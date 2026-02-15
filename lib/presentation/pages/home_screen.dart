@@ -164,7 +164,7 @@ class HomeScreen extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("${'operator'.tr}: Alisher Z.", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            Text("${'operator'.tr}: ${pos.currentUser.value?['name'] ?? 'Unknown'}", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
             Obx(() => pos.currentMode.value == "Dine-in" 
               ? Text("${'table'.tr}: ${pos.selectedTable.value}", style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14))
               : const SizedBox.shrink()),

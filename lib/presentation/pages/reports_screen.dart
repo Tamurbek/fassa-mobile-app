@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/app_colors.dart';
 import '../../logic/pos_controller.dart';
+import 'package:intl/intl.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
@@ -16,28 +17,63 @@ class ReportsScreen extends StatelessWidget {
         title: Text("reports".tr),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("sales_analytics".tr, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            _buildStatsGrid(pos),
-            const SizedBox(height: 32),
-            Text("top_selling".tr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            _buildTopSellingList(),
-            const SizedBox(height: 32),
-            _buildSessionAction(),
-          ],
-        ),
-      ),
+      body: Obx(() {
+        // Calculate real stats from allOrders
+        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        final todayOrders = pos.allOrders.where((o) => (o['timestamp'] ?? '').startsWith(today)).toList();
+        
+        double todayRevenue = todayOrders.fold(0, (sum, o) => sum + (o['total'] as double));
+        int orderCount = todayOrders.length;
+        double avgBill = orderCount > 0 ? todayRevenue / orderCount : 0.0;
+        double totalRevenue = pos.allOrders.fold(0, (sum, o) => sum + (o['total'] as double));
+
+        // Calculate top selling items from allOrders
+        Map<String, int> itemSales = {};
+        Map<String, double> itemRevenue = {};
+        
+        for (var order in pos.allOrders) {
+          final details = order['details'] as List? ?? [];
+          for (var item in details) {
+            String name = item['name'] ?? 'Unknown';
+            int qty = item['qty'] ?? 0;
+            double price = item['price'] ?? 0.0;
+            
+            itemSales[name] = (itemSales[name] ?? 0) + qty;
+            itemRevenue[name] = (itemRevenue[name] ?? 0.0) + (qty * price);
+          }
+        }
+
+        var sortedItems = itemSales.keys.toList()
+          ..sort((a, b) => itemSales[b]!.compareTo(itemSales[a]!));
+        
+        final topSelling = sortedItems.take(5).map((name) => {
+          "name": name,
+          "sales": itemSales[name].toString(),
+          "revenue": "\$${itemRevenue[name]!.toStringAsFixed(2)}"
+        }).toList();
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("sales_analytics".tr, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              _buildStatsGrid(todayRevenue, orderCount, avgBill, totalRevenue),
+              const SizedBox(height: 32),
+              Text("top_selling".tr, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              _buildTopSellingList(topSelling),
+              const SizedBox(height: 32),
+              _buildSessionAction(),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  Widget _buildStatsGrid(POSController pos) {
-    // Mock data for demo
+  Widget _buildStatsGrid(double todayRevenue, int orderCount, double avgBill, double totalRevenue) {
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
@@ -46,10 +82,10 @@ class ReportsScreen extends StatelessWidget {
       crossAxisSpacing: 16,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard("today_revenue".tr, "\$1,240.50", Icons.payments, Colors.green),
-        _buildStatCard("order_count".tr, "42", Icons.shopping_cart, Colors.blue),
-        _buildStatCard("average_bill".tr, "\$29.50", Icons.analytics, Colors.orange),
-        _buildStatCard("total_sales".tr, "\$12.5k", Icons.show_chart, Colors.purple),
+        _buildStatCard("today_revenue".tr, "\$${todayRevenue.toStringAsFixed(2)}", Icons.payments, Colors.green),
+        _buildStatCard("order_count".tr, orderCount.toString(), Icons.shopping_cart, Colors.blue),
+        _buildStatCard("average_bill".tr, "\$${avgBill.toStringAsFixed(2)}", Icons.analytics, Colors.orange),
+        _buildStatCard("total_sales".tr, "\$${totalRevenue.toStringAsFixed(2)}", Icons.show_chart, Colors.purple),
       ],
     );
   }
@@ -76,7 +112,7 @@ class ReportsScreen extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
               Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
             ],
           ),
@@ -85,12 +121,18 @@ class ReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopSellingList() {
-    final List<Map<String, String>> items = [
-      {"name": "Cheesy Beef", "sales": "120", "revenue": "\$1,558"},
-      {"name": "Pepperoni Pizza", "sales": "95", "revenue": "\$1,377"},
-      {"name": "Fresh Orange", "sales": "82", "revenue": "\$369"},
-    ];
+  Widget _buildTopSellingList(List<Map<String, String>> items) {
+    if (items.isEmpty) {
+      return Container(
+        height: 100,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text("no_data".tr),
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -133,7 +175,7 @@ class ReportsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("active_session".tr, style: const TextStyle(fontWeight: FontWeight.bold)),
-                const Text("Started at 08:30 AM", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text("Started: ${DateFormat('hh:mm a').format(DateTime.now())}", style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ),

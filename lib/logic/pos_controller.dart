@@ -23,7 +23,7 @@ class POSController extends GetxController {
   
   // Product Catalog
   var products = <FoodItem>[].obs;
-  var categories = <String>["All", "Burger", "Pizza", "Drinks", "Chicken", "Salad", "Dessert"].obs;
+  var categories = <String>["All"].obs;
   var preparationAreas = <PreparationAreaModel>[].obs;
   var printers = <PrinterModel>[].obs;
   var selectedCategory = "All".obs;
@@ -36,9 +36,9 @@ class POSController extends GetxController {
   // Settings
   var printerPaperSize = "80mm".obs;
   var autoPrintReceipt = false.obs;
-  var restaurantName = "Fast Food Pro".obs;
-  var restaurantAddress = "Tashkent, Uzbekistan".obs;
-  var restaurantPhone = "+998 90 123 45 67".obs;
+  var restaurantName = "".obs;
+  var restaurantAddress = "".obs;
+  var restaurantPhone = "".obs;
 
   @override
   void onInit() {

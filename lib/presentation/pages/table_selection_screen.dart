@@ -45,8 +45,11 @@ class TableSelectionScreen extends StatelessWidget {
               itemCount: tables.length,
               itemBuilder: (context, index) {
                 final tableNum = tables[index];
-                // Mock: tables 3 and 7 are occupied
-                final bool isOccupied = tableNum == "03" || tableNum == "07";
+                final String fullTableLabel = "Table $tableNum";
+                final bool isOccupied = pos.allOrders.any((o) => 
+                  o['table'] == fullTableLabel && 
+                  !["Completed", "Cancelled"].contains(o['status'])
+                );
                 
                 return GestureDetector(
                   onTap: isOccupied ? null : () {

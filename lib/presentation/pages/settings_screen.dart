@@ -97,7 +97,7 @@ class SettingsScreen extends StatelessWidget {
           CircleAvatar(
             radius: 35,
             backgroundColor: AppColors.primary,
-            child: Text(pos.restaurantName.value.substring(0, 2).toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            child: Text(pos.restaurantName.value.isNotEmpty ? pos.restaurantName.value.substring(0, 1).toUpperCase() : "C", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -263,7 +263,7 @@ class SettingsScreen extends StatelessWidget {
           Get.back();
         },
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-        child: Text("save".tr ?? "Save"),
+        child: Text("save".tr),
       ),
       cancel: TextButton(
         onPressed: () => Get.back(),
