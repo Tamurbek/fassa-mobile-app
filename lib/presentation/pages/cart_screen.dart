@@ -179,8 +179,8 @@ class CartScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-                      pos.submitOrder(isPaid: false);
+                    onPressed: () async {
+                      await pos.submitOrder(isPaid: false);
                       Get.offAll(() => const OrdersScreen());
                       Get.snackbar("ordered".tr, "sent_to_kitchen".tr, 
                         backgroundColor: AppColors.primary, colorText: Colors.white);
@@ -239,8 +239,8 @@ class CartScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      pos.submitOrder(isPaid: true);
+                    onPressed: () async {
+                      await pos.submitOrder(isPaid: true);
                       Get.offAll(() => const OrdersScreen());
                       Get.snackbar("success".tr, "payment_completed".tr, 
                         backgroundColor: Colors.green, colorText: Colors.white);

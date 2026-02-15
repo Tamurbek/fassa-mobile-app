@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import 'logic/pos_controller.dart';
 import 'theme/app_theme.dart';
 import 'presentation/pages/main_navigation_screen.dart';
+import 'presentation/pages/auth/login_page.dart';
 import 'translations/app_translations.dart';
 
 void main() async {
@@ -35,7 +36,7 @@ class FastFoodApp extends StatelessWidget {
       translations: AppTranslations(),
       locale: initialLocale,
       fallbackLocale: const Locale('en', 'US'),
-      home: const MainNavigationScreen(), // Use Navigation Screen as root
+      home: const LoginPage(), // Start with Login Page
     );
   }
 }

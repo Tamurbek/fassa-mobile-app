@@ -12,6 +12,7 @@ class POSController extends GetxController {
   
   var currentOrder = <Map<String, dynamic>>[].obs;
   var allOrders = <Map<String, dynamic>>[].obs;
+  var currentUser = Rxn<Map<String, dynamic>>();
   
   // Order modes, current selection, table, and editing state
   final List<String> orderModes = ["Dine-in", "Takeaway", "Delivery"];
@@ -75,6 +76,11 @@ class POSController extends GetxController {
     restaurantName.value = _storage.read('restaurant_name') ?? "Fast Food Pro";
     restaurantAddress.value = _storage.read('restaurant_address') ?? "Tashkent, Uzbekistan";
     restaurantPhone.value = _storage.read('restaurant_phone') ?? "+998 90 123 45 67";
+
+    var storedUser = _storage.read('user');
+    if (storedUser != null) {
+      currentUser.value = Map<String, dynamic>.from(storedUser);
+    }
   }
 
   Future<void> _fetchBackendData() async {
@@ -96,7 +102,7 @@ class POSController extends GetxController {
       // Fetch Orders
       final backendOrders = await _api.getOrders();
       if (backendOrders.isNotEmpty) {
-        allOrders.assignAll(List<Map<String, dynamic>>.from(backendOrders));
+        allOrders.assignAll(backendOrders.map((o) => _normalizeOrder(o)).toList());
         saveAllOrders();
       }
     } catch (e) {
@@ -104,12 +110,31 @@ class POSController extends GetxController {
     }
   }
 
+  Map<String, dynamic> _normalizeOrder(Map<String, dynamic> o) {
+    // Convert backend structure to frontend structure
+    return {
+      "id": o['id'],
+      "table": o['tableNumber'] != null ? o['tableNumber'] : "-",
+      "mode": o['type'].toString().toLowerCase().replaceAll("_", "-").capitalizeFirst,
+      "items": (o['items'] as List).fold(0, (sum, item) => sum + (item['quantity'] as int)),
+      "total": double.tryParse(o['totalAmount'].toString()) ?? 0.0,
+      "status": o['status'].toString().replaceAll("_", " ").split(" ").map((s) => s.toLowerCase().capitalizeFirst).join(" "),
+      "timestamp": o['createdAt'],
+      "details": (o['items'] as List).map((i) => {
+        "id": i['productId'],
+        "name": i['product'] != null ? i['product']['name'] : "Unknown",
+        "qty": i['quantity'],
+        "price": double.tryParse(i['price'].toString()) ?? 0.0,
+      }).toList(),
+    };
+  }
+
   void _setupSocketListeners() {
     _socket.onNewOrder((data) {
       // Add new order to list if it's not already there
       int index = allOrders.indexWhere((o) => o['id'] == data['id']);
       if (index == -1) {
-        allOrders.insert(0, data);
+        allOrders.insert(0, _normalizeOrder(data));
         allOrders.refresh();
         saveAllOrders();
       }
@@ -118,7 +143,7 @@ class POSController extends GetxController {
     _socket.onOrderStatusUpdated((data) {
       int index = allOrders.indexWhere((o) => o['id'] == data['orderId']);
       if (index != -1) {
-        allOrders[index]['status'] = data['status'];
+        allOrders[index]['status'] = data['status'].toString().toLowerCase().capitalizeFirst;
         allOrders.refresh();
         saveAllOrders();
       }
@@ -192,6 +217,21 @@ class POSController extends GetxController {
     isOrderModified.value = currentJson != _originalOrderJson;
   }
 
+  void setCurrentUser(Map<String, dynamic>? user) {
+    currentUser.value = user;
+    if (user != null) {
+      _storage.write('user', user);
+    } else {
+      _storage.remove('user');
+    }
+  }
+
+  void logout() {
+    setCurrentUser(null);
+    _api.setToken(null);
+    Get.offAllNamed('/login'); // We should define routes in main.dart
+  }
+
   Future<void> submitOrder({bool isPaid = false}) async {
     if (currentOrder.isEmpty) return;
 
@@ -214,6 +254,7 @@ class POSController extends GetxController {
       final newOrder = await _api.createOrder({
         "tableNumber": orderData["tableNumber"],
         "type": orderData["type"],
+        "isPaid": isPaid,
         "items": (orderData["items"] as List).map((i) => {
           "productId": i["productId"],
           "quantity": i["qty"],
@@ -221,7 +262,7 @@ class POSController extends GetxController {
         }).toList(),
       });
       
-      allOrders.insert(0, newOrder);
+      allOrders.insert(0, _normalizeOrder(newOrder));
       clearCurrentOrder();
       saveAllOrders();
     } catch (e) {

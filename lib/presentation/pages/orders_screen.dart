@@ -16,12 +16,7 @@ class OrdersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final POSController pos = Get.find<POSController>();
 
-    final List<FoodItem> catalog = [
-      const FoodItem(id: "1", name: "Cheesy Beef Burger", description: "", price: 12.99, imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600"),
-      const FoodItem(id: "2", name: "Pepperoni Pizza", description: "", price: 14.50, imageUrl: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=600"),
-      const FoodItem(id: "3", name: "Crispy Fried Chicken", description: "", price: 9.99, imageUrl: "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?q=80&w=600"),
-      const FoodItem(id: "4", name: "Fresh Orange Juice", description: "", price: 4.50, imageUrl: "https://images.unsplash.com/photo-1613478223719-2ab802602423?q=80&w=600"),
-    ];
+    final List<FoodItem> catalog = pos.products;
 
     return DefaultTabController(
       length: 2,

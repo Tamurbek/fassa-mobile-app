@@ -1,18 +1,54 @@
 import 'package:dio/dio.dart';
 
 class ApiService {
-  static final String baseUrl = 'http://localhost:3001'; // Backend portimiz 3001 edi
+  static final String baseUrl = 'http://localhost:3001'; 
   
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+
   final Dio _dio = Dio(BaseOptions(
     baseUrl: baseUrl,
     connectTimeout: const Duration(seconds: 5),
     receiveTimeout: const Duration(seconds: 3),
   ));
 
-  // Singleton pattern
-  static final ApiService _instance = ApiService._internal();
-  factory ApiService() => _instance;
-  ApiService._internal();
+  String? _token;
+
+  ApiService._internal() {
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) {
+        if (_token != null) {
+          options.headers['Authorization'] = 'Bearer $_token';
+        }
+        return handler.next(options);
+      },
+    ));
+  }
+
+  void setToken(String? token) => _token = token;
+
+  // Auth
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final response = await _dio.post('/auth/login', data: {
+        'email': email,
+        'password': password,
+      });
+      _token = response.data['access_token'];
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> register(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/auth/register', data: data);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   // Categories
   Future<List<dynamic>> getCategories() async {
@@ -55,7 +91,8 @@ class ApiService {
 
   Future<void> updateOrderStatus(int orderId, String status) async {
     try {
-      await _dio.patch('/orders/$orderId/status', data: {'status': status});
+      final backendStatus = status.toUpperCase().replaceAll(" ", "_");
+      await _dio.patch('/orders/$orderId/status', data: {'status': backendStatus});
     } catch (e) {
       rethrow;
     }
