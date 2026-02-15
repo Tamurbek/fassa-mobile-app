@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 class ApiService {
-  static final String baseUrl = 'http://localhost:3001'; 
+  static final String baseUrl = 'https://cafe-backend-code-production.up.railway.app'; 
   
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
