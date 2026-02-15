@@ -1,35 +1,43 @@
 class PrinterModel {
   final String id;
   final String name;
-  final String ipAddress;
+  final String? ipAddress;
   final int port;
-  final List<String> assignedAreas; // e.g., ['Cashier', 'Kitchen', 'Bar']
-  final bool isDefault; // Agar true bo'lsa, tanlanmagan joylar uchun ishlatiladi
+  final String connectionType;
+  final bool isActive;
+  final String cafeId;
+  final String? preparationAreaId;
 
   PrinterModel({
     required this.id,
     required this.name,
-    required this.ipAddress,
+    this.ipAddress,
     this.port = 9100,
-    required this.assignedAreas,
-    this.isDefault = false,
+    this.connectionType = 'NETWORK',
+    this.isActive = true,
+    required this.cafeId,
+    this.preparationAreaId,
   });
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'ipAddress': ipAddress,
+    'ip_address': ipAddress,
     'port': port,
-    'assignedAreas': assignedAreas,
-    'isDefault': isDefault,
+    'connection_type': connectionType,
+    'is_active': isActive,
+    'cafe_id': cafeId,
+    'preparation_area_id': preparationAreaId,
   };
 
   factory PrinterModel.fromJson(Map<String, dynamic> json) => PrinterModel(
     id: json['id'],
     name: json['name'],
-    ipAddress: json['ipAddress'],
+    ipAddress: json['ip_address'],
     port: json['port'] ?? 9100,
-    assignedAreas: List<String>.from(json['assignedAreas'] ?? []),
-    isDefault: json['isDefault'] ?? false,
+    connectionType: json['connection_type'] ?? 'NETWORK',
+    isActive: json['is_active'] ?? true,
+    cafeId: json['cafe_id'] ?? '',
+    preparationAreaId: json['preparation_area_id'],
   );
 }

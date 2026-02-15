@@ -8,6 +8,7 @@ class FoodItem {
   final double rating;
   final int timeEstimate; // in minutes
   final String preparationArea;
+  final String? preparationAreaId;
 
   const FoodItem({
     required this.id,
@@ -19,6 +20,7 @@ class FoodItem {
     this.rating = 4.5,
     this.timeEstimate = 20,
     this.preparationArea = "Kitchen",
+    this.preparationAreaId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -31,6 +33,7 @@ class FoodItem {
     'rating': rating,
     'timeEstimate': timeEstimate,
     'preparationArea': preparationArea,
+    'preparation_area_id': preparationAreaId,
   };
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
@@ -54,6 +57,7 @@ class FoodItem {
       rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
       timeEstimate: json['timeEstimate'] ?? 20,
       preparationArea: json['preparationArea'] ?? 'Kitchen',
+      preparationAreaId: json['preparation_area_id'],
     );
   }
 }

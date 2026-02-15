@@ -98,7 +98,6 @@ class ApiService {
     }
   }
 
-  // Uploads
   Future<String> uploadImage(String filePath) async {
     try {
       String fileName = filePath.split('/').last;
@@ -108,6 +107,26 @@ class ApiService {
 
       final response = await _dio.post('/uploads/', data: formData);
       return response.data['url'];
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Preparation Areas
+  Future<List<dynamic>> getPreparationAreas() async {
+    try {
+      final response = await _dio.get('/preparation-areas');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Printers
+  Future<List<dynamic>> getPrinters() async {
+    try {
+      final response = await _dio.get('/printers');
+      return response.data;
     } catch (e) {
       rethrow;
     }
