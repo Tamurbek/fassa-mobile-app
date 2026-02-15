@@ -97,4 +97,19 @@ class ApiService {
       rethrow;
     }
   }
+
+  // Uploads
+  Future<String> uploadImage(String filePath) async {
+    try {
+      String fileName = filePath.split('/').last;
+      FormData formData = FormData.fromMap({
+        "file": await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+
+      final response = await _dio.post('/uploads/', data: formData);
+      return response.data['url'];
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

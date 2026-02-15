@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../data/models/food_item.dart';
 import '../../logic/pos_controller.dart';
 import '../../theme/app_colors.dart';
+import '../../data/services/api_service.dart';
 import '../widgets/common_image.dart';
 
 class SaveProductScreen extends StatefulWidget {
@@ -80,7 +81,7 @@ class _SaveProductScreenState extends State<SaveProductScreen> {
     }
   }
 
-  void _save() {
+  void _save() async {
     if (_nameController.text.trim().isEmpty) {
       Get.snackbar("error".tr, "name_required".tr, backgroundColor: Colors.red, colorText: Colors.white);
       return;
@@ -92,14 +93,27 @@ class _SaveProductScreenState extends State<SaveProductScreen> {
       return;
     }
 
+    String imageUrl = _imageController.text.trim();
+    
+    // If it's a local file path (not a URL), upload it first
+    if (imageUrl.isNotEmpty && !imageUrl.startsWith('http') && !imageUrl.startsWith('/uploads')) {
+      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+      try {
+        imageUrl = await ApiService().uploadImage(imageUrl);
+        Get.back(); // Close loading dialog
+      } catch (e) {
+        Get.back(); // Close loading dialog
+        Get.snackbar("error".tr, "upload_failed".tr, backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+    }
+
     final newItem = FoodItem(
       id: widget.item?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       name: _nameController.text.trim(),
       description: _descriptionController.text.trim(),
       price: price,
-      imageUrl: _imageController.text.trim().isNotEmpty 
-          ? _imageController.text.trim() 
-          : "", 
+      imageUrl: imageUrl, 
       category: _selectedCategory,
       preparationArea: _selectedPrepArea,
     );

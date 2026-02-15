@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../data/services/api_service.dart';
 
 
 class CommonImage extends StatelessWidget {
@@ -34,6 +35,21 @@ class CommonImage extends StatelessWidget {
     } else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       imageWidget = Image.network(
         imageUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) =>
+            errorWidget ??
+            Container(
+              width: width,
+              height: height,
+              color: Colors.grey.shade200,
+              child: const Icon(Icons.broken_image, color: Colors.grey),
+            ),
+      );
+    } else if (imageUrl.startsWith('/uploads/')) {
+      imageWidget = Image.network(
+        "${ApiService.baseUrl}$imageUrl",
         width: width,
         height: height,
         fit: fit,
