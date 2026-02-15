@@ -4,6 +4,7 @@ import '../../../data/services/api_service.dart';
 import '../../../logic/pos_controller.dart';
 import '../../../theme/app_colors.dart';
 import '../main_navigation_screen.dart';
+import 'pin_code_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -47,8 +48,13 @@ class _LoginPageState extends State<LoginPage> {
         colorText: Colors.white,
       );
 
-      // Navigate to Home
-      Get.offAll(() => const MainNavigationScreen());
+      // Redirect based on PIN setup
+      final pos = Get.find<POSController>();
+      if (pos.pinCode.value == null) {
+        Get.offAll(() => const PinCodeScreen(isSettingNewPin: true));
+      } else {
+        Get.offAll(() => const PinCodeScreen());
+      }
     } catch (e) {
       Get.snackbar(
         'Login Failed',

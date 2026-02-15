@@ -5,6 +5,7 @@ import 'logic/pos_controller.dart';
 import 'theme/app_theme.dart';
 import 'presentation/pages/main_navigation_screen.dart';
 import 'presentation/pages/auth/login_page.dart';
+import 'presentation/pages/auth/pin_code_screen.dart';
 import 'translations/app_translations.dart';
 
 void main() async {
@@ -36,7 +37,28 @@ class FastFoodApp extends StatelessWidget {
       translations: AppTranslations(),
       locale: initialLocale,
       fallbackLocale: const Locale('en', 'US'),
-      home: const LoginPage(), // Start with Login Page
+      home: _getInitialScreen(),
     );
+  }
+
+  Widget _getInitialScreen() {
+    final storage = GetStorage();
+    final pos = Get.find<POSController>();
+    
+    // 1. Check if user is logged in
+    var storedUser = storage.read('user');
+    if (storedUser == null) {
+      return const LoginPage();
+    }
+    
+    // 2. Refresh initial user data in controller if needed
+    // (This is already handled in POSController.onInit)
+
+    // 3. User is logged in, check PIN
+    if (pos.pinCode.value == null) {
+      return const PinCodeScreen(isSettingNewPin: true);
+    } else {
+      return const PinCodeScreen();
+    }
   }
 }

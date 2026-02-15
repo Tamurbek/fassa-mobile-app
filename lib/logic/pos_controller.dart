@@ -13,6 +13,8 @@ class POSController extends GetxController {
   var currentOrder = <Map<String, dynamic>>[].obs;
   var allOrders = <Map<String, dynamic>>[].obs;
   var currentUser = Rxn<Map<String, dynamic>>();
+  var pinCode = RxnString();
+  var isPinAuthenticated = false.obs;
   
   // Order modes, current selection, table, and editing state
   final List<String> orderModes = ["Dine-in", "Takeaway", "Delivery"];
@@ -81,6 +83,17 @@ class POSController extends GetxController {
     if (storedUser != null) {
       currentUser.value = Map<String, dynamic>.from(storedUser);
     }
+
+    pinCode.value = _storage.read('pin_code');
+  }
+
+  void setPinCode(String code) {
+    pinCode.value = code;
+    _storage.write('pin_code', code);
+  }
+
+  void authenticatePin(bool status) {
+    isPinAuthenticated.value = status;
   }
 
   Future<void> _fetchBackendData() async {
