@@ -117,19 +117,15 @@ class POSController extends GetxController {
     try {
       // Fetch Categories
       final backendCategories = await _api.getCategories();
-      if (backendCategories.isNotEmpty) {
-        categoriesObjects.assignAll(List<Map<String, dynamic>>.from(backendCategories));
-        categories.assignAll(["All", ...backendCategories.map((c) => c['name'].toString())]);
-        _storage.write('categories_objects', categoriesObjects.toList());
-        saveCategories();
-      }
+      categoriesObjects.assignAll(List<Map<String, dynamic>>.from(backendCategories));
+      categories.assignAll(["All", ...backendCategories.map((c) => c['name'].toString())]);
+      _storage.write('categories_objects', categoriesObjects.toList());
+      saveCategories();
 
       // Fetch Products
       final backendProducts = await _api.getProducts();
-      if (backendProducts.isNotEmpty) {
-        products.assignAll(backendProducts.map((p) => FoodItem.fromJson(p)).toList());
-        saveProducts();
-      }
+      products.assignAll(backendProducts.map((p) => FoodItem.fromJson(p)).toList());
+      saveProducts();
 
       // Fetch Preparation Areas
       final backendPrepAreas = await _api.getPreparationAreas();
