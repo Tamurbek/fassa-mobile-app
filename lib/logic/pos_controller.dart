@@ -6,6 +6,7 @@ import '../data/models/preparation_area_model.dart';
 import '../data/services/api_service.dart';
 import '../data/services/socket_service.dart';
 import '../data/services/printer_service.dart';
+import '../theme/app_colors.dart';
 
 class POSController extends GetxController {
   final _storage = GetStorage();

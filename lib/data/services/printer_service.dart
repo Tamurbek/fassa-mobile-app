@@ -117,7 +117,7 @@ class PrinterService {
         bytes += generator.text('${item['qty']} x ${item['name']}', 
             styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true));
         if (item['note'] != null && item['note'].toString().isNotEmpty) {
-          bytes += generator.text(' NOTE: ${item['note']}', styles: const PosStyles(italic: true));
+          bytes += generator.text(' NOTE: ${item['note']}');
         }
         bytes += generator.feed(1);
       }
