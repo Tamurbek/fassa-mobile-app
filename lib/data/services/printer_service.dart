@@ -120,7 +120,7 @@ class PrinterService {
 
       // Footer
       bytes += generator.feed(1);
-      bytes += generator.text('Xaridingiz uchun rahmat!', styles: const PosStyles(align: PosAlign.center, italic: true));
+      bytes += generator.text('Xaridingiz uchun rahmat!', styles: const PosStyles(align: PosAlign.center));
       bytes += generator.text('Yana keling!', styles: const PosStyles(align: PosAlign.center));
       
       bytes += generator.feed(3);
