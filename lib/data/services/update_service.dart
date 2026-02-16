@@ -16,8 +16,8 @@ class UpdateService {
       final currentVersion = packageInfo.version;
       final currentBuild = int.parse(packageInfo.buildNumber);
       
-      final latestVersion = updateInfo['latest_version'];
-      final latestBuild = updateInfo['build_number'];
+      final latestVersion = updateInfo['latest_version'] ?? "1.0.0";
+      final latestBuild = int.tryParse(updateInfo['build_number']?.toString() ?? "0") ?? 0;
       
       if (latestBuild > currentBuild) {
         _showUpdateDialog(
