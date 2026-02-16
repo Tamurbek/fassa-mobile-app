@@ -51,7 +51,7 @@ class FoodItem {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       imageUrl: json['image'] ?? json['imageUrl'] ?? '',
       category: categoryName,
       rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
