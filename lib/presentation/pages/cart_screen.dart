@@ -4,6 +4,7 @@ import '../../data/models/food_item.dart';
 import '../../theme/app_colors.dart';
 import '../../logic/pos_controller.dart';
 import 'orders_screen.dart';
+import 'main_navigation_screen.dart';
 import '../widgets/common_image.dart';
 
 class CartScreen extends StatelessWidget {
@@ -181,7 +182,7 @@ class CartScreen extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () async {
                       await pos.submitOrder(isPaid: false);
-                      Get.offAll(() => const MainNavigationScreen());
+                      Get.offAll(() => MainNavigationScreen());
                       Get.snackbar("Oshxona", "Buyurtma oshxonaga yuborildi", 
                         backgroundColor: AppColors.primary, colorText: Colors.white);
                     },
@@ -252,7 +253,7 @@ class CartScreen extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () async {
                       await pos.submitOrder(isPaid: true);
-                      Get.offAll(() => const MainNavigationScreen());
+                      Get.offAll(() => MainNavigationScreen());
                       Get.snackbar("To'lov", "To'lov qabul qilindi va hisob yopildi", 
                         backgroundColor: Colors.green, colorText: Colors.white);
                     },
