@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:get_storage/get_storage.dart';
 
 class ApiService {
   static final String baseUrl = 'https://cafe-backend-code-production.up.railway.app'; 
@@ -12,9 +13,11 @@ class ApiService {
     receiveTimeout: const Duration(seconds: 3),
   ));
 
+  final GetStorage _storage = GetStorage();
   String? _token;
 
   ApiService._internal() {
+    _token = _storage.read('access_token');
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         if (_token != null) {
@@ -25,7 +28,10 @@ class ApiService {
     ));
   }
 
-  void setToken(String? token) => _token = token;
+  void setToken(String? token) {
+    _token = token;
+    _storage.write('access_token', token);
+  }
 
   // Auth
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -35,6 +41,7 @@ class ApiService {
         'password': password,
       });
       _token = response.data['access_token'];
+      _storage.write('access_token', _token);
       return response.data;
     } catch (e) {
       rethrow;
