@@ -181,10 +181,10 @@ class CartScreen extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () async {
-                      await pos.submitOrder(isPaid: false);
-                      Get.offAll(() => MainNavigationScreen());
-                      Get.snackbar("Oshxona", "Buyurtma oshxonaga yuborildi", 
-                        backgroundColor: AppColors.primary, colorText: Colors.white);
+                      bool success = await pos.submitOrder(isPaid: false);
+                      if (success) {
+                        Get.offAll(() => const MainNavigationScreen());
+                      }
                     },
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 75), 
@@ -252,10 +252,10 @@ class CartScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
-                      await pos.submitOrder(isPaid: true);
-                      Get.offAll(() => MainNavigationScreen());
-                      Get.snackbar("To'lov", "To'lov qabul qilindi va hisob yopildi", 
-                        backgroundColor: Colors.green, colorText: Colors.white);
+                      bool success = await pos.submitOrder(isPaid: true);
+                      if (success) {
+                        Get.offAll(() => const MainNavigationScreen());
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(0, 75), 

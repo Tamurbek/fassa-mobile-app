@@ -285,12 +285,11 @@ class POSController extends GetxController {
     Get.offAllNamed('/login'); // We should define routes in main.dart
   }
 
-  Future<void> submitOrder({bool isPaid = false}) async {
-    if (currentOrder.isEmpty) return;
+  Future<bool> submitOrder({bool isPaid = false}) async {
+    if (currentOrder.isEmpty) return false;
 
     if (editingOrderId.value != null) {
-      updateExistingOrder(isPaid: isPaid);
-      return;
+      return await updateExistingOrder(isPaid: isPaid);
     }
 
     final orderData = {
@@ -323,8 +322,12 @@ class POSController extends GetxController {
 
       clearCurrentOrder();
       saveAllOrders();
+      return true;
     } catch (e) {
       print("Error creating order: $e");
+      Get.snackbar("Error", "Could not save order to server", 
+        backgroundColor: Colors.red, colorText: Colors.white);
+      return false;
     }
   }
 
@@ -357,13 +360,13 @@ class POSController extends GetxController {
     isOrderModified.value = false;
   }
 
-  Future<void> updateExistingOrder({bool isPaid = false}) async {
-    if (editingOrderId.value == null) return;
+  Future<bool> updateExistingOrder({bool isPaid = false}) async {
+    if (editingOrderId.value == null) return false;
     
     try {
       // 1. Update status on backend
       final newStatus = isPaid ? "Completed" : "Preparing";
-      await updateOrderStatus(editingOrderId.value!, newStatus);
+      await _api.updateOrderStatus(editingOrderId.value!, newStatus);
       
       // 2. Update local state
       int index = allOrders.indexWhere((o) => o['id'] == editingOrderId.value);
@@ -386,9 +389,14 @@ class POSController extends GetxController {
         allOrders.refresh();
         clearCurrentOrder();
         saveAllOrders();
+        return true;
       }
+      return false;
     } catch (e) {
       print("Error updating existing order: $e");
+      Get.snackbar("Error", "Could not update order on server", 
+        backgroundColor: Colors.red, colorText: Colors.white);
+      return false;
     }
   }
 
@@ -628,27 +636,28 @@ class POSController extends GetxController {
 
   Future<void> printOrder(Map<String, dynamic> order) async {
     isPrinting.value = true;
-    bool anySuccess = false;
-    bool anyPrinterAttempted = false;
+    List<String> successPrinters = [];
+    List<String> failedPrinters = [];
+    List<String> filteredPrinters = [];
     
     final details = order['details'] as List? ?? [];
-    
     final activePrinters = printers.where((p) => p.isActive).toList();
     
     if (activePrinters.isEmpty) {
       Get.snackbar("Printer Warning", "No active printers configured", 
-        backgroundColor: Colors.orange, colorText: AppColors.white,
+        backgroundColor: Colors.orange, colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM);
       isPrinting.value = false;
       return;
     }
 
     for (var printer in activePrinters) {
-      anyPrinterAttempted = true;
+      bool success = false;
       if (printer.preparationAreaId == null || printer.preparationAreaId!.isEmpty) {
         // Receipt Printer - Full Ticket
-        final success = await _printer.printReceipt(printer, order);
-        if (success) anySuccess = true;
+        success = await _printer.printReceipt(printer, order);
+        if (success) successPrinters.add(printer.name);
+        else failedPrinters.add(printer.name);
       } else {
         // Kitchen Printer - Filtered items
         final filteredItems = details.where((d) {
@@ -662,32 +671,34 @@ class POSController extends GetxController {
         }).toList();
 
         if (filteredItems.isNotEmpty) {
-          final success = await _printer.printKitchenTicket(printer, order, filteredItems);
-          if (success) anySuccess = true;
+          success = await _printer.printKitchenTicket(printer, order, filteredItems);
+          if (success) successPrinters.add(printer.name);
+          else failedPrinters.add(printer.name);
         } else {
-          // No items for this kitchen printer - count as "not failed" but didn't print
+          filteredPrinters.add(printer.name);
           print("No items for printer ${printer.name} (Area ID: ${printer.preparationAreaId})");
         }
       }
     }
     
     isPrinting.value = false;
-    if (anySuccess) {
-      Get.snackbar("Printer", "Print job sent successfully", 
-        backgroundColor: AppColors.primary.withOpacity(0.8), colorText: AppColors.white,
-        snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
-    } else if (anyPrinterAttempted) {
-      // Check if we didn't print because of filter or because of connection
-      bool hasKitchenPrinters = activePrinters.any((p) => p.preparationAreaId != null && p.preparationAreaId!.isNotEmpty);
-      if (hasKitchenPrinters && !anySuccess) {
-         Get.snackbar("Printer info", "Prints may be filtered or connection failed", 
-          backgroundColor: Colors.blueGrey, colorText: AppColors.white,
-          snackPosition: SnackPosition.BOTTOM);
-      } else {
-        Get.snackbar("Printer Error", "Could not connect to printers", 
-          backgroundColor: Get.theme.colorScheme.error, colorText: AppColors.white,
-          snackPosition: SnackPosition.BOTTOM);
+
+    if (failedPrinters.isNotEmpty) {
+      String msg = "Failed: ${failedPrinters.join(', ')}";
+      if (successPrinters.isNotEmpty) {
+        msg += "\nSuccess: ${successPrinters.join(', ')}";
       }
+      Get.snackbar("Printer Error", msg, 
+        backgroundColor: Colors.red, colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 4));
+    } else if (successPrinters.isNotEmpty) {
+      Get.snackbar("Printer", "Printed successfully on: ${successPrinters.join(', ')}", 
+        backgroundColor: Colors.green, colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM, duration: const Duration(seconds: 2));
+    } else if (filteredPrinters.isNotEmpty) {
+      Get.snackbar("Printer Info", "No matching items for: ${filteredPrinters.join(', ')}", 
+        backgroundColor: Colors.blueGrey, colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM);
     }
   }
 
