@@ -6,6 +6,7 @@ import '../data/models/preparation_area_model.dart';
 import '../data/services/api_service.dart';
 import '../data/services/socket_service.dart';
 import '../data/services/printer_service.dart';
+import '../data/services/update_service.dart';
 import '../theme/app_colors.dart';
 
 class POSController extends GetxController {
@@ -13,6 +14,7 @@ class POSController extends GetxController {
   final _api = ApiService();
   final _socket = SocketService();
   final _printer = PrinterService();
+  final _update = UpdateService();
   
   var currentOrder = <Map<String, dynamic>>[].obs;
   var allOrders = <Map<String, dynamic>>[].obs;
@@ -50,6 +52,7 @@ class POSController extends GetxController {
     _loadLocalData();
     _fetchBackendData();
     _setupSocketListeners();
+    _update.checkForUpdate();
   }
 
   void _loadLocalData() {
