@@ -21,6 +21,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
   late TextEditingController _ipController;
   late TextEditingController _portController;
   final RxString _selectedAreaId = "".obs;
+  final RxString _paperSize = "80mm".obs;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
     _ipController = TextEditingController(text: widget.printer?.ipAddress ?? "192.168.1.100");
     _portController = TextEditingController(text: widget.printer?.port.toString() ?? "9100");
     _selectedAreaId.value = widget.printer?.preparationAreaId ?? "";
+    _paperSize.value = widget.printer?.paperSize ?? "80mm";
   }
 
   @override
@@ -54,6 +56,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
       isActive: widget.printer?.isActive ?? true,
       cafeId: pos.currentUser.value?['cafe_id'] ?? '',
       preparationAreaId: _selectedAreaId.value.isEmpty ? null : _selectedAreaId.value,
+      paperSize: _paperSize.value,
     );
 
     if (widget.printer == null) {
@@ -118,6 +121,45 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
                 ),
               ),
             )),
+            const SizedBox(height: 16),
+
+            Text("Paper Size", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Obx(() => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _paperSize.value,
+                  isExpanded: true,
+                  items: ["58mm", "80mm"].map((size) => DropdownMenuItem(
+                    value: size,
+                    child: Text(size),
+                  )).toList(),
+                  onChanged: (val) => _paperSize.value = val ?? "80mm",
+                ),
+              ),
+            )),
+            const SizedBox(height: 32),
+            if (widget.printer != null)
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => pos.testPrinter(widget.printer!),
+                  icon: const Icon(Icons.print),
+                  label: const Text("Test Print"),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: const BorderSide(color: AppColors.primary),
+                    foregroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

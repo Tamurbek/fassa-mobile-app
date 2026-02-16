@@ -7,6 +7,7 @@ class PrinterModel {
   final bool isActive;
   final String cafeId;
   final String? preparationAreaId;
+  final String paperSize;
 
   PrinterModel({
     required this.id,
@@ -17,6 +18,7 @@ class PrinterModel {
     this.isActive = true,
     required this.cafeId,
     this.preparationAreaId,
+    this.paperSize = '80mm',
   });
 
   Map<String, dynamic> toJson() => {
@@ -28,6 +30,7 @@ class PrinterModel {
     'is_active': isActive,
     'cafe_id': cafeId,
     'preparation_area_id': preparationAreaId,
+    'paper_size': paperSize,
   };
 
   factory PrinterModel.fromJson(Map<String, dynamic> json) => PrinterModel(
@@ -39,5 +42,6 @@ class PrinterModel {
     isActive: json['is_active'] ?? true,
     cafeId: json['cafe_id'] ?? '',
     preparationAreaId: json['preparation_area_id'],
+    paperSize: json['paper_size'] ?? '80mm',
   );
 }

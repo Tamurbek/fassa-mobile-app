@@ -5,11 +5,13 @@ import '../data/models/printer_model.dart';
 import '../data/models/preparation_area_model.dart';
 import '../data/services/api_service.dart';
 import '../data/services/socket_service.dart';
+import '../data/services/printer_service.dart';
 
 class POSController extends GetxController {
   final _storage = GetStorage();
   final _api = ApiService();
   final _socket = SocketService();
+  final _printer = PrinterService();
   
   var currentOrder = <Map<String, dynamic>>[].obs;
   var allOrders = <Map<String, dynamic>>[].obs;
@@ -290,7 +292,14 @@ class POSController extends GetxController {
         }).toList(),
       });
       
-      allOrders.insert(0, _normalizeOrder(newOrder));
+      final normalizedOrder = _normalizeOrder(newOrder);
+      allOrders.insert(0, normalizedOrder);
+      
+      // Auto Print if enabled
+      if (autoPrintReceipt.value) {
+        printOrder(normalizedOrder);
+      }
+
       clearCurrentOrder();
       saveAllOrders();
     } catch (e) {
@@ -486,5 +495,24 @@ class POSController extends GetxController {
   void deletePrinter(String id) {
     printers.removeWhere((p) => p.id == id);
     savePrinters();
+  }
+
+  Future<void> printOrder(Map<String, dynamic> order) async {
+    // Print to all active printers or specific one? 
+    // Usually we print receipt to a receipt printer, and kitchen orders to kitchen printers.
+    // For now, let's print the receipt to any printer that is active and not kitchen-specific, 
+    // OR just all active printers for simplicity in this demo.
+    
+    for (var printer in printers) {
+      if (printer.isActive) {
+        // If it's a kitchen printer (has preparationAreaId), we might want a different format, 
+        // but for now we'll use the same service.
+        _printer.printReceipt(printer, order);
+      }
+    }
+  }
+
+  Future<void> testPrinter(PrinterModel printer) async {
+    await _printer.printTestPage(printer);
   }
 }
