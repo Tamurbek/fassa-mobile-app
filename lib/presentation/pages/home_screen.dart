@@ -498,7 +498,7 @@ class HomeScreen extends StatelessWidget {
     }
 
     final int crossAxisCount = Responsive.isMobile(context) ? 1 : (Responsive.isTablet(context) ? 2 : 3);
-    final double childAspectRatio = Responsive.isMobile(context) ? 2.8 : 2.5;
+    final double childAspectRatio = Responsive.isMobile(context) ? 1.6 : 1.6;
 
     return GridView.builder(
       padding: EdgeInsets.symmetric(horizontal: Responsive.isMobile(context) ? 24 : 40),
