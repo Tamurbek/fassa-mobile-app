@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'dart:async';
 import '../data/models/food_item.dart';
 import '../data/models/printer_model.dart';
 import '../data/models/preparation_area_model.dart';
@@ -49,6 +50,13 @@ class POSController extends GetxController {
   var restaurantAddress = "".obs;
   var restaurantPhone = "".obs;
 
+  // Subscription
+  var subscriptionDaysLeft = RxnInt();    // null = VIP (cheksiz)
+  var isSubscriptionExpired = false.obs;
+  var isVip = false.obs;
+  var subscriptionEndDate = RxnString();  // ISO string or null
+  Timer? _subscriptionTimer;
+
   String get cafeId => currentUser.value?['cafe_id'] ?? "";
 
   @override
@@ -58,7 +66,111 @@ class POSController extends GetxController {
     _fetchBackendData();
     _setupSocketListeners();
     _update.checkForUpdate();
+    _startSubscriptionCheck();
   }
+
+  @override
+  void onClose() {
+    _subscriptionTimer?.cancel();
+    super.onClose();
+  }
+
+  void _startSubscriptionCheck() {
+    if (currentUser.value != null) {
+      checkSubscription();
+    }
+    _subscriptionTimer = Timer.periodic(const Duration(minutes: 30), (_) {
+      if (currentUser.value != null) {
+        checkSubscription(showWarning: false);
+      }
+    });
+  }
+
+  Future<void> checkSubscription({bool showWarning = true}) async {
+    if (currentUser.value == null) return;
+    try {
+      final status = await _api.getSubscriptionStatus();
+      final bool vip = status['is_vip'] == true;
+      final bool expired = status['is_expired'] == true;
+      final bool active = status['is_active'] != false; // null bo'lsa faol deb hisoblaymiz
+      final dynamic daysLeft = status['days_left'];
+      final String? endDate = status['end_date'];
+
+      isVip.value = vip;
+      isSubscriptionExpired.value = expired || !active;
+      subscriptionDaysLeft.value = vip ? null : (daysLeft as int?);
+      subscriptionEndDate.value = endDate;
+
+      if (expired || !active) {
+        _forceLogoutDueToExpiry(reason: !active ? 'Kafe nofaol holatda' : 'Obuna tugadi');
+        return;
+      }
+
+      if (!vip && showWarning && daysLeft != null) {
+        final int days = daysLeft as int;
+        if (days <= 3 && days > 0) {
+          Get.snackbar(
+            'Obuna tugayapti!',
+            'Obuna muddati ' + days.toString() + ' kun ichida tugaydi. Iltimos, muddatni uzaytiring.',
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 8),
+            snackPosition: SnackPosition.TOP,
+            icon: const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 28),
+            margin: const EdgeInsets.all(12),
+          );
+        }
+      }
+    } catch (e) {
+      print('Subscription check error: ' + e.toString());
+    }
+  }
+
+  void _forceLogoutDueToExpiry({String reason = 'Obuna tugadi'}) {
+    if (Get.isDialogOpen == true) return;
+    isSubscriptionExpired.value = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.dialog(
+        PopScope(
+          canPop: false,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                const Icon(Icons.lock_outline, color: Colors.red, size: 28),
+                const SizedBox(width: 8),
+                Text(reason,
+                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              reason == 'Obuna tugadi' 
+                ? 'Kafengizning obuna muddati tugadi.\n\nTizimdan chiqib, administrator bilan bog\'laning.'
+                : 'Kafengiz vaqtincha nofaol qilindi.\n\nTizimdan chiqib, administrator bilan bog\'laning.',
+              style: const TextStyle(fontSize: 16, height: 1.5),
+            ),
+            actions: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  Get.back();
+                  logout();
+                },
+                icon: const Icon(Icons.exit_to_app),
+                label: const Text('Chiqish'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        barrierDismissible: false,
+      );
+    });
+  }
+
 
   void _loadLocalData() {
     var storedAllOrders = _storage.read('all_orders');

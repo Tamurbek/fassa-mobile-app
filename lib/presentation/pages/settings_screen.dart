@@ -92,23 +92,63 @@ class SettingsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
       ),
-      child: Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 35,
-            backgroundColor: AppColors.primary,
-            child: Text(pos.restaurantName.value.isNotEmpty ? pos.restaurantName.value.substring(0, 1).toUpperCase() : "C", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 35,
+                backgroundColor: AppColors.primary,
+                child: Text(pos.restaurantName.value.isNotEmpty ? pos.restaurantName.value.substring(0, 1).toUpperCase() : "C", style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Obx(() => Text(pos.restaurantName.value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
+                    Obx(() => Text(pos.restaurantAddress.value, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: AppColors.background),
+          const SizedBox(height: 16),
+          Obx(() {
+            final isVip = pos.isVip.value;
+            final daysLeft = pos.subscriptionDaysLeft.value;
+            
+            return Row(
               children: [
-                Obx(() => Text(pos.restaurantName.value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-                Obx(() => Text(pos.restaurantAddress.value, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+                Icon(
+                  isVip ? Icons.workspace_premium_rounded : Icons.timer_outlined,
+                  size: 20,
+                  color: isVip ? Colors.amber.shade700 : (daysLeft != null && daysLeft <= 3 ? Colors.red : Colors.green),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isVip 
+                    ? "VIP — Cheksiz obuna" 
+                    : "Obuna muddati: " + (daysLeft != null ? daysLeft.toString() + " kun qoldi" : "Yuklanmoqda..."),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isVip ? Colors.amber.shade800 : (daysLeft != null && daysLeft <= 3 ? Colors.red : Colors.green.shade700),
+                  ),
+                ),
+                if (!isVip && pos.subscriptionEndDate.value != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(
+                      "(${pos.subscriptionEndDate.value!.split('T')[0]})",
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                  ),
               ],
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );

@@ -243,6 +243,15 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getSubscriptionStatus() async {
+    try {
+      final response = await _dio.get('/cafes/subscription-status');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> getLatestVersion() async {
     try {
       final response = await _dio.get('/system/version');

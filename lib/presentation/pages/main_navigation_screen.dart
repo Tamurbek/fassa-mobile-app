@@ -53,6 +53,74 @@ class MainNavigationScreen extends StatelessWidget {
             ),
           ),
         ),
+
+        // Subscription Warning Banner
+        if (pos.subscriptionDaysLeft.value != null && 
+            pos.subscriptionDaysLeft.value! <= 3 && 
+            pos.subscriptionDaysLeft.value! >= 0)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 16,
+            right: 16,
+            child: Material(
+              elevation: 4,
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.warning_amber_rounded, 
+                        color: Colors.orange.shade800, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Obuna tugashiga ${pos.subscriptionDaysLeft.value} kun qoldi',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade900,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            'Cheklovlar oldini olish uchun uzaytiring',
+                            style: TextStyle(
+                              color: Colors.orange.shade800.withOpacity(0.8),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
         if (pos.isPrinting.value)
           const PrintingOverlay(),
       ],

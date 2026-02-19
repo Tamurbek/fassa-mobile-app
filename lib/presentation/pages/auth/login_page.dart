@@ -41,6 +41,23 @@ class _LoginPageState extends State<LoginPage> {
       // Save user to controller
       Get.find<POSController>().setCurrentUser(response['user']);
       
+      try {
+        final subStatus = await ApiService().getSubscriptionStatus();
+        if (subStatus['is_expired'] == true) {
+          Get.snackbar(
+            'Obuna muddati tugagan',
+            'Sizning obuna muddatingiz tugagan. Iltimos, administrator bilan bog\'laning.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+          );
+          Get.find<POSController>().logout();
+          return;
+        }
+      } catch (e) {
+        print("Subscription check error on login: $e");
+      }
+
       Get.snackbar(
         'Success',
         'Welcome back, ${response['user']['name']}!',
