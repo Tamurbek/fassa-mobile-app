@@ -413,9 +413,19 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          _buildSidebarBtn("kitchen_print_sidebar".tr, const Color(0xFF3B82F6), Icons.print, () => pos.submitOrder(isPaid: false)),
+          _buildSidebarBtn("kitchen_print_sidebar".tr, const Color(0xFF3B82F6), Icons.print, () async {
+            bool success = await pos.submitOrder(isPaid: false);
+            if (success) {
+              Get.offAll(() => const MainNavigationScreen());
+            }
+          }),
           const SizedBox(height: 12),
-          _buildSidebarBtn("pay_finish_sidebar".tr, const Color(0xFFFF9500), Icons.payments, () => pos.submitOrder(isPaid: true)),
+          _buildSidebarBtn("pay_finish_sidebar".tr, const Color(0xFFFF9500), Icons.payments, () async {
+            bool success = await pos.submitOrder(isPaid: true);
+            if (success) {
+              Get.offAll(() => const MainNavigationScreen());
+            }
+          }),
         ],
       ),
     );

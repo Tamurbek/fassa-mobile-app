@@ -725,6 +725,8 @@ class POSController extends GetxController {
 
       clearCurrentOrder();
       saveAllOrders();
+      Get.snackbar("success".tr, isPaid ? "payment_completed".tr : "sent_to_kitchen".tr,
+          backgroundColor: Colors.green, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
       return true;
     } catch (e) {
       print("Error creating order: $e");
@@ -795,6 +797,8 @@ class POSController extends GetxController {
         allOrders.refresh();
         clearCurrentOrder();
         saveAllOrders();
+        Get.snackbar("success".tr, isPaid ? "payment_completed".tr : "sent_to_kitchen".tr,
+            backgroundColor: Colors.green, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
         return true;
       }
       return false;
