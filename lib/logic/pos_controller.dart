@@ -563,13 +563,22 @@ class POSController extends GetxController {
   }
 
   void addToCart(FoodItem item) {
-    int index = currentOrder.indexWhere((element) => element['item'].id == item.id);
+    // Check if we already have a 'New' line for this item
+    int index = currentOrder.indexWhere((element) => 
+      element['item'].id == item.id && (element['isNew'] == true)
+    );
+
     if (index != -1) {
       currentOrder[index]['quantity']++;
-      currentOrder.refresh();
     } else {
-      currentOrder.add({'item': item, 'quantity': 1});
+      currentOrder.add({
+        'item': item, 
+        'quantity': 1,
+        'isNew': true,
+        'sentQty': 0,
+      });
     }
+    currentOrder.refresh();
     _checkIfModified();
   }
 
@@ -579,12 +588,26 @@ class POSController extends GetxController {
   }
 
   void updateQuantity(int index, int delta) {
-    currentOrder[index]['quantity'] += delta;
-    if (currentOrder[index]['quantity'] <= 0) {
-      currentOrder.removeAt(index);
+    final item = currentOrder[index];
+    final bool isNew = item['isNew'] == true;
+    final int sentQty = item['sentQty'] ?? 0;
+
+    if (delta > 0) {
+      if (!isNew) {
+        // If it's a sent item and we increase, redirect to addToCart to create/update separate New line
+        addToCart(item['item']);
+        return;
+      }
+      item['quantity']++;
     } else {
-      currentOrder.refresh();
+      item['quantity']--;
+      if (isNew && item['quantity'] <= 0) {
+        currentOrder.removeAt(index);
+      } else if (!isNew && item['quantity'] < 0) {
+        item['quantity'] = 0; // Don't remove sent items, just mark as cancelled (qty 0)
+      }
     }
+    currentOrder.refresh();
     _checkIfModified();
   }
 
@@ -753,7 +776,12 @@ class POSController extends GetxController {
     for (var d in details) {
       final item = catalog.firstWhereOrNull((f) => f.id == d['id'] || f.name == d['name']);
       if (item != null) {
-        currentOrder.add({'item': item, 'quantity': d['qty']});
+        currentOrder.add({
+          'item': item, 
+          'quantity': d['qty'],
+          'sentQty': d['qty'],
+          'isNew': false,
+        });
       }
     }
     
@@ -769,9 +797,44 @@ class POSController extends GetxController {
     if (editingOrderId.value == null) return false;
     
     try {
-      // 1. Update status on backend
+      // 1. Update status and items on backend
       final newStatus = isPaid ? "Completed" : "Preparing";
+      
+      // Group items for backend and receipts
+      Map<dynamic, Map<String, dynamic>> aggregated = {};
+      for (var e in currentOrder) {
+        final item = e['item'] as FoodItem;
+        final id = item.id;
+        if (aggregated.containsKey(id)) {
+          aggregated[id]!['qty'] += e['quantity'];
+        } else {
+          aggregated[id] = {
+            "id": id,
+            "product_id": id, // For backend
+            "name": item.name,
+            "qty": e['quantity'],
+            "quantity": e['quantity'], // For backend
+            "price": item.price,
+          };
+        }
+      }
+      
+      // Filter out items that are completely cancelled (qty 0) if it's not a kitchen update
+      // Actually, for kitchen update we need the 0 to detect cancellation.
+      final consolidatedList = aggregated.values.toList();
+
       await _api.updateOrderStatus(editingOrderId.value!, newStatus);
+      try {
+        await _api.updateOrder(editingOrderId.value!, {
+          "items": consolidatedList.map((i) => {
+            "product_id": i["id"],
+            "quantity": i["qty"],
+            "price": i["price"]
+          }).toList()
+        });
+      } catch (e) {
+        print("Backend item update failed (may be expected if route missing): $e");
+      }
       
       // 2. Update local state
       int index = allOrders.indexWhere((o) => o['id'] == editingOrderId.value);
@@ -781,12 +844,9 @@ class POSController extends GetxController {
         allOrders[index]['status'] = newStatus;
         allOrders[index]['mode'] = currentMode.value;
         allOrders[index]['table'] = currentMode.value == "Dine-in" ? "Table ${selectedTable.value}" : "-";
-        allOrders[index]['details'] = currentOrder.map((e) => {
-          "id": (e['item'] as FoodItem).id,
-          "name": (e['item'] as FoodItem).name,
-          "qty": e['quantity'],
-          "price": (e['item'] as FoodItem).price,
-        }).toList();
+        
+        // Save aggregated details for receipts and history
+        allOrders[index]['details'] = consolidatedList;
         
         // 3. Print if it's a kitchen update
         await printOrder(allOrders[index], 

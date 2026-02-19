@@ -36,7 +36,7 @@ class CartScreen extends StatelessWidget {
                         separatorBuilder: (context, index) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final cartItem = pos.currentOrder[index];
-                          return _buildCartItem(cartItem['item'], cartItem['quantity'], index, pos);
+                          return _buildCartItem(cartItem, index, pos);
                         },
                       ),
               ),
@@ -103,50 +103,107 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCartItem(FoodItem item, int quantity, int index, POSController pos) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15), 
-            child: CommonImage( // Updated
-              imageUrl: item.imageUrl,
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildCartItem(Map<String, dynamic> cartItem, int index, POSController pos) {
+    final FoodItem item = cartItem['item'];
+    final int quantity = cartItem['quantity'];
+    final bool isNew = cartItem['isNew'] == true;
+    final int sentQty = cartItem['sentQty'] ?? 0;
+    final bool isCancelled = !isNew && quantity == 0;
+    final bool isPartialCancelled = !isNew && quantity < sentQty && quantity > 0;
+
+    return Opacity(
+      opacity: isCancelled ? 0.6 : 1.0,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isNew 
+            ? const Color(0xFFEFF6FF) 
+            : (isCancelled ? Colors.grey.shade50 : AppColors.white),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          border: isNew ? Border.all(color: Colors.blue.shade100) : null,
+        ),
+        child: Row(
+          children: [
+            Stack(
               children: [
-                Text(item.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                const SizedBox(height: 4),
-                Text("\$${item.price.toStringAsFixed(2)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(15), 
+                  child: CommonImage(
+                    imageUrl: item.imageUrl,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                if (isCancelled)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(15)),
+                      child: const Icon(Icons.close, color: Colors.white, size: 30),
+                    ),
+                  ),
               ],
             ),
-          ),
-          Column( // Changed from Row to Column
-            children: [
-              _buildSmallQtyBtn(Icons.add, () => pos.updateQuantity(index, 1), isPrimary: true),
-              GestureDetector(
-                onTap: () => pos.showQuantityDialog(index),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8), 
-                  child: Text(quantity.toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))
-                ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(item.name, 
+                          style: TextStyle(
+                            fontSize: 15, 
+                            fontWeight: FontWeight.bold, 
+                            color: AppColors.textPrimary,
+                            decoration: isCancelled ? TextDecoration.lineThrough : null,
+                          )
+                        ),
+                      ),
+                      if (isNew)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(8)),
+                          child: const Text("Yangi", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  if (isPartialCancelled)
+                    Text("${sentQty - quantity} ta bekor qilindi", 
+                      style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold))
+                  else if (isCancelled)
+                    const Text("Bekor qilingan", 
+                      style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold))
+                  else
+                    Text("\$${item.price.toStringAsFixed(2)}", 
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                ],
               ),
-              _buildSmallQtyBtn(Icons.remove, () => pos.updateQuantity(index, -1)),
-            ],
-          ),
-        ],
+            ),
+            Column(
+              children: [
+                _buildSmallQtyBtn(Icons.add, () => pos.updateQuantity(index, 1), isPrimary: true),
+                GestureDetector(
+                  onTap: () => pos.showQuantityDialog(index),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8), 
+                    child: Text(quantity.toString(), 
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 16,
+                        color: isCancelled ? Colors.red : AppColors.textPrimary,
+                      )
+                    )
+                  ),
+                ),
+                _buildSmallQtyBtn(Icons.remove, () => pos.updateQuantity(index, -1)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

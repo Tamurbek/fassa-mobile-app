@@ -266,7 +266,7 @@ class HomeScreen extends StatelessWidget {
                   separatorBuilder: (context, index) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final cartItem = pos.currentOrder[index];
-                    return _buildPOSCartItem(cartItem['item'], cartItem['quantity'], index, pos);
+                    return _buildPOSCartItem(cartItem, index, pos);
                   },
                 ),
         ),
@@ -337,37 +337,87 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPOSCartItem(FoodItem item, int quantity, int index, POSController pos) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FB),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CommonImage(imageUrl: item.imageUrl, width: 50, height: 50, fit: BoxFit.cover),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildPOSCartItem(Map<String, dynamic> cartItem, int index, POSController pos) {
+    final FoodItem item = cartItem['item'];
+    final int quantity = cartItem['quantity'];
+    final bool isNew = cartItem['isNew'] == true;
+    final int sentQty = cartItem['sentQty'] ?? 0;
+    final bool isCancelled = !isNew && quantity == 0;
+    final bool isPartialCancelled = !isNew && quantity < sentQty && quantity > 0;
+
+    return Opacity(
+      opacity: isCancelled ? 0.5 : 1.0,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isNew 
+            ? const Color(0xFFEFF6FF) // Light blue for new
+            : (isCancelled ? Colors.grey.shade100 : const Color(0xFFF8F9FB)),
+          borderRadius: BorderRadius.circular(20),
+          border: isNew ? Border.all(color: Colors.blue.shade100) : null,
+        ),
+        child: Row(
+          children: [
+            Stack(
               children: [
-                Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                Text("${NumberFormat("#,###", "uz_UZ").format(item.price)} ${"currency".tr}", 
-                  style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11, fontWeight: FontWeight.bold)),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CommonImage(imageUrl: item.imageUrl, width: 50, height: 50, fit: BoxFit.cover),
+                ),
+                if (isCancelled)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(12)),
+                      child: const Icon(Icons.close, color: Colors.white, size: 20),
+                    ),
+                  ),
               ],
             ),
-          ),
-          _buildVerticalCounter(index, quantity, pos),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(item.name, 
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold, 
+                            fontSize: 13,
+                            decoration: isCancelled ? TextDecoration.lineThrough : null,
+                          )
+                        ),
+                      ),
+                      if (isNew)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(6)),
+                          child: const Text("Yangi", style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  if (isPartialCancelled)
+                    Text("${sentQty - quantity} ta bekor qilindi", 
+                      style: const TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.bold))
+                  else if (isCancelled)
+                    const Text("Bekor qilingan", 
+                      style: TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.bold))
+                  else
+                    Text("${NumberFormat("#,###", "uz_UZ").format(item.price)} ${"currency".tr}", 
+                      style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            _buildVerticalCounter(index, quantity, pos, isCancelled),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildVerticalCounter(int index, int qty, POSController pos) {
+  Widget _buildVerticalCounter(int index, int qty, POSController pos, bool isCancelled) {
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30), border: Border.all(color: const Color(0xFFEDF0F5))),
       child: Column(
@@ -375,7 +425,10 @@ class HomeScreen extends StatelessWidget {
           _buildCounterBtn(Icons.add, () => pos.updateQuantity(index, 1)),
           GestureDetector(
             onTap: () => pos.showQuantityDialog(index),
-            child: Text("$qty", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text("$qty", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: isCancelled ? Colors.red : const Color(0xFF1A1A1A))),
+            ),
           ),
           _buildCounterBtn(Icons.remove, () => pos.updateQuantity(index, -1)),
         ],

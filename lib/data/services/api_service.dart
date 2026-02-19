@@ -139,6 +139,15 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> updateOrder(int orderId, Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.put('/orders/$orderId', data: data);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<dynamic>> getOrders() async {
     try {
       final response = await _dio.get('/orders');
