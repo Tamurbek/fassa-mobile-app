@@ -23,6 +23,7 @@ class POSController extends GetxController {
   var pinCode = RxnString();
   var isPinAuthenticated = false.obs;
   var isPrinting = false.obs;
+  var printedKitchenQuantities = <String, Map<String, int>>{}.obs; // "orderId": {"productId": qty}
   
   // Order modes, current selection, table, and editing state
   final List<String> orderModes = ["Dine-in", "Takeaway", "Delivery"];
@@ -102,6 +103,18 @@ class POSController extends GetxController {
     }
 
     pinCode.value = _storage.read('pin_code');
+
+    var storedPrinted = _storage.read('printed_kitchen_items');
+    if (storedPrinted != null) {
+      try {
+        final Map<String, dynamic> decoded = Map<String, dynamic>.from(storedPrinted);
+        printedKitchenQuantities.assignAll(decoded.map(
+          (key, value) => MapEntry(key, Map<String, int>.from(value))
+        ));
+      } catch (e) {
+        print("Error loading printed kitchen items: $e");
+      }
+    }
   }
 
   void setPinCode(String code) {
@@ -348,7 +361,10 @@ class POSController extends GetxController {
       }
       
       // Print order (Kitchen or Receipt)
-      await printOrder(normalizedOrder);
+      await printOrder(normalizedOrder, 
+        isKitchenOnly: !isPaid, 
+        receiptTitle: isPaid ? "TO'LOV CHEKI" : "HISOB CHEKI"
+      );
 
       clearCurrentOrder();
       saveAllOrders();
@@ -414,7 +430,10 @@ class POSController extends GetxController {
         }).toList();
         
         // 3. Print if it's a kitchen update
-        await printOrder(allOrders[index]);
+        await printOrder(allOrders[index], 
+          isKitchenOnly: !isPaid, 
+          receiptTitle: isPaid ? "TO'LOV CHEKI" : "HISOB CHEKI"
+        );
 
         allOrders.refresh();
         clearCurrentOrder();
@@ -446,6 +465,8 @@ class POSController extends GetxController {
 
   void deleteOrder(int orderId) {
     allOrders.removeWhere((o) => o['id'] == orderId);
+    printedKitchenQuantities.remove(orderId.toString());
+    _storage.write('printed_kitchen_items', Map.from(printedKitchenQuantities));
     allOrders.refresh();
     saveAllOrders();
   }
@@ -674,7 +695,7 @@ class POSController extends GetxController {
     }
   }
 
-  Future<void> printOrder(Map<String, dynamic> order) async {
+  Future<void> printOrder(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle}) async {
     isPrinting.value = true;
     List<String> successPrinters = [];
     List<String> failedPrinters = [];
@@ -695,31 +716,107 @@ class POSController extends GetxController {
       bool success = false;
       if (printer.preparationAreaId == null || printer.preparationAreaId!.isEmpty) {
         // Receipt Printer - Full Ticket
-        success = await _printer.printReceipt(printer, order);
+        if (isKitchenOnly) continue; // Skip receipt printer if only kitchen print requested
+        
+        success = await _printer.printReceipt(printer, order, title: receiptTitle);
         if (success) successPrinters.add(printer.name);
         else failedPrinters.add(printer.name);
       } else {
-        // Kitchen Printer - Filtered items
-        final filteredItems = details.where((d) {
+        // Kitchen Printer - DIFF LOGIC
+        final orderIdStr = order['id']?.toString() ?? "0";
+        final previouslyPrinted = printedKitchenQuantities[orderIdStr] ?? {};
+        
+        List<dynamic> addedItems = [];
+        List<dynamic> cancelledItems = [];
+
+        // 1. Identify what items belong to THIS printer's area
+        final areaItems = details.where((d) {
           final itemId = d['id']?.toString().trim();
           if (itemId == null) return false;
-          
           final product = products.firstWhereOrNull((p) => p.id.toString().trim() == itemId);
           return product != null && 
                  product.preparationAreaId != null && 
                  product.preparationAreaId.toString().trim() == printer.preparationAreaId.toString().trim();
         }).toList();
 
-        if (filteredItems.isNotEmpty) {
-          success = await _printer.printKitchenTicket(printer, order, filteredItems);
-          if (success) successPrinters.add(printer.name);
-          else failedPrinters.add(printer.name);
-        } else {
+        // 2. Compare current quantities with previously printed for this order
+        // Check for new or increased quantities
+        for (var item in areaItems) {
+          final String pId = item['id'].toString();
+          final int currentQty = int.tryParse(item['qty'].toString()) ?? 0;
+          final int prevQty = previouslyPrinted[pId] ?? 0;
+
+          if (currentQty > prevQty) {
+            addedItems.add({
+              ...item,
+              'qty': currentQty - prevQty, // Print only the difference
+            });
+          }
+        }
+
+        // Check for cancellations (if this order was printed before)
+        if (previouslyPrinted.isNotEmpty) {
+           previouslyPrinted.forEach((pId, prevQty) {
+              // Does this pId belong to this printer's area?
+              final product = products.firstWhereOrNull((p) => p.id.toString().trim() == pId.trim());
+              bool isMyArea = product != null && 
+                             product.preparationAreaId != null && 
+                             product.preparationAreaId.toString().trim() == printer.preparationAreaId.toString().trim();
+              
+              if (isMyArea) {
+                final currentItem = areaItems.firstWhereOrNull((i) => i['id'].toString() == pId);
+                final int currentQty = currentItem != null ? (int.tryParse(currentItem['qty'].toString()) ?? 0) : 0;
+                
+                if (currentQty < prevQty) {
+                  cancelledItems.add({
+                    'id': pId,
+                    'name': product?.name ?? "Unknown",
+                    'qty': prevQty - currentQty,
+                  });
+                }
+              }
+           });
+        }
+
+        // 3. Print tickets if needed
+        bool printJobDone = false;
+        if (addedItems.isNotEmpty) {
+           success = await _printer.printKitchenTicket(printer, order, addedItems);
+           if (success) {
+             printJobDone = true;
+             successPrinters.add("${printer.name} (Yangilar)");
+           } else failedPrinters.add(printer.name);
+        }
+
+        if (cancelledItems.isNotEmpty) {
+           success = await _printer.printCancellationTicket(printer, order, cancelledItems);
+           if (success) {
+             printJobDone = true;
+             successPrinters.add("${printer.name} (Bekor)");
+           } else failedPrinters.add("${printer.name} (Bekor xatosi)");
+        }
+
+        // 4. If any print was successful or no diff found, update the printed tracking
+        // (We do this globally for the order after the loop if we want, or per printer)
+        if (printJobDone || (addedItems.isEmpty && cancelledItems.isEmpty)) {
+           // Tracking updated below per printer area basis
+        }
+        
+        if (addedItems.isEmpty && cancelledItems.isEmpty) {
           filteredPrinters.add(printer.name);
-          print("No items for printer ${printer.name} (Area ID: ${printer.preparationAreaId})");
         }
       }
     }
+
+    // 5. Finalize printed tracking: Update the global state for this order
+    // This ensures that next time we only print what's CHANGED relative to this moment
+    final String currentOrderId = order['id']?.toString() ?? "0";
+    Map<String, int> newPrintedMap = {};
+    for (var d in details) {
+      newPrintedMap[d['id'].toString()] = int.tryParse(d['qty'].toString()) ?? 0;
+    }
+    printedKitchenQuantities[currentOrderId] = newPrintedMap;
+    _storage.write('printed_kitchen_items', Map.from(printedKitchenQuantities));
     
     isPrinting.value = false;
 

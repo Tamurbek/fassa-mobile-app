@@ -224,7 +224,7 @@ class CartScreen extends StatelessWidget {
                           "price": (e['item'] as FoodItem).price,
                         }).toList(),
                       };
-                      pos.printOrder(tempOrder);
+                      pos.printOrder(tempOrder, receiptTitle: "HISOB CHEKI");
                     },
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 75), 

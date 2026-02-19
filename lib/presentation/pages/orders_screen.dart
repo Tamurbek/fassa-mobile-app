@@ -125,7 +125,7 @@ class OrdersScreen extends StatelessWidget {
         children: [
           SlidableAction(
             onPressed: (context) {
-              pos.printOrder(order);
+              pos.printOrder(order, receiptTitle: "HISOB CHEKI");
               pos.updateOrderStatus(order['id'], "Bill Printed");
               Get.snackbar("success".tr, "print_receipt".tr, 
                 backgroundColor: Colors.orange, colorText: Colors.white);

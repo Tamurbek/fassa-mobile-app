@@ -10,7 +10,13 @@ class PrinterService {
   factory PrinterService() => _instance;
   PrinterService._internal();
 
-  Future<bool> printReceipt(PrinterModel printer, Map<String, dynamic> order) async {
+  String _formatPrice(dynamic amount) {
+    double value = double.tryParse(amount.toString()) ?? 0.0;
+    final formatter = NumberFormat("#,###", "en_US");
+    return formatter.format(value).replaceAll(',', ' ');
+  }
+
+  Future<bool> printReceipt(PrinterModel printer, Map<String, dynamic> order, {String? title}) async {
     if (printer.ipAddress == null || printer.ipAddress!.isEmpty) return false;
 
     try {
@@ -19,11 +25,11 @@ class PrinterService {
           printer.paperSize == '58mm' ? PaperSize.mm58 : PaperSize.mm80, profile);
       
       List<int> bytes = [];
-
       final posController = Get.find<POSController>();
 
-      // Header - Restaurant Identity
-      bytes += generator.text(posController.restaurantName.value,
+      // --- Header: Restaurant Info ---
+      bytes += generator.feed(1);
+      bytes += generator.text(posController.restaurantName.value.toUpperCase(),
           styles: const PosStyles(
             align: PosAlign.center,
             height: PosTextSize.size2,
@@ -40,32 +46,48 @@ class PrinterService {
             styles: const PosStyles(align: PosAlign.center));
       }
       bytes += generator.feed(1);
-      bytes += generator.text('*** TO\'LOV CHEKI ***', styles: const PosStyles(align: PosAlign.center, bold: true));
-      bytes += generator.hr();
-
-      // Order Metadata
-      bytes += generator.text('Buyurtma: #${order['id']}', styles: const PosStyles(bold: true));
-      bytes += generator.text('Sana: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}');
       
-      String modeName = "Zalda";
-      if (order['mode'] == "Takeaway") modeName = "Olib ketish";
-      else if (order['mode'] == "Delivery") modeName = "Yetkazib berish";
-      
-      bytes += generator.text('Turi: $modeName');
-      if (order['table'] != null && order['table'] != '-') {
-        bytes += generator.text('Stol: ${order['table']}', styles: const PosStyles(bold: true));
-      }
-      bytes += generator.hr();
+      // Ticket Title
+      bytes += generator.text('*** ${title ?? "TO\'LOV CHEKI"} ***', 
+          styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size1, width: PosTextSize.size1));
+      bytes += generator.hr(ch: '=');
 
-      // Items Table Header
+      // --- Order Info ---
       bytes += generator.row([
-        PosColumn(text: 'Nomi', width: 6, styles: const PosStyles(bold: true)),
-        PosColumn(text: 'Soni', width: 2, styles: const PosStyles(bold: true, align: PosAlign.center)),
-        PosColumn(text: 'Narxi', width: 4, styles: const PosStyles(bold: true, align: PosAlign.right)),
+        PosColumn(text: 'CHЕK:', width: 4, styles: const PosStyles(bold: true)),
+        PosColumn(text: '#${order['id']}', width: 8, styles: const PosStyles(align: PosAlign.right, bold: true)),
+      ]);
+      
+      bytes += generator.row([
+        PosColumn(text: 'SANA:', width: 4),
+        PosColumn(text: DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now()), width: 8, styles: const PosStyles(align: PosAlign.right)),
+      ]);
+
+      String modeName = "ZALDA";
+      if (order['mode'] == "Takeaway") modeName = "OLIB KETISH";
+      else if (order['mode'] == "Delivery") modeName = "YETKAZIB BERISH";
+      
+      bytes += generator.row([
+        PosColumn(text: 'TURI:', width: 4),
+        PosColumn(text: modeName, width: 8, styles: const PosStyles(align: PosAlign.right)),
+      ]);
+
+      if (order['table'] != null && order['table'] != '-') {
+        bytes += generator.row([
+          PosColumn(text: 'STOL:', width: 4, styles: const PosStyles(bold: true)),
+          PosColumn(text: '${order['table']}', width: 8, styles: const PosStyles(align: PosAlign.right, bold: true)),
+        ]);
+      }
+      bytes += generator.hr(ch: '-');
+
+      // --- Items Table ---
+      bytes += generator.row([
+        PosColumn(text: 'NOMI', width: 7, styles: const PosStyles(bold: true)),
+        PosColumn(text: 'SONI', width: 2, styles: const PosStyles(bold: true, align: PosAlign.center)),
+        PosColumn(text: 'NARXI', width: 3, styles: const PosStyles(bold: true, align: PosAlign.right)),
       ]);
       bytes += generator.hr(ch: '-');
 
-      // Items Calculation and Printing
       final items = order['details'] as List;
       double itemsSubtotal = 0;
       for (var item in items) {
@@ -74,59 +96,57 @@ class PrinterService {
         double lineTotal = price * qty;
         itemsSubtotal += lineTotal;
 
+        // Long names support: wrap if needed (handled by row or manually)
         bytes += generator.row([
-          PosColumn(text: item['name'], width: 6),
+          PosColumn(text: item['name'], width: 7),
           PosColumn(text: qty.toString(), width: 2, styles: const PosStyles(align: PosAlign.center)),
-          PosColumn(text: lineTotal.toStringAsFixed(0), width: 4, styles: const PosStyles(align: PosAlign.right)),
+          PosColumn(text: _formatPrice(lineTotal), width: 3, styles: const PosStyles(align: PosAlign.right)),
         ]);
       }
-      bytes += generator.hr();
+      bytes += generator.hr(ch: '-');
 
-      // Totals
-      // Calculate breakdown based on the same logic as frontend
+      // --- Totals ---
       double serviceFee = 0;
       if (order['mode'] == "Dine-in") {
         serviceFee = itemsSubtotal * 0.10;
       } else if (order['mode'] == "Delivery") {
-        serviceFee = 3.00; // Use simple logic for now or get from order
+        serviceFee = 3000; // Example fixed fee if delivery
       }
       
       double tax = itemsSubtotal * 0.05;
       double finalTotal = itemsSubtotal + serviceFee + tax;
 
       bytes += generator.row([
-        PosColumn(text: 'Subtotal:', width: 8),
-        PosColumn(text: '${itemsSubtotal.toStringAsFixed(0)} sum', width: 4, styles: const PosStyles(align: PosAlign.right)),
+        PosColumn(text: 'JAMI:', width: 7),
+        PosColumn(text: '${_formatPrice(itemsSubtotal)} so\'m', width: 5, styles: const PosStyles(align: PosAlign.right)),
       ]);
 
       if (serviceFee > 0) {
         bytes += generator.row([
-          PosColumn(text: 'Xizmat haqi:', width: 8),
-          PosColumn(text: '${serviceFee.toStringAsFixed(0)} sum', width: 4, styles: const PosStyles(align: PosAlign.right)),
+          PosColumn(text: 'XIZMAT HAQI:', width: 7),
+          PosColumn(text: '${_formatPrice(serviceFee)} so\'m', width: 5, styles: const PosStyles(align: PosAlign.right)),
         ]);
       }
 
       bytes += generator.row([
-        PosColumn(text: 'Soliq (5%):', width: 8),
-        PosColumn(text: '${tax.toStringAsFixed(0)} sum', width: 4, styles: const PosStyles(align: PosAlign.right)),
+        PosColumn(text: 'SOLIQ (5%):', width: 7),
+        PosColumn(text: '${_formatPrice(tax)} so\'m', width: 5, styles: const PosStyles(align: PosAlign.right)),
       ]);
 
       bytes += generator.hr(ch: '=');
       bytes += generator.row([
-        PosColumn(text: 'JAMI:', width: 6, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size1)),
-        PosColumn(text: '${finalTotal.toStringAsFixed(0)} sum', width: 6, styles: const PosStyles(bold: true, align: PosAlign.right, height: PosTextSize.size2, width: PosTextSize.size1)),
+        PosColumn(text: 'TO\'LOV:', width: 5, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size1)),
+        PosColumn(text: '${_formatPrice(finalTotal)} so\'m', width: 7, styles: const PosStyles(bold: true, align: PosAlign.right, height: PosTextSize.size2, width: PosTextSize.size1)),
       ]);
       bytes += generator.hr(ch: '=');
 
-      // Footer
+      // --- Footer ---
       bytes += generator.feed(1);
-      bytes += generator.text('Xaridingiz uchun rahmat!', styles: const PosStyles(align: PosAlign.center));
-      bytes += generator.text('Yana keling!', styles: const PosStyles(align: PosAlign.center));
-      
+      bytes += generator.text('*** Xaridingiz uchun rahmat! ***', styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.text('YANA KELING!', styles: const PosStyles(align: PosAlign.center, bold: true));
       bytes += generator.feed(3);
       bytes += generator.cut();
 
-      // Send to printer
       final socket = await Socket.connect(printer.ipAddress, printer.port,
           timeout: const Duration(seconds: 5));
       socket.add(bytes);
@@ -151,32 +171,40 @@ class PrinterService {
       List<int> bytes = [];
 
       // Large Header
-      bytes += generator.text('KITCHEN TICKET',
+      bytes += generator.feed(1);
+      bytes += generator.text('OSHXONA CHEKI',
           styles: const PosStyles(
             align: PosAlign.center,
             height: PosTextSize.size2,
             width: PosTextSize.size2,
             bold: true,
           ));
-      
-      bytes += generator.hr();
-      bytes += generator.text('Order ID: #${order['id']}', styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true));
-      bytes += generator.text('Table: ${order['table']}', styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true));
-      bytes += generator.text('Time: ${DateFormat('HH:mm').format(DateTime.now())}');
-      bytes += generator.hr();
+      bytes += generator.hr(ch: '=');
 
-      // Items
+      // Order & Table Info (XL Size)
+      bytes += generator.text('STOL: ${order['table']}', 
+          styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true, align: PosAlign.center));
+      bytes += generator.text('BUYURTMA: #${order['id']}', 
+          styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true, align: PosAlign.center));
+      
+      bytes += generator.feed(1);
+      bytes += generator.text('VAQT: ${DateFormat('HH:mm').format(DateTime.now())}', styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.hr(ch: '-');
+
+      // Items (Large and Bold)
       for (var item in items) {
-        bytes += generator.text('${item['qty']} x ${item['name']}', 
-            styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true));
+        bytes += generator.row([
+          PosColumn(text: '${item['qty']} x', width: 3, styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true)),
+          PosColumn(text: '${item['name']}', width: 9, styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size1, bold: true)),
+        ]);
+        
         if (item['note'] != null && item['note'].toString().isNotEmpty) {
-          bytes += generator.text(' NOTE: ${item['note']}');
+          bytes += generator.text(' >> IZOH: ${item['note']}', styles: const PosStyles(bold: true));
         }
-        bytes += generator.feed(1);
+        bytes += generator.hr(ch: '.');
       }
 
-      bytes += generator.hr();
-      bytes += generator.feed(2);
+      bytes += generator.feed(3);
       bytes += generator.cut();
 
       final socket = await Socket.connect(printer.ipAddress, printer.port,
@@ -188,6 +216,62 @@ class PrinterService {
       return true;
     } catch (e) {
       print('Kitchen printing error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> printCancellationTicket(PrinterModel printer, Map<String, dynamic> order, List<dynamic> items) async {
+    if (printer.ipAddress == null || printer.ipAddress!.isEmpty || items.isEmpty) return false;
+
+    try {
+      final profile = await CapabilityProfile.load();
+      final generator = Generator(
+          printer.paperSize == '58mm' ? PaperSize.mm58 : PaperSize.mm80, profile);
+      
+      List<int> bytes = [];
+
+      // Large Header - Red-like warning (Capitalized and Bold)
+      bytes += generator.feed(1);
+      bytes += generator.text('!!! BEKOR QILINDI !!!',
+          styles: const PosStyles(
+            align: PosAlign.center,
+            height: PosTextSize.size2,
+            width: PosTextSize.size2,
+            bold: true,
+          ));
+      bytes += generator.hr(ch: '*');
+
+      // Order & Table Info
+      bytes += generator.text('STOL: ${order['table']}', 
+          styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true, align: PosAlign.center));
+      bytes += generator.text('BUYURTMA: #${order['id']}', 
+          styles: const PosStyles(height: PosTextSize.size1, width: PosTextSize.size1, bold: true, align: PosAlign.center));
+      
+      bytes += generator.feed(1);
+      bytes += generator.text('VAQT: ${DateFormat('HH:mm').format(DateTime.now())}', styles: const PosStyles(align: PosAlign.center));
+      bytes += generator.hr(ch: '-');
+
+      // Cancelled Items
+      for (var item in items) {
+        bytes += generator.row([
+          PosColumn(text: '${item['qty']} x', width: 3, styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true)),
+          PosColumn(text: '${item['name']}', width: 9, styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size1, bold: true)),
+        ]);
+        bytes += generator.hr(ch: '-');
+      }
+
+      bytes += generator.feed(3);
+      bytes += generator.cut();
+
+      final socket = await Socket.connect(printer.ipAddress, printer.port,
+          timeout: const Duration(seconds: 5));
+      socket.add(bytes);
+      await socket.flush();
+      await socket.close();
+      
+      return true;
+    } catch (e) {
+      print('Cancellation printing error: $e');
       return false;
     }
   }
