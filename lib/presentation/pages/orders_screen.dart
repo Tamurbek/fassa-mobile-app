@@ -234,7 +234,7 @@ class OrdersScreen extends StatelessWidget {
       ),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        childAspectRatio: isMobile ? 1.4 : 1.2,
+        childAspectRatio: isMobile ? 2.8 : 2.5,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
