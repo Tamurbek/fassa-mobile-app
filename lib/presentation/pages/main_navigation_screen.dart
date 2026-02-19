@@ -20,7 +20,6 @@ class MainNavigationScreen extends StatelessWidget {
 
     final List<Map<String, dynamic>> menuItems = [
       {"icon": Icons.home_rounded, "label": "home_page".tr, "page": const OrdersScreen()},
-      {"icon": Icons.shopping_basket_rounded, "label": "sale".tr, "page": const HomeScreen()},
       {"icon": Icons.restaurant_menu_rounded, "label": "menu".tr, "page": const ProductManagementScreen()},
       {"icon": Icons.bar_chart_rounded, "label": "reports".tr, "page": const ReportsScreen(), "adminOnly": true},
       {"icon": Icons.settings_rounded, "label": "settings".tr, "page": const SettingsScreen()},
