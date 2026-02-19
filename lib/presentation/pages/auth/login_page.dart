@@ -43,13 +43,20 @@ class _LoginPageState extends State<LoginPage> {
       
       try {
         final subStatus = await ApiService().getSubscriptionStatus();
-        if (subStatus['is_expired'] == true) {
+        final bool isExpired = subStatus['is_expired'] == true;
+        final bool isActive = subStatus['is_active'] != false;
+
+        if (isExpired || !isActive) {
           Get.snackbar(
-            'Obuna muddati tugagan',
-            'Sizning obuna muddatingiz tugagan. Iltimos, administrator bilan bog\'laning.',
+            isExpired ? 'Obuna muddati tugagan' : 'Kafe nofaol',
+            isExpired 
+              ? 'Sizning obuna muddatingiz tugagan. Iltimos, administrator bilan bog\'laning.'
+              : 'Kafengiz vaqtincha nofaol qilindi. Iltimos, administrator bilan bog\'laning.',
             backgroundColor: Colors.red,
             colorText: Colors.white,
             duration: const Duration(seconds: 5),
+            margin: const EdgeInsets.all(12),
+            snackPosition: SnackPosition.TOP,
           );
           Get.find<POSController>().logout();
           return;
