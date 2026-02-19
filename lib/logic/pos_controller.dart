@@ -59,6 +59,8 @@ class POSController extends GetxController {
   var enableBillPrint = true.obs;
   var enablePaymentPrint = true.obs;
 
+  var isOrdersTableView = false.obs;
+
   var tablePositions = <String, Map<String, double>>{}.obs; // "Location-TableId": {"x": 100.0, "y": 200.0}
   var tableBackendIds = <String, String>{}; // "Location-TableId": "backend_uuid"
   var isEditMode = false.obs;
@@ -232,6 +234,7 @@ class POSController extends GetxController {
     enableKitchenPrint.value = _storage.read('enable_kitchen_print') ?? true;
     enableBillPrint.value = _storage.read('enable_bill_print') ?? true;
     enablePaymentPrint.value = _storage.read('enable_payment_print') ?? true;
+    isOrdersTableView.value = _storage.read('is_orders_table_view') ?? false;
 
     var storedUser = _storage.read('user');
     if (storedUser != null) {
@@ -288,6 +291,11 @@ class POSController extends GetxController {
   void setEnablePaymentPrint(bool value) {
     enablePaymentPrint.value = value;
     _storage.write('enable_payment_print', value);
+  }
+
+  void toggleOrdersViewMode() {
+    isOrdersTableView.value = !isOrdersTableView.value;
+    _storage.write('is_orders_table_view', isOrdersTableView.value);
   }
 
   Future<void> syncTablePositionWithBackend(String tableId) async {

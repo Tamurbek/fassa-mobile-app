@@ -45,6 +45,12 @@ class OrdersScreen extends StatelessWidget {
               icon: const Icon(Icons.refresh),
               onPressed: () => pos.allOrders.refresh(),
             ),
+            if (!isMobile)
+              Obx(() => IconButton(
+                icon: Icon(pos.isOrdersTableView.value ? Icons.grid_view_rounded : Icons.view_list_rounded),
+                onPressed: () => pos.toggleOrdersViewMode(),
+                tooltip: pos.isOrdersTableView.value ? "Switch to Cards" : "Switch to Table",
+              )),
             if (!isMobile) const SizedBox(width: 16),
           ],
         ),
@@ -78,9 +84,9 @@ class OrdersScreen extends StatelessWidget {
                     }
                     return filtered.isEmpty
                         ? _buildEmptyState("no_active_orders".tr, "start_new_sale".tr)
-                        : (isMobile 
-                            ? _buildOrdersGrid(filtered, pos, catalog, context)
-                            : _buildOrdersTable(filtered, pos, catalog, context));
+                        : (pos.isOrdersTableView.value && !isMobile 
+                            ? _buildOrdersTable(filtered, pos, catalog, context)
+                            : _buildOrdersGrid(filtered, pos, catalog, context));
                   }),
                   Obx(() {
                     var filtered = pos.allOrders.where((o) => o['status'] == "Completed").toList();
@@ -89,9 +95,9 @@ class OrdersScreen extends StatelessWidget {
                     }
                     return filtered.isEmpty
                         ? _buildEmptyState("no_completed_orders".tr, "history_empty".tr)
-                        : (isMobile 
-                            ? _buildOrdersGrid(filtered, pos, catalog, context)
-                            : _buildOrdersTable(filtered, pos, catalog, context));
+                        : (pos.isOrdersTableView.value && !isMobile 
+                            ? _buildOrdersTable(filtered, pos, catalog, context)
+                            : _buildOrdersGrid(filtered, pos, catalog, context));
                   }),
                 ],
               ),
@@ -132,7 +138,7 @@ class OrdersScreen extends StatelessWidget {
             final bool isActive = status != "Completed";
             
             return DataRow(cells: [
-              DataCell(Text(order['id'].toString().substring(0, 8))),
+              DataCell(Text(order['id'].toString().length > 8 ? order['id'].toString().substring(0, 8) : order['id'].toString())),
               DataCell(Text(order['table'] ?? "—")),
               DataCell(Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
