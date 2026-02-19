@@ -21,6 +21,8 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
   late TextEditingController _ipController;
   late TextEditingController _portController;
   final RxList<String> _selectedAreaIds = <String>[].obs;
+  final RxBool _printReceipts = false.obs;
+  final RxBool _printPayments = false.obs;
   final RxString _paperSize = "80mm".obs;
 
   @override
@@ -30,6 +32,8 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
     _ipController = TextEditingController(text: widget.printer?.ipAddress ?? "192.168.1.100");
     _portController = TextEditingController(text: widget.printer?.port.toString() ?? "9100");
     _selectedAreaIds.assignAll(widget.printer?.preparationAreaIds ?? []);
+    _printReceipts.value = widget.printer?.printReceipts ?? false;
+    _printPayments.value = widget.printer?.printPayments ?? false;
     _paperSize.value = widget.printer?.paperSize ?? "80mm";
   }
 
@@ -56,6 +60,8 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
       isActive: widget.printer?.isActive ?? true,
       cafeId: pos.currentUser.value?['cafe_id'] ?? '',
       preparationAreaIds: _selectedAreaIds.toList(),
+      printReceipts: _printReceipts.value,
+      printPayments: _printPayments.value,
       paperSize: _paperSize.value,
     );
 
@@ -101,10 +107,41 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
             const SizedBox(height: 16),
             _buildTextField("Port", _portController, keyboardType: TextInputType.number),
             const SizedBox(height: 24),
+
+            // --- Printing Options ---
+            Text("Printing Options", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                children: [
+                   Obx(() => SwitchListTile(
+                    title: const Text("Hisob cheki (Bill)", style: TextStyle(fontSize: 14)),
+                    subtitle: const Text("Mijozga beriladigan oraliq hisob", style: TextStyle(fontSize: 11)),
+                    value: _printReceipts.value,
+                    onChanged: (val) => _printReceipts.value = val,
+                    activeColor: AppColors.primary,
+                  )),
+                  const Divider(height: 1),
+                  Obx(() => SwitchListTile(
+                    title: const Text("To'lov cheki (Payment)", style: TextStyle(fontSize: 14)),
+                    subtitle: const Text("To'lovdan so'ng chiqadigan final chek", style: TextStyle(fontSize: 11)),
+                    value: _printPayments.value,
+                    onChanged: (val) => _printPayments.value = val,
+                    activeColor: AppColors.primary,
+                  )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
             
             Text("preparation_area".tr, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            const Text("Tanlanmasa, 'Kassa' (Faqat hisob/to'lov cheki) bo'lib ishlaydi.", style: TextStyle(color: Colors.grey, fontSize: 11)),
+            const Text("Taomlar va ichimliklar uchun hududlarni tanlang.", style: TextStyle(color: Colors.grey, fontSize: 11)),
             const SizedBox(height: 12),
             Obx(() => Wrap(
               spacing: 8,

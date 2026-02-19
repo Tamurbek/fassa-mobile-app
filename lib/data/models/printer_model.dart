@@ -7,6 +7,8 @@ class PrinterModel {
   final bool isActive;
   final String cafeId;
   final List<String> preparationAreaIds;
+  final bool printReceipts;
+  final bool printPayments;
   final String paperSize;
 
   PrinterModel({
@@ -18,6 +20,8 @@ class PrinterModel {
     this.isActive = true,
     required this.cafeId,
     this.preparationAreaIds = const [],
+    this.printReceipts = false,
+    this.printPayments = false,
     this.paperSize = '80mm',
   });
 
@@ -30,6 +34,8 @@ class PrinterModel {
     'is_active': isActive,
     'cafe_id': cafeId,
     'preparation_area_ids': preparationAreaIds,
+    'print_receipts': printReceipts,
+    'print_payments': printPayments,
     'paper_size': paperSize,
   };
 
@@ -38,7 +44,6 @@ class PrinterModel {
     if (json['preparation_area_ids'] != null) {
       areas = List<String>.from(json['preparation_area_ids']);
     } else if (json['preparation_area_id'] != null && json['preparation_area_id'].toString().isNotEmpty) {
-      // Migration for old single ID format
       areas = [json['preparation_area_id'].toString()];
     }
 
@@ -51,6 +56,8 @@ class PrinterModel {
       isActive: json['is_active'] ?? true,
       cafeId: json['cafe_id'] ?? '',
       preparationAreaIds: areas,
+      printReceipts: json['print_receipts'] ?? false,
+      printPayments: json['print_payments'] ?? false,
       paperSize: json['paper_size'] ?? '80mm',
     );
   }
