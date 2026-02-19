@@ -320,15 +320,16 @@ class OrdersScreen extends StatelessWidget {
             icon: Icons.receipt_long,
             borderRadius: BorderRadius.circular(20),
           ),
-          if (pos.isAdmin)
+          if (pos.isAdmin || order['status'] == "Bill Printed")
             SlidableAction(
               onPressed: (context) {
                 pos.loadOrderForEditing(order, catalog);
-                Get.to(() => const CartScreen());
+                Get.to(() => const HomeScreen()); // Standard flow to cart
               },
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
               icon: Icons.payments_outlined,
+              label: 'pay'.tr,
               borderRadius: BorderRadius.circular(20),
             ),
         ],
@@ -403,7 +404,7 @@ class OrdersScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
+              Flexible(
                 child: Text(
                   "${'total'.tr}: \$${order['total'].toStringAsFixed(2)}", 
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: isMobile ? 16 : 18, color: AppColors.primary),
@@ -424,15 +425,34 @@ class OrdersScreen extends StatelessWidget {
                         color: Colors.orange,
                         tooltip: "print_receipt".tr,
                       ),
-                      _buildCompactIconButton(
-                        onPressed: () {
-                          pos.loadOrderForEditing(order, catalog);
-                          Get.to(() => const HomeScreen());
-                        },
-                        icon: Icons.edit_rounded,
-                        color: Colors.blue,
-                        tooltip: "edit".tr,
-                      ),
+                      if (status == "Bill Printed") ...[
+                        _buildCompactIconButton(
+                          onPressed: () {
+                            pos.loadOrderForEditing(order, catalog);
+                            Get.to(() => const HomeScreen());
+                          },
+                          icon: Icons.payments_outlined,
+                          color: Colors.green,
+                          tooltip: "pay".tr,
+                        ),
+                        if (pos.isAdmin)
+                          _buildCompactIconButton(
+                            onPressed: () => _confirmUnlock(order['id'], pos),
+                            icon: Icons.lock_open_rounded,
+                            color: Colors.orange,
+                            tooltip: "unlock".tr,
+                          ),
+                      ] else ...[
+                        _buildCompactIconButton(
+                          onPressed: () {
+                            pos.loadOrderForEditing(order, catalog);
+                            Get.to(() => const HomeScreen());
+                          },
+                          icon: Icons.edit_rounded,
+                          color: Colors.blue,
+                          tooltip: "edit".tr,
+                        ),
+                      ],
                     ],
                     if (pos.isAdmin)
                       _buildCompactIconButton(
@@ -481,6 +501,7 @@ class OrdersScreen extends StatelessWidget {
            backgroundColor: Colors.orange,
            foregroundColor: Colors.white,
            icon: Icons.lock_open,
+           label: 'unlock'.tr,
            borderRadius: BorderRadius.circular(20),
          );
        }
@@ -494,6 +515,7 @@ class OrdersScreen extends StatelessWidget {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         icon: Icons.edit_outlined,
+        label: 'edit'.tr,
         borderRadius: BorderRadius.circular(20),
       );
     }
@@ -501,10 +523,19 @@ class OrdersScreen extends StatelessWidget {
 
   Widget _buildActionIcon(dynamic status, Map<String, dynamic> order, POSController pos, List<FoodItem> catalog) {
     if (status == "Bill Printed") {
-      return Container(
-        padding: const EdgeInsets.all(8), // Increased from 4
-        decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), shape: BoxShape.circle),
-        child: Icon(Icons.lock, size: 20, color: Colors.orange.withOpacity(pos.isAdmin ? 1.0 : 0.5)), // Increased from 16
+      return GestureDetector(
+        onTap: () {
+          pos.loadOrderForEditing(order, catalog);
+          Get.to(() => const HomeScreen());
+        },
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), shape: BoxShape.circle),
+          child: Tooltip(
+            message: "pay".tr,
+            child: Icon(Icons.lock, size: 20, color: Colors.orange.withOpacity(pos.isAdmin ? 1.0 : 0.5)),
+          ),
+        ),
       );
     } else {
       return GestureDetector(
@@ -513,9 +544,9 @@ class OrdersScreen extends StatelessWidget {
           Get.to(() => const HomeScreen());
         },
         child: Container(
-          padding: const EdgeInsets.all(8), // Increased from 4
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), shape: BoxShape.circle),
-          child: const Icon(Icons.add, size: 20, color: AppColors.primary), // Increased from 16
+          child: const Icon(Icons.add, size: 20, color: AppColors.primary),
         ),
       );
     }
