@@ -54,6 +54,13 @@ class POSController extends GetxController {
   var serviceFeeTakeaway = 0.0.obs;
   var serviceFeeDelivery = 3000.0.obs;
 
+  // Subscription
+  var subscriptionDaysLeft = RxnInt();    // null = VIP (cheksiz)
+  var isSubscriptionExpired = false.obs;
+  var isVip = false.obs;
+  var subscriptionEndDate = RxnString();  // ISO string or null
+  Timer? _subscriptionTimer;
+
   // Role helpers
   bool get isAdmin => currentUser.value?['role'] == "CAFE_ADMIN" || currentUser.value?['role'] == "SYSTEM_ADMIN";
   bool get isWaiter => currentUser.value?['role'] == "WAITER";
