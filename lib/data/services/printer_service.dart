@@ -4,6 +4,8 @@ import '../models/printer_model.dart';
 import '../../logic/pos_controller.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 
 class PrinterService {
   static final PrinterService _instance = PrinterService._internal();
@@ -59,6 +61,29 @@ class PrinterService {
       final posController = Get.find<POSController>();
 
       // --- Header: Restaurant Info ---
+      if (posController.restaurantLogo.value.isNotEmpty) {
+        try {
+          final logoUrl = posController.restaurantLogo.value;
+          final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 5));
+          if (response.statusCode == 200) {
+            final image = img.decodeImage(response.bodyBytes);
+            if (image != null) {
+              // Resize image if it's too large to fit the printer. 
+              // 80mm printers typically have 576 dots max width, 58mm has 384 dots.
+              final maxWidth = printer.paperSize == '58mm' ? 384 : 576;
+              img.Image resized = image;
+              if (image.width > maxWidth) {
+                resized = img.copyResize(image, width: maxWidth);
+              }
+              bytes += generator.image(resized);
+              bytes += generator.feed(1);
+            }
+          }
+        } catch (e) {
+          print('Logo download/print failed: $e');
+        }
+      }
+
       bytes += generator.feed(1);
       bytes += generator.text(_normalizeString(posController.restaurantName.value.toUpperCase()),
           styles: const PosStyles(

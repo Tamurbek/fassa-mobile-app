@@ -52,6 +52,7 @@ class POSController extends GetxController {
   var restaurantName = "".obs;
   var restaurantAddress = "".obs;
   var restaurantPhone = "".obs;
+  var restaurantLogo = "".obs;
   var serviceFeeDineIn = 10.0.obs;
   var serviceFeeTakeaway = 0.0.obs;
   var serviceFeeDelivery = 3000.0.obs;
@@ -232,6 +233,7 @@ class POSController extends GetxController {
     restaurantName.value = _storage.read('restaurant_name') ?? "Fast Food Pro";
     restaurantAddress.value = _storage.read('restaurant_address') ?? "Tashkent, Uzbekistan";
     restaurantPhone.value = _storage.read('restaurant_phone') ?? "+998 90 123 45 67";
+    restaurantLogo.value = _storage.read('restaurant_logo') ?? "";
     serviceFeeDineIn.value = _storage.read('service_fee_dine_in') ?? 10.0;
     serviceFeeTakeaway.value = _storage.read('service_fee_takeaway') ?? 0.0;
     serviceFeeDelivery.value = _storage.read('service_fee_delivery') ?? 3000.0;
@@ -332,6 +334,7 @@ class POSController extends GetxController {
     String? name,
     String? address,
     String? phone,
+    String? logo,
     double? serviceFeeDineInVal,
     double? serviceFeeTakeawayVal,
     double? serviceFeeDeliveryVal,
@@ -341,6 +344,7 @@ class POSController extends GetxController {
       if (name != null) updateData['name'] = name;
       if (address != null) updateData['address'] = address;
       if (phone != null) updateData['phone'] = phone;
+      if (logo != null) updateData['logo'] = logo;
       if (serviceFeeDineInVal != null) updateData['service_fee_dine_in'] = serviceFeeDineInVal;
       if (serviceFeeTakeawayVal != null) updateData['service_fee_takeaway'] = serviceFeeTakeawayVal;
       if (serviceFeeDeliveryVal != null) updateData['service_fee_delivery'] = serviceFeeDeliveryVal;
@@ -353,6 +357,7 @@ class POSController extends GetxController {
       if (name != null) restaurantName.value = updatedCafe['name'];
       if (address != null) restaurantAddress.value = updatedCafe['address'];
       if (phone != null) restaurantPhone.value = updatedCafe['phone'];
+      if (logo != null) restaurantLogo.value = updatedCafe['logo'];
       if (serviceFeeDineInVal != null) serviceFeeDineIn.value = (updatedCafe['service_fee_dine_in'] as num).toDouble();
       if (serviceFeeTakeawayVal != null) serviceFeeTakeaway.value = (updatedCafe['service_fee_takeaway'] as num).toDouble();
       if (serviceFeeDeliveryVal != null) serviceFeeDelivery.value = (updatedCafe['service_fee_delivery'] as num).toDouble();
@@ -361,6 +366,7 @@ class POSController extends GetxController {
       if (name != null) _storage.write('restaurant_name', restaurantName.value);
       if (address != null) _storage.write('restaurant_address', restaurantAddress.value);
       if (phone != null) _storage.write('restaurant_phone', restaurantPhone.value);
+      if (logo != null) _storage.write('restaurant_logo', restaurantLogo.value);
       if (serviceFeeDineInVal != null) _storage.write('service_fee_dine_in', serviceFeeDineIn.value);
       if (serviceFeeTakeawayVal != null) _storage.write('service_fee_takeaway', serviceFeeTakeaway.value);
       if (serviceFeeDeliveryVal != null) _storage.write('service_fee_delivery', serviceFeeDelivery.value);
@@ -383,6 +389,7 @@ class POSController extends GetxController {
       restaurantName.value = cafe['name'] ?? "";
       restaurantAddress.value = cafe['address'] ?? "";
       restaurantPhone.value = cafe['phone'] ?? "";
+      restaurantLogo.value = cafe['logo'] ?? "";
       serviceFeeDineIn.value = (cafe['service_fee_dine_in'] ?? 10.0).toDouble();
       serviceFeeTakeaway.value = (cafe['service_fee_takeaway'] ?? 0.0).toDouble();
       serviceFeeDelivery.value = (cafe['service_fee_delivery'] ?? 3000.0).toDouble();
@@ -390,6 +397,7 @@ class POSController extends GetxController {
       _storage.write('restaurant_name', restaurantName.value);
       _storage.write('restaurant_address', restaurantAddress.value);
       _storage.write('restaurant_phone', restaurantPhone.value);
+      _storage.write('restaurant_logo', restaurantLogo.value);
       _storage.write('service_fee_dine_in', serviceFeeDineIn.value);
       _storage.write('service_fee_takeaway', serviceFeeTakeaway.value);
       _storage.write('service_fee_delivery', serviceFeeDelivery.value);
