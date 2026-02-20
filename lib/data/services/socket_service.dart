@@ -16,7 +16,7 @@ class SocketService {
   void setCafeId(String id) {
     _cafeId = id;
     if (socket.connected) {
-      socket.emit('join', id);
+      socket.emit('joinRoom', {'cafe_id': id});
     }
   }
 
@@ -32,7 +32,7 @@ class SocketService {
     socket.onConnect((_) {
       print('WebSocket connected: ${socket.id}');
       if (_cafeId != null) {
-        socket.emit('join', _cafeId);
+        socket.emit('joinRoom', {'cafe_id': _cafeId});
       }
     });
 
@@ -53,6 +53,9 @@ class SocketService {
   }
 
   void emitPrintRequest(Map<String, dynamic> data) {
+    if (_cafeId != null) {
+      data['cafe_id'] = _cafeId;
+    }
     socket.emit('printRequest', data);
   }
 
@@ -61,11 +64,18 @@ class SocketService {
   }
 
   void emitTableLock(String tableId, String userName) {
-    socket.emit('tableLock', {'tableId': tableId, 'user': userName});
+    socket.emit('tableLock', {
+      'tableId': tableId, 
+      'user': userName,
+      'cafe_id': _cafeId,
+    });
   }
 
   void emitTableUnlock(String tableId) {
-    socket.emit('tableUnlock', {'tableId': tableId});
+    socket.emit('tableUnlock', {
+      'tableId': tableId,
+      'cafe_id': _cafeId,
+    });
   }
 
   void onTableLockStatus(Function(dynamic) callback) {
