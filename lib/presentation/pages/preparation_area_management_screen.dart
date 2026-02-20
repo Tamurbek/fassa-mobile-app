@@ -24,7 +24,7 @@ class PreparationAreaManagementScreen extends StatelessWidget {
       ),
       body: Obx(() {
         if (pos.preparationAreas.isEmpty) {
-          return const Center(child: Text("No preparation areas found.")); 
+          return Center(child: Text("no_areas_found".tr)); 
         }
         return ListView.separated(
           padding: const EdgeInsets.all(16),
@@ -70,7 +70,7 @@ class PreparationAreaManagementScreen extends StatelessWidget {
                       child: const Icon(Icons.restaurant, color: AppColors.secondary),
                     ),
                     title: Text(area.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text("${_getItemCount(pos, area)} items assigned"),
+                    subtitle: Text("${_getItemCount(pos, area)} ${"items_assigned".tr}"),
                   ),
                 ),
               ),
@@ -88,10 +88,10 @@ class PreparationAreaManagementScreen extends StatelessWidget {
   void _confirmDelete(BuildContext context, POSController pos, PreparationAreaModel area) {
     int count = _getItemCount(pos, area);
     Get.defaultDialog(
-      title: "Confirm Delete",
-      middleText: "Delete '${area.name}'?\nIt has $count items assigned.",
-      textConfirm: "Delete",
-      textCancel: "Cancel",
+      title: "confirm_delete".tr,
+      middleText: "${"delete".tr} '${area.name}'?\n${"items_assigned".tr}: $count",
+      textConfirm: "delete".tr,
+      textCancel: "cancel".tr,
       confirmTextColor: Colors.white,
       buttonColor: Colors.red,
       onConfirm: () {
@@ -104,10 +104,10 @@ class PreparationAreaManagementScreen extends StatelessWidget {
   void _showDialog(BuildContext context, POSController pos, PreparationAreaModel? area) {
     final controller = TextEditingController(text: area?.name ?? "");
     Get.defaultDialog(
-      title: area == null ? "Add Area" : "Edit Area",
+      title: area == null ? "add_area".tr : "edit_area".tr,
       content: TextField(
         controller: controller, 
-        decoration: const InputDecoration(labelText: "Area Name", border: OutlineInputBorder())
+        decoration: InputDecoration(labelText: "area_name".tr, border: const OutlineInputBorder())
       ),
       confirm: ElevatedButton(
         onPressed: () async {
@@ -129,7 +129,7 @@ class PreparationAreaManagementScreen extends StatelessWidget {
               }
               Get.back(); // Close loading
               Get.back(); // Close dialog
-              Get.snackbar("success".tr, area == null ? "Area Added" : "Area Updated",
+              Get.snackbar("success".tr, area == null ? "area_added".tr : "area_updated".tr,
                 backgroundColor: Colors.green, colorText: Colors.white);
             } catch (e) {
               Get.back(); // Close loading

@@ -93,13 +93,13 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-                    SizedBox(width: 8),
+                    const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
                     Text(
-                      "Orqaga",
-                      style: TextStyle(
+                      "back".tr,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,

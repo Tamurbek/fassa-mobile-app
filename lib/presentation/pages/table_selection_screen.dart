@@ -71,7 +71,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> with Single
               icon: Icon(pos.isEditMode.value ? Icons.check_circle : Icons.edit_location_alt_rounded),
               onPressed: () => pos.toggleEditMode(),
               color: pos.isEditMode.value ? Colors.green : null,
-              tooltip: pos.isEditMode.value ? "Save Layout" : "Edit Layout",
+              tooltip: pos.isEditMode.value ? "save_layout".tr : "edit_layout".tr,
             )),
         ],
         bottom: TabBar(
@@ -79,7 +79,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> with Single
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.primary,
-          tabs: _locations.map((loc) => Tab(text: loc)).toList(),
+          tabs: _locations.map((loc) => Tab(text: loc.toLowerCase().tr)).toList(),
         ),
       ),
       body: Center(
@@ -96,7 +96,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> with Single
                      const SizedBox(width: 20),
                      _StatusIndicator(color: Colors.red, label: "occupied".tr),
                      const SizedBox(width: 20),
-                     _StatusIndicator(color: Colors.orange, label: "Tahrirlanmoqda"),
+                     _StatusIndicator(color: Colors.orange, label: "editing_status".tr),
                   ],
                 ),
               ),

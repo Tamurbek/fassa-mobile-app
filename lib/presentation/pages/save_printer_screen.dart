@@ -74,7 +74,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
       }
       Get.back(); // Close loading dialog
       Get.back(); // Go back
-      Get.snackbar("success".tr, widget.printer == null ? "Printer Added" : "Printer Updated",
+      Get.snackbar("success".tr, widget.printer == null ? "printer_added".tr : "printer_updated".tr,
         backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
       Get.back(); // Close loading dialog
@@ -109,7 +109,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
             const SizedBox(height: 24),
 
             // --- Printing Options ---
-            Text("Printing Options", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+            Text("printing_options".tr, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
@@ -120,16 +120,16 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
               child: Column(
                 children: [
                    Obx(() => SwitchListTile(
-                    title: const Text("Hisob cheki (Bill)", style: TextStyle(fontSize: 14)),
-                    subtitle: const Text("Mijozga beriladigan oraliq hisob", style: TextStyle(fontSize: 11)),
+                    title: Text("bill_receipt_title".tr, style: const TextStyle(fontSize: 14)),
+                    subtitle: Text("bill_receipt_subtitle".tr, style: const TextStyle(fontSize: 11)),
                     value: _printReceipts.value,
                     onChanged: (val) => _printReceipts.value = val,
                     activeColor: AppColors.primary,
                   )),
                   const Divider(height: 1),
                   Obx(() => SwitchListTile(
-                    title: const Text("To'lov cheki (Payment)", style: TextStyle(fontSize: 14)),
-                    subtitle: const Text("To'lovdan so'ng chiqadigan final chek", style: TextStyle(fontSize: 11)),
+                    title: Text("payment_receipt_title".tr, style: const TextStyle(fontSize: 14)),
+                    subtitle: Text("payment_receipt_subtitle".tr, style: const TextStyle(fontSize: 11)),
                     value: _printPayments.value,
                     onChanged: (val) => _printPayments.value = val,
                     activeColor: AppColors.primary,
@@ -141,7 +141,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
             
             Text("preparation_area".tr, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            const Text("Taomlar va ichimliklar uchun hududlarni tanlang.", style: TextStyle(color: Colors.grey, fontSize: 11)),
+            Text("area_selection_tip".tr, style: const TextStyle(color: Colors.grey, fontSize: 11)),
             const SizedBox(height: 12),
             Obx(() => Wrap(
               spacing: 8,
@@ -167,7 +167,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
             const Divider(),
             const SizedBox(height: 16),
 
-            Text("Paper Size", style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+            Text("paper_size".tr, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Obx(() => Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -195,7 +195,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => pos.testPrinter(widget.printer!),
                   icon: const Icon(Icons.print),
-                  label: const Text("Test Print"),
+                  label: Text("test_print".tr),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: AppColors.primary),

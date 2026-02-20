@@ -123,7 +123,7 @@ class _SaveProductScreenState extends State<SaveProductScreen> {
         backgroundColor: Colors.green, colorText: Colors.white);
     } catch (e) {
       Get.back(); // Close loading dialog
-      Get.snackbar("error".tr, "Save failed: $e", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("error".tr, "${"save_failed".tr}: $e", backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
 
@@ -192,7 +192,7 @@ class _SaveProductScreenState extends State<SaveProductScreen> {
                 child: DropdownButton<String>(
                   value: _selectedPrepAreaId.value.isEmpty ? null : _selectedPrepAreaId.value,
                   isExpanded: true,
-                  hint: const Text("Select Area"),
+                  hint: Text("select_area".tr),
                   items: pos.preparationAreas.map((area) => DropdownMenuItem(value: area.id, child: Text(area.name))).toList(),
                   onChanged: (val) {
                     if (val != null) {

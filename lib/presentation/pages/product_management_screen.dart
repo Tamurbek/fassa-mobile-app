@@ -209,10 +209,10 @@ class ProductManagementScreen extends StatelessWidget {
 
   void _confirmDeleteProduct(BuildContext context, POSController pos, FoodItem item) {
     Get.defaultDialog(
-      title: "Confirm Delete",
-      middleText: "Delete ${item.name}?",
-      textConfirm: "Delete",
-      textCancel: "Cancel",
+      title: "confirm_delete".tr,
+      middleText: "delete_item_confirm".tr,
+      textConfirm: "delete".tr,
+      textCancel: "cancel".tr,
       confirmTextColor: Colors.white,
       buttonColor: Colors.red,
       onConfirm: () {
@@ -225,7 +225,7 @@ class ProductManagementScreen extends StatelessWidget {
   void _showCategoryDialog(BuildContext context, POSController pos, String? category) {
     final controller = TextEditingController(text: category ?? "");
     Get.defaultDialog(
-      title: category == null ? "Add Category" : "Edit Category",
+      title: category == null ? "add_category".tr : "edit_category".tr,
       content: TextField(controller: controller, decoration: InputDecoration(labelText: "product_name".tr)), // Using product_name as placeholder or better 'category'
       confirm: ElevatedButton(
         onPressed: () async {
@@ -255,7 +255,7 @@ class ProductManagementScreen extends StatelessWidget {
 
   void _confirmDeleteCategory(BuildContext context, POSController pos, String category) {
     Get.defaultDialog(
-      title: "delete_category_confirm".tr,
+      title: "confirm_delete".tr,
       middleText: "'$category'?",
       textConfirm: "delete".tr,
       textCancel: "cancel".tr,

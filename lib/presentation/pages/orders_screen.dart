@@ -50,7 +50,7 @@ class OrdersScreen extends StatelessWidget {
               Obx(() => IconButton(
                 icon: Icon(pos.isOrdersTableView.value ? Icons.grid_view_rounded : Icons.view_list_rounded),
                 onPressed: () => pos.toggleOrdersViewMode(),
-                tooltip: pos.isOrdersTableView.value ? "Switch to Cards" : "Switch to Table",
+                tooltip: pos.isOrdersTableView.value ? "switch_to_cards".tr : "switch_to_table".tr,
               )),
             if (!isMobile) const SizedBox(width: 16),
           ],

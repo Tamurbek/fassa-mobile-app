@@ -88,7 +88,7 @@ class PrinterManagementScreen extends StatelessWidget {
                           ),
                           child: Text(
                             printerAreas.isEmpty 
-                                ? "KASSA" 
+                                ? "cashier_label".tr 
                                 : printerAreas.map((a) => a.name).join(", "),
                             style: TextStyle(
                               fontSize: 10, 
@@ -111,10 +111,10 @@ class PrinterManagementScreen extends StatelessWidget {
 
   void _confirmDeletePrinter(BuildContext context, POSController pos, PrinterModel printer) {
     Get.defaultDialog(
-      title: "Confirm Delete",
-      middleText: "Delete printer '${printer.name}'?",
-      textConfirm: "Delete",
-      textCancel: "Cancel",
+      title: "confirm_delete".tr,
+      middleText: "${"delete".tr} '${printer.name}'?",
+      textConfirm: "delete".tr,
+      textCancel: "cancel".tr,
       confirmTextColor: Colors.white,
       buttonColor: Colors.red,
       onConfirm: () {
