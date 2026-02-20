@@ -109,6 +109,12 @@ class PrinterService {
           PosColumn(text: _normalizeString('${order['table']}'), width: 8, styles: const PosStyles(align: PosAlign.right, bold: true)),
         ]);
       }
+      if (order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
+        bytes += generator.row([
+          PosColumn(text: _normalizeString('XIZMAT KO\'RSATDI:'), width: 6),
+          PosColumn(text: _normalizeString('${order['waiter_name']}'), width: 6, styles: const PosStyles(align: PosAlign.right)),
+        ]);
+      }
       bytes += generator.hr(ch: '-');
 
       // --- Items Table ---
@@ -222,6 +228,9 @@ class PrinterService {
       
       bytes += generator.feed(1);
       bytes += generator.text(_normalizeString('VAQT: ${DateFormat('HH:mm').format(DateTime.now())}'), styles: const PosStyles(align: PosAlign.center));
+      if (order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
+        bytes += generator.text(_normalizeString('AFITSANT: ${order['waiter_name']}'), styles: const PosStyles(align: PosAlign.center, bold: true));
+      }
       bytes += generator.hr(ch: '-');
 
       // Items (Large and Bold)
@@ -284,6 +293,9 @@ class PrinterService {
       
       bytes += generator.feed(1);
       bytes += generator.text(_normalizeString('VAQT: ${DateFormat('HH:mm').format(DateTime.now())}'), styles: const PosStyles(align: PosAlign.center));
+      if (order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
+        bytes += generator.text(_normalizeString('AFITSANT: ${order['waiter_name']}'), styles: const PosStyles(align: PosAlign.center, bold: true));
+      }
       bytes += generator.hr(ch: '-');
 
       // Cancelled Items

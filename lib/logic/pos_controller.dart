@@ -548,6 +548,9 @@ class POSController extends GetxController {
       if (deviceRole.value == "ADMIN" || deviceRole.value == "CASHIER" || isAdmin || isCashier) {
         print("Remote print request received: ${data['receiptTitle']}");
         final Map<String, dynamic> order = Map<String, dynamic>.from(data['order']);
+        if (data['sender'] != null && data['sender'].toString().isNotEmpty) {
+          order['waiter_name'] = data['sender'];
+        }
         final bool isKitchenOnly = (data['isKitchenOnly'] == true || data['isKitchenOnly'].toString() == 'true' || data['isKitchenOnly'] == 1);
         final String? receiptTitle = data['receiptTitle'];
         
@@ -1190,6 +1193,13 @@ class POSController extends GetxController {
   }
 
   Future<void> printOrder(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle}) async {
+    if (!order.containsKey('waiter_name')) {
+      final name = currentUser.value?['name'];
+      if (name != null && name.isNotEmpty) {
+        order['waiter_name'] = name;
+      }
+    }
+
     // If it's a Waiter device, send the print request to the Admin/Cashier device via Socket
     if (deviceRole.value == "WAITER" || isWaiter) {
       print("Sending print request to central printer via Socket...");
