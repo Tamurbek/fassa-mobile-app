@@ -91,7 +91,7 @@ class _PinCodeScreenState extends State<PinCodeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopBar(),
+            // _buildTopBar() was removed as requested
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(vertical: 20),
@@ -152,6 +152,19 @@ class _PinCodeScreenState extends State<PinCodeScreen> {
                                   color: Color(0xFF9CA3AF),
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton.icon(
+                              onPressed: () => pos.logout(),
+                              icon: const Icon(Icons.logout_rounded, size: 16, color: Colors.redAccent),
+                              label: const Text(
+                                'Tizimdan chiqish',
+                                style: TextStyle(
+                                  color: Colors.redAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                 ),
                               ),
                             ),
