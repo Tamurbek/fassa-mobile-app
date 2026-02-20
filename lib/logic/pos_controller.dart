@@ -77,6 +77,7 @@ class POSController extends GetxController {
   // Role helpers
   bool get isAdmin => currentUser.value?['role'] == "CAFE_ADMIN" || currentUser.value?['role'] == "SYSTEM_ADMIN";
   bool get isWaiter => currentUser.value?['role'] == "WAITER";
+  bool get isCashier => currentUser.value?['role'] == "CASHIER";
 
   String get cafeId => currentUser.value?['cafe_id'] ?? "";
 
@@ -526,7 +527,7 @@ class POSController extends GetxController {
         saveAllOrders();
 
         // Auto-print for Admin/Cashier devices if it's a new order
-        if (deviceRole.value == "ADMIN" || deviceRole.value == "CASHIER" || isAdmin) {
+        if (deviceRole.value == "ADMIN" || deviceRole.value == "CASHIER" || isAdmin || isCashier) {
           print("Socket: Auto-printing new order for Admin/Cashier...");
           _printLocally(normalized, isKitchenOnly: true); // New orders always start with Kitchen Print
         }
@@ -544,7 +545,7 @@ class POSController extends GetxController {
 
     _socket.onPrintRequest((data) {
       // Only Admin or Cashier devices should process print requests from other devices
-      if (deviceRole.value == "ADMIN" || deviceRole.value == "CASHIER" || isAdmin) {
+      if (deviceRole.value == "ADMIN" || deviceRole.value == "CASHIER" || isAdmin || isCashier) {
         print("Remote print request received: ${data['receiptTitle']}");
         final Map<String, dynamic> order = Map<String, dynamic>.from(data['order']);
         final bool isKitchenOnly = data['isKitchenOnly'] == true;

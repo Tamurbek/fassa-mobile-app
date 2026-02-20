@@ -396,7 +396,7 @@ class OrdersScreen extends StatelessWidget {
 
   Widget _buildEndAction(dynamic status, Map<String, dynamic> order, POSController pos, List<FoodItem> catalog) {
     if (status == "Bill Printed") {
-       if (pos.isAdmin) {
+       if (pos.isAdmin || pos.isCashier) {
          return SlidableAction(
            onPressed: (context) => _confirmUnlock(order['id'], pos),
            backgroundColor: Colors.orange,
@@ -428,7 +428,7 @@ class OrdersScreen extends StatelessWidget {
           decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), shape: BoxShape.circle),
           child: Tooltip(
             message: "pay".tr,
-            child: Icon(Icons.lock, size: 20, color: Colors.orange.withOpacity(pos.isAdmin ? 1.0 : 0.5)),
+            child: Icon(Icons.lock, size: 20, color: Colors.orange.withOpacity((pos.isAdmin || pos.isCashier) ? 1.0 : 0.5)),
           ),
         ),
       );
@@ -597,7 +597,7 @@ class OrdersScreen extends StatelessWidget {
               color: Colors.green,
               label: "pay".tr,
             ),
-            if (pos.isAdmin) ...[
+            if (pos.isAdmin || pos.isCashier) ...[
               const SizedBox(width: 8),
               _buildToolbarButton(
                 onPressed: hasSelection ? () => _confirmUnlock(order['id'], pos) : null,
@@ -614,7 +614,7 @@ class OrdersScreen extends StatelessWidget {
               label: "edit".tr,
             ),
           ],
-          if (pos.isAdmin) ...[
+          if (pos.isAdmin || pos.isCashier) ...[
             const SizedBox(width: 8),
             _buildToolbarButton(
               onPressed: hasSelection ? () => _confirmDelete(order['id'], pos) : null,

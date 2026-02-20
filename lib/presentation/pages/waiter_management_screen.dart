@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import '../../theme/app_colors.dart';
 import '../../logic/pos_controller.dart';
 
-class WaiterManagementScreen extends StatelessWidget {
-  const WaiterManagementScreen({super.key});
+class StaffManagementScreen extends StatelessWidget {
+  const StaffManagementScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,20 +13,20 @@ class WaiterManagementScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("Afitsantlar boshqaruvi"),
+        title: const Text("Xodimlar boshqaruvi"),
         centerTitle: true,
       ),
       body: Obx(() {
-        final waiters = pos.users.where((u) => u['role'] == "WAITER").toList();
+        final staff = pos.users.where((u) => u['role'] == "WAITER" || u['role'] == "CASHIER").toList();
         
-        if (waiters.isEmpty) {
+        if (staff.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.people_outline, size: 80, color: Colors.grey[300]),
                 const SizedBox(height: 16),
-                const Text("Hozircha afitsantlar yo'q", 
+                const Text("Hozircha xodimlar yo'q", 
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
               ],
             ),
@@ -35,10 +35,10 @@ class WaiterManagementScreen extends StatelessWidget {
 
         return ListView.separated(
           padding: const EdgeInsets.all(24),
-          itemCount: waiters.length,
+          itemCount: staff.length,
           separatorBuilder: (context, index) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final waiter = waiters[index];
+            final member = staff[index];
             return Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -48,22 +48,25 @@ class WaiterManagementScreen extends StatelessWidget {
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 leading: CircleAvatar(
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
-                  child: Text(waiter['name'][0].toUpperCase(), 
-                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  backgroundColor: member['role'] == "CASHIER" ? Colors.orange.withOpacity(0.1) : AppColors.primary.withOpacity(0.1),
+                  child: Icon(
+                    member['role'] == "CASHIER" ? Icons.point_of_sale_rounded : Icons.person_rounded, 
+                    color: member['role'] == "CASHIER" ? Colors.orange : AppColors.primary,
+                    size: 20,
+                  ),
                 ),
-                title: Text(waiter['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(waiter['email'], style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                title: Text(member['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text("${member['role'] == "CASHIER" ? "Kassir" : "Afitsant"} • ${member['email']}", style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
-                      onPressed: () => _showWaiterDialog(context, pos, waiter: waiter),
+                      onPressed: () => _showStaffDialog(context, pos, member: member),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                      onPressed: () => _confirmDelete(context, pos, waiter),
+                      onPressed: () => _confirmDelete(context, pos, member),
                     ),
                   ],
                 ),
@@ -73,23 +76,24 @@ class WaiterManagementScreen extends StatelessWidget {
         );
       }),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showWaiterDialog(context, pos),
+        onPressed: () => _showStaffDialog(context, pos),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  void _showWaiterDialog(BuildContext context, POSController pos, {Map<String, dynamic>? waiter}) {
-    final isEditing = waiter != null;
-    final nameController = TextEditingController(text: waiter?['name'] ?? '');
-    final emailController = TextEditingController(text: waiter?['email'] ?? '');
+  void _showStaffDialog(BuildContext context, POSController pos, {Map<String, dynamic>? member}) {
+    final isEditing = member != null;
+    final nameController = TextEditingController(text: member?['name'] ?? '');
+    final emailController = TextEditingController(text: member?['email'] ?? '');
     final passwordController = TextEditingController();
+    final RxString selectedRole = (member?['role'] ?? 'WAITER').toString().obs;
 
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(isEditing ? "Afitsantni tahrirlash" : "Yangi afitsant qo'shish"),
+        title: Text(isEditing ? "Xodimni tahrirlash" : "Yangi xodim qo'shish"),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -102,13 +106,33 @@ class WaiterManagementScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              Obx(() => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedRole.value,
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(value: 'WAITER', child: Text("Afitsant")),
+                      DropdownMenuItem(value: 'CASHIER', child: Text("Kassir")),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) selectedRole.value = val;
+                    },
+                  ),
+                ),
+              )),
+              const SizedBox(height: 16),
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
                   labelText: "Email / Login",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -135,18 +159,18 @@ class WaiterManagementScreen extends StatelessWidget {
                 final Map<String, dynamic> data = {
                   'name': nameController.text.trim(),
                   'email': emailController.text.trim(),
-                  'role': 'WAITER',
+                  'role': selectedRole.value,
                 };
                 if (passwordController.text.isNotEmpty) {
                   data['password'] = passwordController.text;
                 }
 
                 if (isEditing) {
-                  await pos.updateUserProfile(waiter['id'], data);
+                  await pos.updateUserProfile(member['id'], data);
                   Get.snackbar("Muvaffaqiyatli", "Ma'lumotlar yangilandi", backgroundColor: Colors.green, colorText: Colors.white);
                 } else {
                   await pos.addUser(data);
-                  Get.snackbar("Muvaffaqiyatli", "Yangi afitsant qo'shildi", backgroundColor: Colors.green, colorText: Colors.white);
+                  Get.snackbar("Muvaffaqiyatli", "Yangi xodim qo'shildi", backgroundColor: Colors.green, colorText: Colors.white);
                 }
                 Get.back();
               } catch (e) {
@@ -165,19 +189,19 @@ class WaiterManagementScreen extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, POSController pos, Map<String, dynamic> waiter) {
+  void _confirmDelete(BuildContext context, POSController pos, Map<String, dynamic> member) {
     Get.defaultDialog(
       title: "O'chirishni tasdiqlang",
-      middleText: "${waiter['name']} tizimdan o'chirilsinmi?",
+      middleText: "${member['name']} tizimdan o'chirilsinmi?",
       textConfirm: "Ha, o'chirish",
       textCancel: "Bekor qilish",
       confirmTextColor: Colors.white,
       buttonColor: Colors.red,
       onConfirm: () async {
         try {
-          await pos.deleteUser(waiter['id']);
+          await pos.deleteUser(member['id']);
           Get.back();
-          Get.snackbar("O'chirildi", "Afitsant tizimdan olib tashlandi", backgroundColor: Colors.orange, colorText: Colors.white);
+          Get.snackbar("O'chirildi", "Xodim tizimdan olib tashlandi", backgroundColor: Colors.orange, colorText: Colors.white);
         } catch (e) {
           Get.snackbar("Xato", "O'chirib bo'lmadi: $e", backgroundColor: Colors.red, colorText: Colors.white);
         }

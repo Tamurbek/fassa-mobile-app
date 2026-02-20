@@ -35,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
               _buildProfileCard(pos),
               const SizedBox(height: 32),
               
-              if (pos.isAdmin) ...[
+              if (pos.isAdmin || pos.isCashier) ...[
                 _buildSectionLabel("printer_settings".tr),
                 _buildSettingsCard([
                   Obx(() => _buildActionItem(
@@ -80,7 +80,7 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 _buildSectionLabel("staff".tr),
                 _buildSettingsCard([
-                  _buildActionItem(Icons.badge_rounded, "waiter_management".tr, onTap: () => Get.to(() => const WaiterManagementScreen())),
+                  _buildActionItem(Icons.badge_rounded, "waiter_management".tr, onTap: () => Get.to(() => const StaffManagementScreen())),
                 ]),
               ],
 
