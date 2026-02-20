@@ -11,6 +11,15 @@ class SocketService {
     _initSocket();
   }
 
+  String? _cafeId;
+
+  void setCafeId(String id) {
+    _cafeId = id;
+    if (socket.connected) {
+      socket.emit('join', id);
+    }
+  }
+
   void _initSocket() {
     socket = IO.io(ApiService.baseUrl, 
       IO.OptionBuilder()
@@ -22,12 +31,16 @@ class SocketService {
 
     socket.onConnect((_) {
       print('WebSocket connected: ${socket.id}');
+      if (_cafeId != null) {
+        socket.emit('join', _cafeId);
+      }
     });
 
     socket.onDisconnect((_) {
       print('WebSocket disconnected');
     });
 
+    socket.on('error', (err) => print('Socket Error: $err'));
     socket.onConnectError((err) => print('Connection Error: $err'));
   }
 

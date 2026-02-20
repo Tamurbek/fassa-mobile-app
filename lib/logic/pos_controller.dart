@@ -243,6 +243,7 @@ class POSController extends GetxController {
     var storedUser = _storage.read('user');
     if (storedUser != null) {
       currentUser.value = Map<String, dynamic>.from(storedUser);
+      _socket.setCafeId(cafeId);
     }
 
     var storedWaiters = _storage.read('all_users');
@@ -515,12 +516,20 @@ class POSController extends GetxController {
 
   void _setupSocketListeners() {
     _socket.onNewOrder((data) {
+      print("Socket: New order received: ${data['id']}");
       // Add new order to list if it's not already there
       int index = allOrders.indexWhere((o) => o['id'] == data['id']);
       if (index == -1) {
-        allOrders.insert(0, _normalizeOrder(data));
+        final normalized = _normalizeOrder(data);
+        allOrders.insert(0, normalized);
         allOrders.refresh();
         saveAllOrders();
+
+        // Auto-print for Admin/Cashier devices if it's a new order
+        if (deviceRole.value == "ADMIN" || deviceRole.value == "CASHIER" || isAdmin) {
+          print("Socket: Auto-printing new order for Admin/Cashier...");
+          _printLocally(normalized, isKitchenOnly: true); // New orders always start with Kitchen Print
+        }
       }
     });
 
@@ -744,6 +753,7 @@ class POSController extends GetxController {
     currentUser.value = user;
     if (user != null) {
       _storage.write('user', user);
+      _socket.setCafeId(cafeId);
       _fetchBackendData(); // Sync data immediately after login
     } else {
       _storage.remove('user');
