@@ -61,7 +61,7 @@ class PrinterService {
       final posController = Get.find<POSController>();
 
       // --- Header: Restaurant Info ---
-      if (posController.restaurantLogo.value.isNotEmpty) {
+      if (posController.showLogo.value && posController.restaurantLogo.value.isNotEmpty) {
         try {
           final logoUrl = posController.restaurantLogo.value;
           final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 5));
@@ -69,10 +69,11 @@ class PrinterService {
             final image = img.decodeImage(response.bodyBytes);
             if (image != null) {
               // Resize image if it's too large to fit the printer. 
-              // 80mm printers typically have 576 dots max width, 58mm has 384 dots.
-              final maxWidth = printer.paperSize == '58mm' ? 384 : 576;
+              final maxWidth = printer.paperSize == '58mm' ? 150 : 200;
               img.Image resized = image;
               if (image.width > maxWidth) {
+                resized = img.copyResize(image, width: maxWidth);
+              } else {
                 resized = img.copyResize(image, width: maxWidth);
               }
               bytes += generator.image(resized);
@@ -134,7 +135,7 @@ class PrinterService {
           PosColumn(text: _normalizeString('${order['table']}'), width: 8, styles: const PosStyles(align: PosAlign.right, bold: true)),
         ]);
       }
-      if (order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
+      if (posController.showWaiter.value && order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
         bytes += generator.row([
           PosColumn(text: _normalizeString('XIZMAT KO\'RSATDI:'), width: 6),
           PosColumn(text: _normalizeString('${order['waiter_name']}'), width: 6, styles: const PosStyles(align: PosAlign.right)),
@@ -204,8 +205,26 @@ class PrinterService {
 
       // --- Footer ---
       bytes += generator.feed(1);
-      bytes += generator.text(_normalizeString('*** Xaridingiz uchun rahmat! ***'), styles: const PosStyles(align: PosAlign.center));
-      bytes += generator.text(_normalizeString('YANA KELING!'), styles: const PosStyles(align: PosAlign.center, bold: true));
+      
+      if (posController.receiptFooter.value.isNotEmpty) {
+        bytes += generator.text(_normalizeString(posController.receiptFooter.value), styles: const PosStyles(align: PosAlign.center, bold: true));
+      }
+      
+      if (posController.showWifi.value && posController.wifiSsid.value.isNotEmpty) {
+        bytes += generator.feed(1);
+        bytes += generator.text(_normalizeString('Wi-Fi: ${posController.wifiSsid.value}'), styles: const PosStyles(align: PosAlign.center));
+        if (posController.wifiPassword.value.isNotEmpty) {
+          bytes += generator.text(_normalizeString('Parol: ${posController.wifiPassword.value}'), styles: const PosStyles(align: PosAlign.center));
+        }
+      }
+      
+      if (posController.instagram.value.isNotEmpty) {
+        bytes += generator.text(_normalizeString('Instagram: ${posController.instagram.value}'), styles: const PosStyles(align: PosAlign.center));
+      }
+      
+      if (posController.telegram.value.isNotEmpty) {
+        bytes += generator.text(_normalizeString('Telegram: ${posController.telegram.value}'), styles: const PosStyles(align: PosAlign.center));
+      }
       bytes += generator.feed(3);
       bytes += generator.cut();
 

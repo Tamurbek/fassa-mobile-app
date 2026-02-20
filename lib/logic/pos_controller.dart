@@ -57,6 +57,18 @@ class POSController extends GetxController {
   var serviceFeeTakeaway = 0.0.obs;
   var serviceFeeDelivery = 3000.0.obs;
   
+  // Receipt Settings
+  var receiptStyle = "STANDARD".obs;
+  var receiptHeader = "".obs;
+  var receiptFooter = "Xaridingiz uchun rahmat!".obs;
+  var showLogo = true.obs;
+  var showWaiter = true.obs;
+  var showWifi = false.obs;
+  var wifiSsid = "".obs;
+  var wifiPassword = "".obs;
+  var instagram = "".obs;
+  var telegram = "".obs;
+
   // Printing Toggles
   var enableKitchenPrint = true.obs;
   var enableBillPrint = true.obs;
@@ -238,6 +250,17 @@ class POSController extends GetxController {
     serviceFeeTakeaway.value = _storage.read('service_fee_takeaway') ?? 0.0;
     serviceFeeDelivery.value = _storage.read('service_fee_delivery') ?? 3000.0;
     
+    receiptStyle.value = _storage.read('receipt_style') ?? "STANDARD";
+    receiptHeader.value = _storage.read('receipt_header') ?? "";
+    receiptFooter.value = _storage.read('receipt_footer') ?? "Xaridingiz uchun rahmat!";
+    showLogo.value = _storage.read('show_logo') ?? true;
+    showWaiter.value = _storage.read('show_waiter') ?? true;
+    showWifi.value = _storage.read('show_wifi') ?? false;
+    wifiSsid.value = _storage.read('wifi_ssid') ?? "";
+    wifiPassword.value = _storage.read('wifi_password') ?? "";
+    instagram.value = _storage.read('instagram') ?? "";
+    telegram.value = _storage.read('telegram') ?? "";
+    
     enableKitchenPrint.value = _storage.read('enable_kitchen_print') ?? true;
     enableBillPrint.value = _storage.read('enable_bill_print') ?? true;
     enablePaymentPrint.value = _storage.read('enable_payment_print') ?? true;
@@ -338,6 +361,16 @@ class POSController extends GetxController {
     double? serviceFeeDineInVal,
     double? serviceFeeTakeawayVal,
     double? serviceFeeDeliveryVal,
+    String? receiptStyleVal,
+    String? receiptHeaderVal,
+    String? receiptFooterVal,
+    bool? showLogoVal,
+    bool? showWaiterVal,
+    bool? showWifiVal,
+    String? wifiSsidVal,
+    String? wifiPasswordVal,
+    String? instagramVal,
+    String? telegramVal,
   }) async {
     try {
       final Map<String, dynamic> updateData = {};
@@ -348,6 +381,16 @@ class POSController extends GetxController {
       if (serviceFeeDineInVal != null) updateData['service_fee_dine_in'] = serviceFeeDineInVal;
       if (serviceFeeTakeawayVal != null) updateData['service_fee_takeaway'] = serviceFeeTakeawayVal;
       if (serviceFeeDeliveryVal != null) updateData['service_fee_delivery'] = serviceFeeDeliveryVal;
+      if (receiptStyleVal != null) updateData['receipt_style'] = receiptStyleVal;
+      if (receiptHeaderVal != null) updateData['receipt_header'] = receiptHeaderVal;
+      if (receiptFooterVal != null) updateData['receipt_footer'] = receiptFooterVal;
+      if (showLogoVal != null) updateData['show_logo'] = showLogoVal;
+      if (showWaiterVal != null) updateData['show_waiter'] = showWaiterVal;
+      if (showWifiVal != null) updateData['show_wifi'] = showWifiVal;
+      if (wifiSsidVal != null) updateData['wifi_ssid'] = wifiSsidVal;
+      if (wifiPasswordVal != null) updateData['wifi_password'] = wifiPasswordVal;
+      if (instagramVal != null) updateData['instagram'] = instagramVal;
+      if (telegramVal != null) updateData['telegram'] = telegramVal;
 
       if (updateData.isEmpty) return;
 
@@ -362,6 +405,17 @@ class POSController extends GetxController {
       if (serviceFeeTakeawayVal != null) serviceFeeTakeaway.value = (updatedCafe['service_fee_takeaway'] as num).toDouble();
       if (serviceFeeDeliveryVal != null) serviceFeeDelivery.value = (updatedCafe['service_fee_delivery'] as num).toDouble();
 
+      if (receiptStyleVal != null) receiptStyle.value = updatedCafe['receipt_style'] ?? "STANDARD";
+      if (receiptHeaderVal != null) receiptHeader.value = updatedCafe['receipt_header'] ?? "";
+      if (receiptFooterVal != null) receiptFooter.value = updatedCafe['receipt_footer'] ?? "Xaridingiz uchun rahmat!";
+      if (showLogoVal != null) showLogo.value = updatedCafe['show_logo'] ?? true;
+      if (showWaiterVal != null) showWaiter.value = updatedCafe['show_waiter'] ?? true;
+      if (showWifiVal != null) showWifi.value = updatedCafe['show_wifi'] ?? false;
+      if (wifiSsidVal != null) wifiSsid.value = updatedCafe['wifi_ssid'] ?? "";
+      if (wifiPasswordVal != null) wifiPassword.value = updatedCafe['wifi_password'] ?? "";
+      if (instagramVal != null) instagram.value = updatedCafe['instagram'] ?? "";
+      if (telegramVal != null) telegram.value = updatedCafe['telegram'] ?? "";
+
       // Save to local storage
       if (name != null) _storage.write('restaurant_name', restaurantName.value);
       if (address != null) _storage.write('restaurant_address', restaurantAddress.value);
@@ -370,6 +424,17 @@ class POSController extends GetxController {
       if (serviceFeeDineInVal != null) _storage.write('service_fee_dine_in', serviceFeeDineIn.value);
       if (serviceFeeTakeawayVal != null) _storage.write('service_fee_takeaway', serviceFeeTakeaway.value);
       if (serviceFeeDeliveryVal != null) _storage.write('service_fee_delivery', serviceFeeDelivery.value);
+      
+      _storage.write('receipt_style', receiptStyle.value);
+      _storage.write('receipt_header', receiptHeader.value);
+      _storage.write('receipt_footer', receiptFooter.value);
+      _storage.write('show_logo', showLogo.value);
+      _storage.write('show_waiter', showWaiter.value);
+      _storage.write('show_wifi', showWifi.value);
+      _storage.write('wifi_ssid', wifiSsid.value);
+      _storage.write('wifi_password', wifiPassword.value);
+      _storage.write('instagram', instagram.value);
+      _storage.write('telegram', telegram.value);
 
       Get.snackbar("Muvaffaqiyatli", "Sozlamalar saqlandi", 
         backgroundColor: Colors.green, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
@@ -394,6 +459,17 @@ class POSController extends GetxController {
       serviceFeeTakeaway.value = (cafe['service_fee_takeaway'] ?? 0.0).toDouble();
       serviceFeeDelivery.value = (cafe['service_fee_delivery'] ?? 3000.0).toDouble();
       
+      receiptStyle.value = cafe['receipt_style'] ?? "STANDARD";
+      receiptHeader.value = cafe['receipt_header'] ?? "";
+      receiptFooter.value = cafe['receipt_footer'] ?? "Xaridingiz uchun rahmat!";
+      showLogo.value = cafe['show_logo'] ?? true;
+      showWaiter.value = cafe['show_waiter'] ?? true;
+      showWifi.value = cafe['show_wifi'] ?? false;
+      wifiSsid.value = cafe['wifi_ssid'] ?? "";
+      wifiPassword.value = cafe['wifi_password'] ?? "";
+      instagram.value = cafe['instagram'] ?? "";
+      telegram.value = cafe['telegram'] ?? "";
+      
       _storage.write('restaurant_name', restaurantName.value);
       _storage.write('restaurant_address', restaurantAddress.value);
       _storage.write('restaurant_phone', restaurantPhone.value);
@@ -401,6 +477,17 @@ class POSController extends GetxController {
       _storage.write('service_fee_dine_in', serviceFeeDineIn.value);
       _storage.write('service_fee_takeaway', serviceFeeTakeaway.value);
       _storage.write('service_fee_delivery', serviceFeeDelivery.value);
+      
+      _storage.write('receipt_style', receiptStyle.value);
+      _storage.write('receipt_header', receiptHeader.value);
+      _storage.write('receipt_footer', receiptFooter.value);
+      _storage.write('show_logo', showLogo.value);
+      _storage.write('show_waiter', showWaiter.value);
+      _storage.write('show_wifi', showWifi.value);
+      _storage.write('wifi_ssid', wifiSsid.value);
+      _storage.write('wifi_password', wifiPassword.value);
+      _storage.write('instagram', instagram.value);
+      _storage.write('telegram', telegram.value);
     } catch (e) {
       print("Error fetching cafe info: $e");
     }
