@@ -6,7 +6,8 @@ import '../../logic/pos_controller.dart';
 import 'home_screen.dart';
 
 class TableSelectionScreen extends StatefulWidget {
-  const TableSelectionScreen({super.key});
+  final bool isRoot;
+  const TableSelectionScreen({super.key, this.isRoot = false});
 
   @override
   State<TableSelectionScreen> createState() => _TableSelectionScreenState();
@@ -44,7 +45,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> with Single
       appBar: AppBar(
         title: Text("select_table".tr),
         centerTitle: true,
-        leading: Padding(
+        leading: widget.isRoot ? null : Padding(
           padding: const EdgeInsets.all(8.0),
           child: GestureDetector(
             onTap: () => Get.back(),
@@ -183,14 +184,23 @@ class _FloorPlanView extends StatelessWidget {
                 onPanEnd: pos.isEditMode.value ? (_) {
                   pos.syncTablePositionWithBackend(tableId);
                 } : null,
-                onTap: pos.isEditMode.value ? null : (isOccupied || isLockedByOther ? () {
-                  if (isLockedByOther) {
-                    Get.snackbar("Xatolik", "Ushbu stolni hozirda $lockedByUser tahrirlamoqda", 
-                      backgroundColor: Colors.orange, colorText: Colors.white);
-                  }
+                onTap: pos.isEditMode.value ? null : (isLockedByOther ? () {
+                  Get.snackbar("Xatolik", "Ushbu stolni hozirda $lockedByUser tahrirlamoqda", 
+                    backgroundColor: Colors.orange, colorText: Colors.white);
                 } : () {
-                  pos.setTable(tableId);
-                  Get.to(() => const HomeScreen());
+                  if (isOccupied) {
+                    final order = pos.allOrders.firstWhereOrNull((o) => 
+                      o['table'] == tableId && 
+                      !["Completed", "Cancelled"].contains(o['status'])
+                    );
+                    if (order != null) {
+                      pos.loadOrderForEditing(order, pos.products);
+                      Get.to(() => const HomeScreen());
+                    }
+                  } else {
+                    pos.setTable(tableId);
+                    Get.to(() => const HomeScreen());
+                  }
                 }),
                 child: _TableWidget(
                   tableNum: tableNum,
