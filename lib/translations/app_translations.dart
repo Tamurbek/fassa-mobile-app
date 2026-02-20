@@ -296,7 +296,7 @@ class AppTranslations extends Translations {
           'bill_receipt_title': 'Hisob cheki (Bill)',
           'bill_receipt_subtitle': 'Mijozga beriladigan oraliq hisob',
           'payment_receipt_title': 'To\'lov cheki (Payment)',
-          'payment_receipt_subtitle': 'To\'lovdan so'ng chiqadigan final chek',
+          'payment_receipt_subtitle': 'To\'lovdan so\'ng chiqadigan final chek',
           'area_selection_tip': 'Taomlar va ichimliklar uchun hududlarni tanlang',
           'paper_size': 'Qog\'oz o\'lchami',
           'test_print': 'Test chop etish',
