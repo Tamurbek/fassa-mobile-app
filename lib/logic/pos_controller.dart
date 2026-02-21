@@ -83,6 +83,10 @@ class POSController extends GetxController {
     "Navis": List.generate(6, (index) => (index + 41).toString().padLeft(2, '0')),
   }.obs;
 
+  var tableAreaBackendIds = <String, String>{}; // "Zal": "area_uuid"
+  var tableAreaDetails = <String, Map<String, dynamic>>{}.obs; // "Zal": {"width_m": 12.0, "height_m": 8.0}
+  var selectedWaiter = RxnString(); // Track selected waiter for order assignment (Cashier/Admin)
+
   var tablePositions = <String, Map<String, double>>{}.obs; // "Location-TableId": {"x": 100.0, "y": 200.0}
   var tableProperties = <String, Map<String, dynamic>>{}.obs; // width, height, shape
   var tableBackendIds = <String, String>{}; // "Location-TableId": "backend_uuid"
@@ -576,6 +580,14 @@ class POSController extends GetxController {
       final backendAreas = await _api.getTableAreas();
       if (backendAreas.isNotEmpty) {
         tableAreas.assignAll(backendAreas.map((a) => a['name'].toString()).toList());
+        for (var a in backendAreas) {
+          final String name = a['name'].toString();
+          tableAreaBackendIds[name] = a['id'].toString();
+          tableAreaDetails[name] = {
+            "width_m": (a['width_m'] as num?)?.toDouble() ?? 10.0,
+            "height_m": (a['height_m'] as num?)?.toDouble() ?? 10.0,
+          };
+        }
       }
 
       final backendTables = await _api.getTables();
@@ -636,7 +648,7 @@ class POSController extends GetxController {
     }
 
     // Fetch Users (Waiters)
-    if (isAdmin) {
+    if (isAdmin || isCashier) {
       try {
         final backendUsers = await _api.getUsers();
         users.assignAll(List<Map<String, dynamic>>.from(backendUsers));
@@ -663,6 +675,7 @@ class POSController extends GetxController {
       "items": (o['items'] as List?)?.fold(0, (sum, item) => sum + ((item['quantity'] ?? item['qty'] ?? 0) as int)) ?? 0,
       "total": double.tryParse(totalAmt.toString()) ?? 0.0,
       "status": statusStr.toString().replaceAll("_", " ").split(" ").map((s) => s.toLowerCase().capitalizeFirst).join(" "),
+      "waiter_name": o['waiter_name'],
       "timestamp": timestamp,
       "details": (o['items'] as List? ?? []).map((i) => {
         "id": i['productId'] ?? i['product_id'],
@@ -951,6 +964,7 @@ class POSController extends GetxController {
         "table_number": orderData["tableNumber"],
         "type": orderData["type"],
         "is_paid": isPaid,
+        "waiter_name": selectedWaiter.value ?? currentUser.value?['name'],
         "cafe_id": cafeId,
         "items": (orderData["items"] as List).map((i) => {
           "product_id": i["productId"],
@@ -1115,12 +1129,87 @@ class POSController extends GetxController {
     }
   }
 
+  void showWaiterSelectionDialog(String tableId, Function onSelected) {
+    if (users.isEmpty) {
+      onSelected();
+      return;
+    }
+
+    final waiters = users.where((u) => u['role'] == "WAITER").toList();
+    if (waiters.isEmpty) {
+      onSelected();
+      return;
+    }
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Afitsantni tanlang", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: waiters.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final w = waiters[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: Text(w['name']?[0] ?? "W", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                ),
+                title: Text(w['name'] ?? "Unknown", style: const TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  selectedWaiter.value = w['name'];
+                  Get.back();
+                  onSelected();
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              selectedWaiter.value = null; // Default to current user
+              Get.back();
+              onSelected();
+            },
+            child: const Text("O'zimga biriktirish"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void deleteOrder(int orderId) {
     allOrders.removeWhere((o) => o['id'] == orderId);
     printedKitchenQuantities.remove(orderId.toString());
     _storage.write('printed_kitchen_items', Map.from(printedKitchenQuantities));
     allOrders.refresh();
     saveAllOrders();
+  }
+
+  Future<void> updateAreaDimensions(String areaName, double width, double height) async {
+    final String? areaId = tableAreaBackendIds[areaName];
+    if (areaId == null) return;
+
+    try {
+      await _api.updateTableArea(areaId, {
+        "name": areaName,
+        "width_m": width,
+        "height_m": height,
+      });
+      tableAreaDetails[areaName] = {
+        "width_m": width,
+        "height_m": height,
+      };
+      tableAreaDetails.refresh();
+    } catch (e) {
+      print("Error updating area dimensions: $e");
+      Get.snackbar("Xatolik", "Hudud o'lchamlarini saqlashda xatolik yuz berdi",
+          backgroundColor: Colors.red, colorText: Colors.white);
+    }
   }
 
   void clearCurrentOrder() {

@@ -198,8 +198,46 @@ class _FloorPlanView extends StatelessWidget {
         final double floorWidth = constraints.maxWidth;
         final double floorHeight = constraints.maxHeight;
 
+        final areaDetails = pos.tableAreaDetails[location];
+        final String dimText = areaDetails != null 
+            ? "${areaDetails['width_m']}m x ${areaDetails['height_m']}m" 
+            : "";
+
         return Obx(() => Stack(
-          children: tables.map((tableNum) {
+          children: [
+            if (dimText.isNotEmpty)
+              Positioned(
+                right: 20,
+                bottom: 20,
+                child: GestureDetector(
+                  onTap: pos.isAdmin ? () => _showAreaSettingsDialog(context) : null,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          dimText,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        if (pos.isAdmin) ...[
+                          const SizedBox(width: 8),
+                          Icon(Icons.settings, size: 14, color: Colors.grey.shade600),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ...tables.map((tableNum) {
             final String tableId = "$location-$tableNum";
             final position = pos.tablePositions[tableId] ?? _getDefaultPosition(tableNum, floorWidth, floorHeight);
             
@@ -254,7 +292,14 @@ class _FloorPlanView extends StatelessWidget {
                     }
                   } else {
                     pos.setTable(tableId);
-                    Get.to(() => const HomeScreen());
+                    if (pos.isAdmin || pos.isCashier) {
+                      pos.showWaiterSelectionDialog(tableId, () {
+                        Get.to(() => const HomeScreen());
+                      });
+                    } else {
+                      pos.selectedWaiter.value = null;
+                      Get.to(() => const HomeScreen());
+                    }
                   }
                 }),
                 child: _TableWidget(
@@ -272,6 +317,48 @@ class _FloorPlanView extends StatelessWidget {
           }).toList(),
         ));
       },
+    );
+  }
+
+  void _showAreaSettingsDialog(BuildContext context) {
+    final areaDetails = pos.tableAreaDetails[location];
+    final wController = TextEditingController(text: areaDetails?['width_m']?.toString() ?? "10.0");
+    final hController = TextEditingController(text: areaDetails?['height_m']?.toString() ?? "10.0");
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("$location - O'lchamlar", style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: wController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Kenglik (metr)", border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: hController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "Uzunlik (metr)", border: OutlineInputBorder()),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish")),
+          ElevatedButton(
+            onPressed: () {
+              final w = double.tryParse(wController.text) ?? 10.0;
+              final h = double.tryParse(hController.text) ?? 10.0;
+              pos.updateAreaDimensions(location, w, h);
+              Get.back();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            child: const Text("Saqlash"),
+          ),
+        ],
+      ),
     );
   }
 
