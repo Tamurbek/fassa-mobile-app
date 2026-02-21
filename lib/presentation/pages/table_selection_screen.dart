@@ -57,6 +57,11 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                   color: pos.isEditMode.value ? Colors.green : null,
                   tooltip: pos.isEditMode.value ? "save_layout".tr : "edit_layout".tr,
                 ),
+              IconButton(
+                icon: const Icon(Icons.lock_rounded, color: Colors.orange),
+                onPressed: () => pos.lockTerminal(),
+                tooltip: "Terminalni qulflash",
+              ),
             ],
             bottom: TabBar(
               isScrollable: locations.length > 3,

@@ -147,6 +147,8 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 16),
           _buildTopIcon(Icons.notifications_outlined),
           const SizedBox(width: 12),
+          _buildTopIcon(Icons.lock_rounded, onTap: () => pos.lockTerminal()),
+          const SizedBox(width: 12),
           _buildTopIcon(Icons.settings_outlined, onTap: () => Get.toNamed('/settings')),
         ],
       ),

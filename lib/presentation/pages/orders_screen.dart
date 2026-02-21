@@ -46,6 +46,11 @@ class OrdersScreen extends StatelessWidget {
               icon: const Icon(Icons.refresh),
               onPressed: () => pos.allOrders.refresh(),
             ),
+            IconButton(
+              icon: const Icon(Icons.lock_rounded, color: Colors.orange),
+              onPressed: () => pos.lockTerminal(),
+              tooltip: "Terminalni qulflash",
+            ),
             if (!isMobile)
               Obx(() => IconButton(
                 icon: Icon(pos.isOrdersTableView.value ? Icons.grid_view_rounded : Icons.view_list_rounded),

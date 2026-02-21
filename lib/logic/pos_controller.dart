@@ -1083,21 +1083,25 @@ class POSController extends GetxController {
     isPinAuthenticated.value = false;
     
     currentOrder.clear();
-    allOrders.clear();
-    products.clear();
-    categories.assignAll(["All"]);
-    categoriesObjects.clear();
-    preparationAreas.clear();
-    printers.clear();
-    users.clear();
-    lockedTables.clear();
-    tablePositions.clear();
-    tableProperties.clear();
-    tableAreaBackendIds.clear();
-    tableAreaDetails.clear();
-    printedKitchenQuantities.clear();
+    // In terminal mode we might want to keep some data, but logout usually implies clearing
+    // but we MUST clear sensitive user data
+    
+    if (forced) {
+       allOrders.clear();
+       products.clear();
+       categories.assignAll(["All"]);
+       categoriesObjects.clear();
+       preparationAreas.clear();
+       printers.clear();
+       users.clear();
+       lockedTables.clear();
+    }
+  }
 
-    _storage.remove('all_orders');
+  void lockTerminal() {
+    logout(forced: false);
+    Get.offAllNamed('/staff-selection');
+  }
     _storage.remove('products');
     _storage.remove('categories');
     _storage.remove('categories_objects');

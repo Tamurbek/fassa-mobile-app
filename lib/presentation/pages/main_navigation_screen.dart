@@ -180,9 +180,9 @@ class MainNavigationScreen extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.swap_horiz, color: AppColors.primary),
-            tooltip: "Foydalanuvchini almashtirish",
-            onPressed: () => _showSwitchUserDialog(pos),
+            icon: const Icon(Icons.lock_person_rounded, color: AppColors.primary),
+            tooltip: "Terminalni qulflash",
+            onPressed: () => pos.lockTerminal(),
           ),
         ],
       ),
