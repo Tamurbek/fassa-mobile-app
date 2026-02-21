@@ -1288,6 +1288,8 @@ class POSController extends GetxController {
       return;
     }
 
+    bool didSelect = false;
+
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -1308,6 +1310,7 @@ class POSController extends GetxController {
                 title: Text(w['name'] ?? "Unknown", style: const TextStyle(fontWeight: FontWeight.bold)),
                 onTap: () {
                   selectedWaiter.value = w['name'];
+                  didSelect = true;
                   Get.back();
                   onSelected();
                 },
@@ -1319,6 +1322,7 @@ class POSController extends GetxController {
           TextButton(
             onPressed: () {
               selectedWaiter.value = null; // Default to current user
+              didSelect = true;
               Get.back();
               onSelected();
             },
@@ -1326,7 +1330,11 @@ class POSController extends GetxController {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      if (!didSelect) {
+        clearCurrentOrder();
+      }
+    });
   }
 
   void deleteOrder(int orderId) {
