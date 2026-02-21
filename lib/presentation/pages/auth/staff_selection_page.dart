@@ -20,6 +20,7 @@ class StaffSelectionPage extends StatefulWidget {
 
 class _StaffSelectionPageState extends State<StaffSelectionPage> {
   List<dynamic> _staff = [];
+  String _selectedRole = 'WAITER';
   bool _isLoading = true;
 
   @override
@@ -39,7 +40,7 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
       
       if (mounted) {
         setState(() {
-          _staff = staff.where((s) => s['role'] != 'CAFE_ADMIN' && s['role'] != 'SYSTEM_ADMIN').toList();
+          _staff = staff;
           _isLoading = false;
         });
       }
@@ -225,48 +226,102 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
-        : _staff.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.people_outline, size: 64, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Xodimlar topilmadi',
-                      style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: _fetchStaff,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Qayta urinish'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF9500),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 200,
-                    childAspectRatio: 0.8,
-                    crossAxisSpacing: 24,
-                    mainAxisSpacing: 24,
-                  ),
-                  itemCount: _staff.length,
-                  itemBuilder: (context, index) {
-                    final member = _staff[index];
-                    return _buildStaffCard(member);
-                  },
-                ),
+        : Column(
+            children: [
+              _buildFilterBar(),
+              Expanded(
+                child: _buildStaffGrid(),
               ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    final roles = [
+      {'id': 'WAITER', 'name': 'Ofitsiant', 'icon': Icons.flatware},
+      {'id': 'CASHIER', 'name': 'Kassir', 'icon': Icons.point_of_sale},
+      {'id': 'CAFE_ADMIN', 'name': 'Admin', 'icon': Icons.admin_panel_settings},
+    ];
+
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Colors.white,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: roles.length,
+        itemBuilder: (context, index) {
+          final role = roles[index];
+          final bool isSelected = _selectedRole == role['id'];
+          return Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ChoiceChip(
+              label: Row(
+                children: [
+                   Icon(
+                    role['icon'] as IconData, 
+                    size: 18, 
+                    color: isSelected ? Colors.white : Colors.grey
+                  ),
+                  const SizedBox(width: 8),
+                  Text(role['name'] as String),
+                ],
+              ),
+              selected: isSelected,
+              onSelected: (bool selected) {
+                if (selected) {
+                  setState(() => _selectedRole = role['id'] as String);
+                }
+              },
+              selectedColor: const Color(0xFFFF9500),
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.bold,
+              ),
+              backgroundColor: Colors.grey.shade100,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStaffGrid() {
+    final filteredStaff = _staff.where((s) => s['role'] == _selectedRole).toList();
+
+    if (filteredStaff.isEmpty && !_isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.people_outline, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              'Ushbu bo\'limda xodimlar mavjud emas',
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200,
+          childAspectRatio: 0.8,
+          crossAxisSpacing: 24,
+          mainAxisSpacing: 24,
+        ),
+        itemCount: filteredStaff.length,
+        itemBuilder: (context, index) {
+          final member = filteredStaff[index];
+          return _buildStaffCard(member);
+        },
+      ),
     );
   }
 
