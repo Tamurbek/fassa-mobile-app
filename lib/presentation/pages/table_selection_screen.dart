@@ -67,19 +67,20 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
             ),
           ),
           body: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: isMobile ? double.infinity : 1200),
+            child: SizedBox(
+              width: double.infinity,
+              height: double.infinity,
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                          _StatusIndicator(color: Colors.green, label: "available".tr),
-                         const SizedBox(width: 20),
+                         const SizedBox(width: 24),
                          _StatusIndicator(color: Colors.red, label: "occupied".tr),
-                         const SizedBox(width: 20),
+                         const SizedBox(width: 24),
                          _StatusIndicator(color: Colors.orange, label: "editing_status".tr),
                       ],
                     ),
@@ -98,6 +99,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
                   Obx(() => pos.isEditMode.value 
                     ? Container(
                         padding: const EdgeInsets.all(16),
+                        width: double.infinity,
                         color: Colors.amber.withOpacity(0.1),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -133,7 +135,7 @@ class _FloorPlanView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (pos.isWaiter) {
+    if (pos.deviceRole.value == "WAITER") {
       return GridView.builder(
         padding: const EdgeInsets.all(24),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -200,51 +202,73 @@ class _FloorPlanView extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final double floorWidth = constraints.maxWidth;
-        final double floorHeight = constraints.maxHeight;
+        // Calculate the maximum bounds of all tables to ensure the canvas is large enough
+        double maxTableX = constraints.maxWidth;
+        double maxTableY = constraints.maxHeight;
+        
+        for (var tableNum in tables) {
+          final String tableId = "$location-$tableNum";
+          final posData = pos.tablePositions[tableId];
+          if (posData != null) {
+             final props = pos.tableProperties[tableId] ?? {};
+             double w = (props['width'] as num?)?.toDouble() ?? 80.0;
+             double h = (props['height'] as num?)?.toDouble() ?? 80.0;
+             if (posData['x']! + w > maxTableX) maxTableX = posData['x']! + w + 200;
+             if (posData['y']! + h > maxTableY) maxTableY = posData['y']! + h + 200;
+          }
+        }
 
         final areaDetails = pos.tableAreaDetails[location];
         final String dimText = areaDetails != null 
             ? "${areaDetails['width_m']}m x ${areaDetails['height_m']}m" 
             : "";
 
-        return Obx(() => Stack(
-          children: [
-            if (dimText.isNotEmpty)
-              Positioned(
-                right: 20,
-                bottom: 20,
-                child: GestureDetector(
-                  onTap: pos.isAdmin ? () => _showAreaSettingsDialog(context) : null,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          dimText,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade600,
-                          ),
+        return Obx(() => InteractiveViewer(
+          boundaryMargin: const EdgeInsets.all(1000), // Very large margin for freedom of movement
+          minScale: 0.1,
+          maxScale: 2.5,
+          panEnabled: !pos.isEditMode.value, 
+          child: Container(
+            width: maxTableX,
+            height: maxTableY,
+            color: Colors.grey.withOpacity(0.02), // Subtle floor texture
+            child: Stack(
+              children: [
+                if (dimText.isNotEmpty)
+                  Positioned(
+                    right: 20,
+                    bottom: 20,
+                    child: GestureDetector(
+                      onTap: pos.isAdmin ? () => _showAreaSettingsDialog(context) : null,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        if (pos.isAdmin) ...[
-                          const SizedBox(width: 8),
-                          Icon(Icons.settings, size: 14, color: Colors.grey.shade600),
-                        ],
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              dimText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            if (pos.isAdmin) ...[
+                              const SizedBox(width: 8),
+                              Icon(Icons.settings, size: 14, color: Colors.grey.shade600),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
             ...tables.map((tableNum) {
             final String tableId = "$location-$tableNum";
-            final position = pos.tablePositions[tableId] ?? _getDefaultPosition(tableNum, floorWidth, floorHeight);
+            final position = pos.tablePositions[tableId] ?? _getDefaultPosition(tableNum, maxTableX, maxTableY);
             
             final Map<String, dynamic> props = pos.tableProperties[tableId] ?? {};
             final double tableWidth = (props['width'] as num?)?.toDouble() ?? 80.0;
@@ -269,8 +293,8 @@ class _FloorPlanView extends StatelessWidget {
                   double newY = position['y']! + details.delta.dy;
                   
                   // Boundaries
-                  newX = newX.clamp(0.0, floorWidth - tableWidth);
-                  newY = newY.clamp(0.0, floorHeight - tableHeight);
+                  newX = newX.clamp(0.0, maxTableX - tableWidth);
+                  newY = newY.clamp(0.0, maxTableY - tableHeight);
                   
                   pos.updateTablePosition(tableId, newX, newY);
                 } : null,
@@ -319,9 +343,12 @@ class _FloorPlanView extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
-          ],
-        ));
+                  }).toList(),
+                ],
+              ),
+            ),
+          ),
+        );
       },
     );
   }
