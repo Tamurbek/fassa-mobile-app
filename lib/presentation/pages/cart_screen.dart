@@ -165,9 +165,13 @@ class CartScreen extends StatelessWidget {
             decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
