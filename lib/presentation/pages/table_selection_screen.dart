@@ -13,6 +13,7 @@ class TableSelectionScreen extends StatefulWidget {
   State<TableSelectionScreen> createState() => _TableSelectionScreenState();
 }
 
+class _TableSelectionScreenState extends State<TableSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final POSController pos = Get.find<POSController>();
