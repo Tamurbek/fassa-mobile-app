@@ -311,7 +311,7 @@ class ApiService {
   // Users
   Future<List<dynamic>> getUsers() async {
     try {
-      final response = await _dio.get('/users/');
+      final response = await _dio.get('/users');
       return response.data;
     } catch (e) {
       rethrow;
