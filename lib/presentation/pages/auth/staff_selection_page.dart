@@ -37,13 +37,19 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
         staff = await ApiService().getTerminalStaff();
       }
       
-      setState(() {
-        _staff = staff;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _staff = staff;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      Get.snackbar('Xatolik', 'Xodimlarni yuklab bo\'lmadi');
-      setState(() => _isLoading = false);
+      print("Error fetching staff: $e");
+      Get.snackbar('Xatolik', 'Xodimlarni yuklab bo\'lmadi: $e', 
+        backgroundColor: Colors.red, colorText: Colors.white);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -83,22 +89,48 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())
-        : Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 200,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 24,
-                mainAxisSpacing: 24,
+        : _staff.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Xodimlar topilmadi',
+                      style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _fetchStaff,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Qayta urinish'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF9500),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 200,
+                    childAspectRatio: 0.8,
+                    crossAxisSpacing: 24,
+                    mainAxisSpacing: 24,
+                  ),
+                  itemCount: _staff.length,
+                  itemBuilder: (context, index) {
+                    final member = _staff[index];
+                    return _buildStaffCard(member);
+                  },
+                ),
               ),
-              itemCount: _staff.length,
-              itemBuilder: (context, index) {
-                final member = _staff[index];
-                return _buildStaffCard(member);
-              },
-            ),
-          ),
     );
   }
 

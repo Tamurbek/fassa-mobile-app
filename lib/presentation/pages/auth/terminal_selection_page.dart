@@ -79,7 +79,7 @@ class _TerminalSelectionPageState extends State<TerminalSelectionPage> {
                   _posController.setCurrentTerminal(response['terminal']);
                   
                   Navigator.pop(context); // Close dialog
-                  Get.offAll(() => const StaffSelectionPage());
+                  Get.offAllNamed('/staff-selection');
                   Get.snackbar('Muvaffaqiyatli', '${terminal['name']} terminaliga ulandi', 
                     backgroundColor: Colors.green, colorText: Colors.white);
                 } catch (e) {
