@@ -10,6 +10,7 @@ import '../main_navigation_screen.dart';
 import 'pin_code_screen.dart';
 import 'qr_scanner_page.dart';
 import 'terminal_login_page.dart';
+import 'terminal_selection_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -101,9 +102,13 @@ class _LoginPageState extends State<LoginPage> {
         colorText: Colors.white,
       );
 
-      // Redirect based on PIN setup
+      // Redirect based on role and PIN setup
       final pos = Get.find<POSController>();
-      if (pos.pinCode.value == null) {
+      final String role = response['user']['role'];
+      
+      if (role == 'SYSTEM_ADMIN' || role == 'CAFE_ADMIN') {
+        Get.offAll(() => const TerminalSelectionPage());
+      } else if (pos.pinCode.value == null) {
         Get.offAll(() => const PinCodeScreen(isSettingNewPin: true));
       } else {
         Get.offAll(() => const PinCodeScreen());

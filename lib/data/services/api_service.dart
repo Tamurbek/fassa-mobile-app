@@ -449,4 +449,13 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<List<dynamic>> getTerminals() async {
+    try {
+      final response = await _dio.get('/terminals');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
