@@ -50,7 +50,7 @@ class _TerminalLoginPageState extends State<TerminalLoginPage> {
       backgroundColor: const Color(0xFFF3F4F6),
       body: Center(
         child: Container(
-          maxWidth: 400,
+          constraints: const BoxConstraints(maxWidth: 400),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: Colors.white,
