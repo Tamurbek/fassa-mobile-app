@@ -671,9 +671,6 @@ class POSController extends GetxController {
       print("Error fetching printers: $e");
     }
 
-      print("Error fetching printers: $e");
-    }
-
     // Fetch Orders
     try {
       final backendOrders = await _api.getOrders();
