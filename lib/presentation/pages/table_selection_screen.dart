@@ -314,7 +314,7 @@ class _FloorPlanView extends StatelessWidget {
                 ),
               ),
             );
-            ]).toList(),
+          }).toList(),
           ],
         ));
       },
