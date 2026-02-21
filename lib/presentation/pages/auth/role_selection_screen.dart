@@ -85,8 +85,7 @@ class RoleSelectionScreen extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 300,
-        height: 240,
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
@@ -100,6 +99,7 @@ class RoleSelectionScreen extends StatelessWidget {
           border: Border.all(color: Colors.white, width: 2),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(16),
@@ -109,11 +109,12 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
               child: Icon(icon, color: color, size: 40),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
               title,
+              textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF1A1A1A),
               ),
