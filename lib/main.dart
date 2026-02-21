@@ -12,6 +12,7 @@ import 'presentation/pages/reports_screen.dart';
 import 'presentation/pages/auth/role_selection_screen.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'logic/background_service.dart';
+import 'presentation/components/location_checker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +49,7 @@ class FastFoodApp extends StatelessWidget {
       translations: AppTranslations(),
       locale: initialLocale,
       fallbackLocale: const Locale('en', 'US'),
+      builder: (context, child) => LocationChecker(child: child!),
       home: _getInitialScreen(),
       getPages: [
         GetPage(name: '/login', page: () => const LoginPage()),
