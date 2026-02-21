@@ -133,7 +133,7 @@ class _FloorPlanView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (pos.isWaiter) {
+    if (pos.isWaiter || pos.isCashier) {
       return GridView.builder(
         padding: const EdgeInsets.all(24),
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
