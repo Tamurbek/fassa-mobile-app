@@ -675,6 +675,14 @@ class OrdersScreen extends StatelessWidget {
   }
 
   void _handleOrderEdit(Map<String, dynamic> order, POSController pos, List<FoodItem> catalog) {
+    if (order['status'] == "Bill Printed") {
+      if (!(pos.isAdmin || pos.isCashier)) {
+        Get.snackbar("Xatolik", "Ushbu buyurtma cheki chiqarilgan (qulflangan)", 
+            backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+    }
+
     final String? tableId = order['table'];
     if (tableId != null && tableId != "-" && pos.lockedTables.containsKey(tableId)) {
       final String? lockedBy = pos.lockedTables[tableId];

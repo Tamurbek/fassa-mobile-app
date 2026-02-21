@@ -194,6 +194,11 @@ class _FloorPlanView extends StatelessWidget {
                       !["Completed", "Cancelled"].contains(o['status'])
                     );
                     if (order != null) {
+                      if (order['status'] == "Bill Printed" && !(pos.isAdmin || pos.isCashier)) {
+                        Get.snackbar("Xatolik", "Ushbu buyurtma cheki chiqarilgan (qulflangan)", 
+                            backgroundColor: Colors.red, colorText: Colors.white);
+                        return;
+                      }
                       pos.loadOrderForEditing(order, pos.products);
                       Get.to(() => const HomeScreen());
                     }

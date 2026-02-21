@@ -313,6 +313,9 @@ class CartScreen extends StatelessWidget {
                         }).toList(),
                       };
                       pos.printOrder(tempOrder, receiptTitle: "HISOB CHEKI");
+                      if (pos.editingOrderId.value != null) {
+                        pos.updateOrderStatus(pos.editingOrderId.value!, "Bill Printed");
+                      }
                     },
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 75), 
