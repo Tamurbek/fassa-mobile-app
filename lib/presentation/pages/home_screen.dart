@@ -214,11 +214,11 @@ class HomeScreen extends StatelessWidget {
     final bool isMobile = Responsive.isMobile(context);
     return GridView.builder(
       padding: EdgeInsets.all(isMobile ? 24 : 40),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: isMobile ? 2 : (Responsive.isTablet(context) ? 3 : 4),
-        childAspectRatio: 0.75,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 200,
+        childAspectRatio: 0.8,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) => _buildFoodCard(items[index], context),
