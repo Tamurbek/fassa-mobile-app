@@ -21,6 +21,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
   late TextEditingController _ipController;
   late TextEditingController _portController;
   final RxList<String> _selectedAreaIds = <String>[].obs;
+  final RxList<String> _selectedTableAreaNames = <String>[].obs;
   final RxBool _printReceipts = false.obs;
   final RxBool _printPayments = false.obs;
   final RxString _paperSize = "80mm".obs;
@@ -32,6 +33,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
     _ipController = TextEditingController(text: widget.printer?.ipAddress ?? "192.168.1.100");
     _portController = TextEditingController(text: widget.printer?.port.toString() ?? "9100");
     _selectedAreaIds.assignAll(widget.printer?.preparationAreaIds ?? []);
+    _selectedTableAreaNames.assignAll(widget.printer?.tableAreaNames ?? []);
     _printReceipts.value = widget.printer?.printReceipts ?? false;
     _printPayments.value = widget.printer?.printPayments ?? false;
     _paperSize.value = widget.printer?.paperSize ?? "80mm";
@@ -60,6 +62,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
       isActive: widget.printer?.isActive ?? true,
       cafeId: pos.currentUser.value?['cafe_id'] ?? '',
       preparationAreaIds: _selectedAreaIds.toList(),
+      tableAreaNames: _selectedTableAreaNames.toList(),
       printReceipts: _printReceipts.value,
       printPayments: _printPayments.value,
       paperSize: _paperSize.value,
@@ -158,6 +161,32 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
                       _selectedAreaIds.add(area.id);
                     } else {
                       _selectedAreaIds.remove(area.id);
+                    }
+                  },
+                );
+              }).toList(),
+            )),
+            const SizedBox(height: 24),
+            
+            Text("receipt_table_areas".tr, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text("receipt_area_selection_tip".tr, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+            const SizedBox(height: 12),
+            Obx(() => Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: pos.tableAreaDetails.keys.map((areaName) {
+                final isSelected = _selectedTableAreaNames.contains(areaName);
+                return FilterChip(
+                  label: Text(areaName),
+                  selected: isSelected,
+                  selectedColor: Colors.blue.withOpacity(0.2),
+                  checkmarkColor: Colors.blue,
+                  onSelected: (selected) {
+                    if (selected) {
+                      _selectedTableAreaNames.add(areaName);
+                    } else {
+                      _selectedTableAreaNames.remove(areaName);
                     }
                   },
                 );

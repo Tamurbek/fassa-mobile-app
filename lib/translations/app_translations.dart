@@ -223,6 +223,8 @@ class AppTranslations extends Translations {
           'all_rights_reserved': 'All rights reserved.',
           'reprint_order': 'Reprint Order',
           'reprint_kitchen': 'Reprint Kitchen',
+          'receipt_table_areas': 'Receipt Table Areas',
+          'receipt_area_selection_tip': 'Select table areas for bills and final receipts',
         },
         'uz_UZ': {
           'order_management': 'Buyurtmalar boshqaruvi',
@@ -443,6 +445,8 @@ class AppTranslations extends Translations {
           'all_rights_reserved': 'Barcha huquqlar himoyalangan.',
           'reprint_order': 'Qayta chop etish',
           'reprint_kitchen': 'Oshxonaga qayta yuborish',
+          'receipt_table_areas': 'Hisob-kitob hududlari',
+          'receipt_area_selection_tip': 'Hisob va to\'lov cheklari chiqadigan hududlarni tanlang',
         },
         'ru_RU': {
           'order_management': 'Управление заказами',
@@ -663,6 +667,8 @@ class AppTranslations extends Translations {
           'all_rights_reserved': 'Все права защищены.',
           'reprint_order': 'Повторная печать',
           'reprint_kitchen': 'Повтор на кухню',
+          'receipt_table_areas': 'Зоны для чеков',
+          'receipt_area_selection_tip': 'Выберите зоны столов для гостевых счетов и финальных чеков',
         }
       };
 }

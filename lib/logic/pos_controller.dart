@@ -1505,6 +1505,16 @@ class POSController extends GetxController {
           shouldPrintCurrentReceipt = true;
         }
 
+        // --- Filter by Table Area if specified ---
+        if (shouldPrintCurrentReceipt && printer.tableAreaNames.isNotEmpty) {
+          final String orderTableId = (order['table'] ?? "").toString();
+          final String orderAreaName = orderTableId.contains("-") ? orderTableId.split("-")[0] : "";
+          if (!printer.tableAreaNames.contains(orderAreaName)) {
+            print("Skipping printer ${printer.name} as it is not assigned to area $orderAreaName");
+            shouldPrintCurrentReceipt = false;
+          }
+        }
+
         if (shouldPrintCurrentReceipt && !isKitchenOnly) {
           if ((receiptTitle == "HISOB CHEKI" && !enableBillPrint.value) || 
               (receiptTitle != "HISOB CHEKI" && !enablePaymentPrint.value)) {
