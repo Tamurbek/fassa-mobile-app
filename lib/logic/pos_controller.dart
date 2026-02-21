@@ -1022,6 +1022,33 @@ class POSController extends GetxController {
     _storage.remove('pin_code');
     _api.setToken(null);
     isPinAuthenticated.value = false;
+    
+    currentOrder.clear();
+    allOrders.clear();
+    products.clear();
+    categories.assignAll(["All"]);
+    categoriesObjects.clear();
+    preparationAreas.clear();
+    printers.clear();
+    users.clear();
+    lockedTables.clear();
+    tablePositions.clear();
+    tableProperties.clear();
+    tableAreaBackendIds.clear();
+    tableAreaDetails.clear();
+    printedKitchenQuantities.clear();
+
+    _storage.remove('all_orders');
+    _storage.remove('products');
+    _storage.remove('categories');
+    _storage.remove('categories_objects');
+    _storage.remove('preparation_areas');
+    _storage.remove('printers');
+    _storage.remove('all_users');
+    _storage.remove('printed_kitchen_items');
+    _storage.remove('table_positions');
+    _storage.remove('table_properties');
+
     Get.offAllNamed('/login');
     if (forced) {
        Get.snackbar(
