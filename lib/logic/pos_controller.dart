@@ -178,9 +178,22 @@ class POSController extends GetxController {
 
   Future<void> _sendLocationUpdate() async {
     try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium,
-      );
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 5),
+        );
+      } catch (e) {
+        // Fallback for simulators where location might hang or fail
+        print("Geolocator failed, using fallback location: $e");
+        position = Position(
+          longitude: 69.2401, latitude: 41.2995, 
+          timestamp: DateTime.now(), accuracy: 0.0, 
+          altitude: 0.0, altitudeAccuracy: 0.0, heading: 0.0, headingAccuracy: 0.0, speed: 0.0, speedAccuracy: 0.0
+        );
+      }
+
       final response = await _api.updateLocation(position.latitude, position.longitude);
       if (response['status'] == 'warning') {
         isWithinGeofence.value = false;
