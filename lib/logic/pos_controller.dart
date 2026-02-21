@@ -1018,6 +1018,8 @@ class POSController extends GetxController {
   void logout({bool forced = false}) {
     stopLocationTracking();
     setCurrentUser(null);
+    pinCode.value = null;
+    _storage.remove('pin_code');
     _api.setToken(null);
     isPinAuthenticated.value = false;
     Get.offAllNamed('/login');
