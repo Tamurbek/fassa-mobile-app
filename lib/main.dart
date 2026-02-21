@@ -75,15 +75,19 @@ class FastFoodApp extends StatelessWidget {
       return const RoleSelectionScreen();
     }
     
-    // 1. Check if user is logged in
-    if (pos.currentUser.value == null) {
-      // 1.5 Check if terminal is logged in (CASHIER MODE)
-      if (pos.currentTerminal.value != null && pos.deviceRole.value == "CASHIER") {
-        return const StaffSelectionPage();
+    // 1. CASHIER (Terminal) Mode
+    if (pos.deviceRole.value == "CASHIER") {
+      if (pos.currentTerminal.value == null) {
+        return const LoginPage(); // Needs terminal login
       }
-      
-      // 1.6 Check if we are in WAITER MODE and have a scanned cafeId
-      if (pos.deviceRole.value == "WAITER") {
+      if (!pos.isPinAuthenticated.value) {
+        return const StaffSelectionPage(); // Always choose staff on restart
+      }
+    }
+    
+    // 2. WAITER (Phone) Mode
+    if (pos.deviceRole.value == "WAITER") {
+      if (pos.currentUser.value == null) {
         if (pos.waiterCafeId.value != null) {
           return StaffSelectionPage(cafeId: pos.waiterCafeId.value, isFromTerminal: false);
         } else {
@@ -91,14 +95,17 @@ class FastFoodApp extends StatelessWidget {
         }
       }
       
-      return const LoginPage();
+      // Staff is logged in, check personal PIN
+      if (!pos.isPinAuthenticated.value) {
+        if (pos.pinCode.value == null) {
+          return const PinCodeScreen(isSettingNewPin: true);
+        } else {
+          return const PinCodeScreen();
+        }
+      }
     }
     
-    // 2. User is logged in, check PIN
-    if (pos.pinCode.value == null) {
-      return const PinCodeScreen(isSettingNewPin: true);
-    } else {
-      return const PinCodeScreen();
-    }
+    // 3. Authenticated - Go to Main Screen
+    return const MainNavigationScreen();
   }
 }
