@@ -280,6 +280,15 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> updateTableArea(String id, Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.put('/table-areas/$id', data: data);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<dynamic>> getTables() async {
     try {
       final response = await _dio.get('/tables');
