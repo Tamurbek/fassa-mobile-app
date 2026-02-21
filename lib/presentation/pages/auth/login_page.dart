@@ -10,6 +10,8 @@ import '../main_navigation_screen.dart';
 import 'pin_code_screen.dart';
 import 'terminal_selection_page.dart';
 
+import 'staff_selection_page.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -58,10 +60,29 @@ class _LoginPageState extends State<LoginPage> {
       print("Error getting device info: $e");
     }
 
+    final inputText = _emailController.text.trim();
+    final passwordText = _passwordController.text;
+
     try {
+      // 1. TERMINAL LOGIN (if input is not an email)
+      if (!inputText.contains('@')) {
+        final response = await ApiService().loginTerminal(inputText, passwordText);
+        Get.find<POSController>().setCurrentTerminal(response['terminal']);
+        
+        Get.snackbar(
+          'Muvaffaqiyatli',
+          '${response['terminal']['name']} terminaliga ulandi',
+          backgroundColor: Colors.green.withOpacity(0.7),
+          colorText: Colors.white,
+        );
+        Get.offAll(() => const StaffSelectionPage());
+        return;
+      }
+
+      // 2. USER LOGIN (if input is an email)
       final response = await ApiService().login(
-        _emailController.text.trim(),
-        _passwordController.text,
+        inputText,
+        passwordText,
         deviceId: deviceId,
         deviceName: deviceName,
       );
@@ -114,12 +135,12 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       Get.snackbar(
         'Login Failed',
-        'Invalid email or password',
+        inputText.contains('@') ? 'Invalid email or password' : 'Invalid terminal username or password',
         backgroundColor: Colors.red.withOpacity(0.7),
         colorText: Colors.white,
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -220,12 +241,12 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 48),
-                  _buildLabel('email_address'.tr),
+                  _buildLabel('login_id_or_email'.tr),
                   const SizedBox(height: 10),
                   _buildTextField(
                     controller: _emailController,
-                    hintText: 'email_address'.tr,
-                    prefixIcon: Icons.email_outlined,
+                    hintText: 'login_id_or_email'.tr,
+                    prefixIcon: Icons.badge_outlined,
                   ),
                   const SizedBox(height: 24),
                   Row(
