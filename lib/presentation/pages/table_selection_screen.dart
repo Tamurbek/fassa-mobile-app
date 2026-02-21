@@ -203,6 +203,11 @@ class _FloorPlanView extends StatelessWidget {
             final String tableId = "$location-$tableNum";
             final position = pos.tablePositions[tableId] ?? _getDefaultPosition(tableNum, floorWidth, floorHeight);
             
+            final Map<String, dynamic> props = pos.tableProperties[tableId] ?? {};
+            final double tableWidth = (props['width'] as num?)?.toDouble() ?? 80.0;
+            final double tableHeight = (props['height'] as num?)?.toDouble() ?? 80.0;
+            final String tableShape = props['shape']?.toString() ?? "square";
+
             final bool isOccupied = pos.allOrders.any((o) => 
               o['table'] == tableId && 
               !["Completed", "Cancelled"].contains(o['status'])
@@ -221,8 +226,8 @@ class _FloorPlanView extends StatelessWidget {
                   double newY = position['y']! + details.delta.dy;
                   
                   // Boundaries
-                  newX = newX.clamp(0.0, floorWidth - 80);
-                  newY = newY.clamp(0.0, floorHeight - 80);
+                  newX = newX.clamp(0.0, floorWidth - tableWidth);
+                  newY = newY.clamp(0.0, floorHeight - tableHeight);
                   
                   pos.updateTablePosition(tableId, newX, newY);
                 } : null,
@@ -258,6 +263,9 @@ class _FloorPlanView extends StatelessWidget {
                   isEditMode: pos.isEditMode.value,
                   lockedByUser: lockedByUser,
                   isLockedByOther: isLockedByOther,
+                  width: tableWidth,
+                  height: tableHeight,
+                  shape: tableShape,
                 ),
               ),
             );
@@ -282,6 +290,9 @@ class _TableWidget extends StatelessWidget {
   final bool isEditMode;
   final String? lockedByUser;
   final bool isLockedByOther;
+  final double width;
+  final double height;
+  final String shape;
 
   const _TableWidget({
     required this.tableNum,
@@ -289,18 +300,22 @@ class _TableWidget extends StatelessWidget {
     required this.isEditMode,
     this.lockedByUser,
     this.isLockedByOther = false,
+    this.width = 80.0,
+    this.height = 80.0,
+    this.shape = "square",
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 80,
-      height: 80,
+      width: width,
+      height: height,
       decoration: BoxDecoration(
         color: isLockedByOther 
             ? Colors.orange.withOpacity(0.1) 
             : (isOccupied ? Colors.red.withOpacity(0.1) : (isEditMode ? Colors.blue.withOpacity(0.05) : AppColors.white)),
-        borderRadius: BorderRadius.circular(20),
+        shape: shape == 'circle' ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: shape == 'circle' ? null : BorderRadius.circular(20),
         border: Border.all(
           color: isEditMode 
               ? Colors.blue.withOpacity(0.5) 

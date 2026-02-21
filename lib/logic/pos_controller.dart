@@ -84,6 +84,7 @@ class POSController extends GetxController {
   }.obs;
 
   var tablePositions = <String, Map<String, double>>{}.obs; // "Location-TableId": {"x": 100.0, "y": 200.0}
+  var tableProperties = <String, Map<String, dynamic>>{}.obs; // width, height, shape
   var tableBackendIds = <String, String>{}; // "Location-TableId": "backend_uuid"
   var isEditMode = false.obs;
 
@@ -307,6 +308,18 @@ class POSController extends GetxController {
         ));
       } catch (e) {
         print("Error loading table positions: $e");
+      }
+    }
+
+    var storedTableProperties = _storage.read('table_properties');
+    if (storedTableProperties != null) {
+      try {
+        final Map<String, dynamic> decoded = Map<String, dynamic>.from(storedTableProperties);
+        tableProperties.assignAll(decoded.map(
+          (key, value) => MapEntry(key, Map<String, dynamic>.from(value))
+        ));
+      } catch (e) {
+        print("Error loading table properties: $e");
       }
     }
   }
@@ -591,6 +604,12 @@ class POSController extends GetxController {
               "y": (t['y'] as num).toDouble()
             };
           }
+          
+          tableProperties[tableId] = {
+            "width": (t['width'] as num?)?.toDouble() ?? 80.0,
+            "height": (t['height'] as num?)?.toDouble() ?? 80.0,
+            "shape": t['shape']?.toString() ?? "square",
+          };
         }
         
         // Ensure all areas are present in tba
@@ -610,6 +629,7 @@ class POSController extends GetxController {
 
         tablesByArea.assignAll(tba);
         _storage.write('table_positions', Map.from(tablePositions));
+        _storage.write('table_properties', Map.from(tableProperties));
       }
     } catch (e) {
       print("Error fetching tables: $e");
