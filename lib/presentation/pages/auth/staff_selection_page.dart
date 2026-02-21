@@ -80,9 +80,8 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
               final pos = Get.find<POSController>();
               pos.setDeviceRole(null);
               pos.setWaiterCafeId(null);
-              pos.logout(forced: true);
-              
-              Get.offAllNamed('/');
+              pos.setCurrentTerminal(null);
+              pos.logout(forced: false);
             },
           ),
         ],
