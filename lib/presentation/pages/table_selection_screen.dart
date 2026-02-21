@@ -369,7 +369,10 @@ class _FloorPlanView extends StatelessWidget {
   }
 
   Map<String, double> _getDefaultPosition(String tableNum, double width, double height) {
-    int index = int.parse(tableNum) % 20;
+    // Extract numbers if possible, otherwise use hash
+    int? parsed = int.tryParse(tableNum.replaceAll(RegExp(r'[^0-9]'), ''));
+    int index = (parsed ?? tableNum.hashCode.abs()) % 20;
+    
     int cols = (width / 100).floor().clamp(1, 10);
     double x = (index % cols) * 100.0 + 20;
     double y = (index ~/ cols) * 100.0 + 20;

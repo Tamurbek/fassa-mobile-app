@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Bu ilova kafeda ekanligingizni tasdiqlash uchun joylashuvingizni bilishi kerak.</string>
 </dict>
 </plist>
