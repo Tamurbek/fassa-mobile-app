@@ -73,6 +73,7 @@ class POSController extends GetxController {
   var wifiPassword = "".obs;
   var instagram = "".obs;
   var telegram = "".obs;
+  var allowWaiterMobileOrders = true.obs;
 
   // Printing Toggles
   var enableKitchenPrint = true.obs;
@@ -355,6 +356,7 @@ class POSController extends GetxController {
     wifiPassword.value = _storage.read('wifi_password') ?? "";
     instagram.value = _storage.read('instagram') ?? "";
     telegram.value = _storage.read('telegram') ?? "";
+    allowWaiterMobileOrders.value = _storage.read('allow_waiter_mobile_orders') ?? true;
     
     enableKitchenPrint.value = _storage.read('enable_kitchen_print') ?? true;
     enableBillPrint.value = _storage.read('enable_bill_print') ?? true;
@@ -498,6 +500,7 @@ class POSController extends GetxController {
       if (wifiPasswordVal != null) updateData['wifi_password'] = wifiPasswordVal;
       if (instagramVal != null) updateData['instagram'] = instagramVal;
       if (telegramVal != null) updateData['telegram'] = telegramVal;
+      // Note: allow_waiter_mobile_orders might be added here too, if needed
 
       if (updateData.isEmpty) return;
 
@@ -522,7 +525,7 @@ class POSController extends GetxController {
       if (wifiPasswordVal != null) wifiPassword.value = updatedCafe['wifi_password'] ?? "";
       if (instagramVal != null) instagram.value = updatedCafe['instagram'] ?? "";
       if (telegramVal != null) telegram.value = updatedCafe['telegram'] ?? "";
-
+      
       // Save to local storage
       if (name != null) _storage.write('restaurant_name', restaurantName.value);
       if (address != null) _storage.write('restaurant_address', restaurantAddress.value);
@@ -552,6 +555,21 @@ class POSController extends GetxController {
     }
   }
 
+  Future<bool> switchUserWithPin(String userId, String pin) async {
+    try {
+      final data = await _api.loginWithPin(userId, pin, deviceId: "POS_Terminal", deviceName: "POS");
+      currentUser.value = data['user'];
+      _storage.write('user', data['user']);
+      
+      // Resync data with new user properties
+      await _fetchBackendData();
+      return true;
+    } catch (e) {
+      Get.snackbar("Xato", "Nato'g'ri PIN yoki server xatosi.", backgroundColor: Colors.red, colorText: Colors.white);
+      return false;
+    }
+  }
+
   Future<void> _fetchBackendData() async {
     if (currentUser.value == null) return;
     
@@ -577,6 +595,7 @@ class POSController extends GetxController {
       wifiPassword.value = cafe['wifi_password'] ?? "";
       instagram.value = cafe['instagram'] ?? "";
       telegram.value = cafe['telegram'] ?? "";
+      allowWaiterMobileOrders.value = cafe['allow_waiter_mobile_orders'] ?? true;
       
       _storage.write('restaurant_name', restaurantName.value);
       _storage.write('restaurant_address', restaurantAddress.value);
@@ -597,6 +616,7 @@ class POSController extends GetxController {
       _storage.write('wifi_password', wifiPassword.value);
       _storage.write('instagram', instagram.value);
       _storage.write('telegram', telegram.value);
+      _storage.write('allow_waiter_mobile_orders', allowWaiterMobileOrders.value);
     } catch (e) {
       print("Error fetching cafe info: $e");
     }
@@ -648,6 +668,9 @@ class POSController extends GetxController {
       printers.assignAll(backendPrinters.map((p) => PrinterModel.fromJson(p)).toList());
       savePrinters();
     } catch (e) {
+      print("Error fetching printers: $e");
+    }
+
       print("Error fetching printers: $e");
     }
 

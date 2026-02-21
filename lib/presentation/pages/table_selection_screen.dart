@@ -176,6 +176,11 @@ class _FloorPlanView extends StatelessWidget {
                     Get.to(() => const HomeScreen());
                   }
                 } else {
+                  if (pos.isWaiter && !pos.allowWaiterMobileOrders.value) {
+                    Get.snackbar("Ruxsat berilmagan", "Shaxsiy telefondan buyurtma olish taqiqlangan. Iltimos, POS terminaldan foydalaning.", 
+                      backgroundColor: Colors.red, colorText: Colors.white);
+                    return;
+                  }
                   pos.setTable(tableId);
                   Get.to(() => const HomeScreen());
                 }

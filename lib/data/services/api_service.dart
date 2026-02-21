@@ -65,6 +65,22 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> loginWithPin(String userId, String pinCode, {String? deviceId, String? deviceName}) async {
+    try {
+      final response = await _dio.post('/auth/login/pin', data: {
+        'user_id': userId,
+        'pin_code': pinCode,
+        'device_id': deviceId,
+        'device_name': deviceName,
+      });
+      _token = response.data['access_token'];
+      _storage.write('access_token', _token);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> updateLocation(double lat, double lng) async {
     try {
       final response = await _dio.post('/auth/location', data: {

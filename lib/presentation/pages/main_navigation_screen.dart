@@ -152,7 +152,7 @@ class MainNavigationScreen extends StatelessWidget {
 
   Widget _buildSidebarProfile(POSController pos) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF8F9FB),
@@ -171,10 +171,108 @@ class MainNavigationScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(pos.currentUser.value?['name'] ?? "Unknown", 
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1A1A1A))),
-                Text("manager".tr, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1A1A1A)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(pos.currentUser.value?['role'] ?? "Noma'lum", 
+                  style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11, fontWeight: FontWeight.bold)),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.swap_horiz, color: AppColors.primary),
+            tooltip: "Foydalanuvchini almashtirish",
+            onPressed: () => _showSwitchUserDialog(pos),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSwitchUserDialog(POSController pos) {
+    if (pos.users.isEmpty) {
+      Get.snackbar("Xato", "Foydalanuvchilar topilmadi", backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Profilni almashtirish", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: 300,
+          height: 300,
+          child: ListView.builder(
+            itemCount: pos.users.length,
+            itemBuilder: (context, index) {
+              final user = pos.users[index];
+              return ListTile(
+                leading: const CircleAvatar(
+                  backgroundColor: AppColors.primaryLight,
+                  child: Icon(Icons.person, color: AppColors.primary),
+                ),
+                title: Text(user['name'] ?? 'Noma\'lum', style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(user['role'] ?? ''),
+                onTap: () {
+                  Get.back();
+                  _showPinDialog(pos, user['id'], user['name']);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish", style: TextStyle(color: Colors.grey))),
+        ],
+      ),
+    );
+  }
+
+  void _showPinDialog(POSController pos, String userId, String userName) {
+    final pinController = TextEditingController();
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("$userName uchun PIN kod", style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: pinController,
+          decoration: InputDecoration(
+            hintText: "****",
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          keyboardType: TextInputType.number,
+          obscureText: true,
+          maxLength: 4,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 24, letterSpacing: 8),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish", style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+            onPressed: () async {
+              if (pinController.text.length != 4) {
+                Get.snackbar("Xato", "PIN kod 4 ta raqamdan iborat bo'lishi kerak", backgroundColor: Colors.orange, colorText: Colors.white);
+                return;
+              }
+              Get.back(); // Close dialog
+              
+              // Show loading
+              Get.dialog(const Center(child: CircularProgressIndicator(color: AppColors.primary)), barrierDismissible: false);
+              
+              final success = await pos.switchUserWithPin(userId, pinController.text);
+              
+              Get.back(); // close loading
+              
+              if (success) {
+                Get.snackbar("Muvaffaqiyatli", "Xush kelibsiz, $userName", backgroundColor: Colors.green, colorText: Colors.white);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text("Kirish", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

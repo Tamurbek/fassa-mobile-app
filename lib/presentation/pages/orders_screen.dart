@@ -111,12 +111,17 @@ class OrdersScreen extends StatelessWidget {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          heroTag: 'orders_fab',
-          onPressed: () => _showOrderTypeDialog(context, pos),
-          backgroundColor: AppColors.primary,
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
+        floatingActionButton: Obx(() {
+          if (pos.isWaiter && !pos.allowWaiterMobileOrders.value) {
+            return const SizedBox.shrink();
+          }
+          return FloatingActionButton(
+            heroTag: 'orders_fab',
+            onPressed: () => _showOrderTypeDialog(context, pos),
+            backgroundColor: AppColors.primary,
+            child: const Icon(Icons.add, color: Colors.white),
+          );
+        }),
       ),
     );
   }
