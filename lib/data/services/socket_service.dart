@@ -86,6 +86,17 @@ class SocketService {
     socket.on('tableLockStatus', (data) => callback(data));
   }
 
+  void onWaiterCall(Function(dynamic) callback) {
+    socket.on('waiterCall', (data) => callback(data));
+  }
+
+  void emitCallWaiter(Map<String, dynamic> data) {
+    if (_cafeId != null) {
+      data['cafe_id'] = _cafeId;
+    }
+    socket.emit('callWaiter', data);
+  }
+
   void disconnect() {
     socket.disconnect();
   }

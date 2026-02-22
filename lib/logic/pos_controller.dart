@@ -13,6 +13,8 @@ import '../data/services/socket_service.dart';
 import '../data/services/printer_service.dart';
 import '../data/services/update_service.dart';
 import '../theme/app_colors.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class POSController extends GetxController {
   final _storage = GetStorage();
@@ -20,6 +22,7 @@ class POSController extends GetxController {
   final _socket = SocketService();
   final _printer = PrinterService();
   final _update = UpdateService();
+  final _audioPlayer = AudioPlayer();
   
   var currentOrder = <Map<String, dynamic>>[].obs;
   var allOrders = <Map<String, dynamic>>[].obs;
@@ -922,6 +925,24 @@ class POSController extends GetxController {
       print("Socket: Data update notification received: $data");
       refreshData(showMessage: false); // Silent refresh
     });
+
+    _socket.onWaiterCall((data) {
+      final String targetWaiterId = data['waiter_id'].toString();
+      final String? currentUserId = currentUser.value?['id']?.toString();
+      
+      if (currentUserId == targetWaiterId) {
+        _playAlertSound();
+        Get.snackbar(
+          "Chaqiruv!", 
+          "${data['sender_name']} sizni chaqirmoqda",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 10),
+          icon: const Icon(Icons.notifications_active, color: Colors.white),
+          mainButton: TextButton(onPressed: () => Get.back(), child: const Text("OK", style: TextStyle(color: Colors.white))),
+        );
+      }
+    });
   }
 
   double get subtotal => currentOrder.fold(0, (sum, item) => sum + (item['item'].price * item['quantity']));
@@ -1430,6 +1451,33 @@ class POSController extends GetxController {
       Get.snackbar("Xato", "Stolni o'zgartirishda xatolik yuz berdi", 
         backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
     }
+  }
+
+  Future<void> _playAlertSound() async {
+    try {
+      // Use a system alert sounds or a bundled asset
+      // For now, let's use a common notification beep if we had one
+      // Since we don't have assets yet, we'll try a system sound or just rely on snackbar/vibration for now
+      // Actually, audioplayers can play system sounds on some platforms or we can bundle one later.
+      // Let's use a public URL for a beep sound as a placeholder
+      await _audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
+    } catch (e) {
+      print("Error playing alert sound: $e");
+    }
+  }
+
+  void callWaiter(Map<String, dynamic> waiter) {
+    if (!isAdmin && !isCashier) return;
+    
+    _socket.emitCallWaiter({
+      'waiter_id': waiter['id'],
+      'waiter_name': waiter['name'],
+      'sender_name': currentUser.value?['name'] ?? "Admin",
+      'message': "Tezda kassa yoniga keling",
+    });
+    
+    Get.snackbar("Signal yuborildi", "${waiter['name']}ga signal yuborildi", 
+      backgroundColor: Colors.blue, colorText: Colors.white);
   }
 
   void showWaiterSelectionDialog(String tableId, Function onSelected) {

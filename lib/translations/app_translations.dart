@@ -185,6 +185,7 @@ class AppTranslations extends Translations {
           'ok': 'OK',
           'home_page': 'Home',
           'sale': 'Sale',
+          'staff': 'Staff',
           'menu': 'Menu',
           'admin_panel': 'Admin Panel',
           'tables': 'Tables',
