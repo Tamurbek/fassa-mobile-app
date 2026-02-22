@@ -605,6 +605,16 @@ class POSController extends GetxController {
       _storage.write('user', data['user']);
       _storage.write('access_token', data['access_token']);
       
+      if (data['user']['pin_code'] != null) {
+        pinCode.value = data['user']['pin_code'].toString();
+        _storage.write('pin_code', pinCode.value);
+      }
+
+      if (data['user']['role'] != null) {
+        deviceRole.value = data['user']['role'].toString().toUpperCase();
+        _storage.write('device_role', deviceRole.value);
+      }
+      
       _socket.setCafeId(cafeId);
       await _fetchBackendData();
       return true;
@@ -1143,6 +1153,17 @@ class POSController extends GetxController {
     currentUser.value = user;
     if (user != null) {
       _storage.write('user', user);
+      
+      if (user['pin_code'] != null) {
+        pinCode.value = user['pin_code'].toString();
+        _storage.write('pin_code', pinCode.value);
+      }
+      
+      if (user['role'] != null) {
+        deviceRole.value = user['role'].toString().toUpperCase();
+        _storage.write('device_role', deviceRole.value);
+      }
+
       _socket.setCafeId(cafeId);
       _fetchBackendData(); // Sync data immediately after login
     } else {
