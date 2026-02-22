@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:async';
-import 'dart:io';
 import 'package:audioplayers/audioplayers.dart';
 import '../../data/models/food_item.dart';
 import '../../data/models/printer_model.dart';
@@ -115,6 +113,25 @@ abstract class POSControllerState extends GetxController {
     final terminalCafeId = currentTerminal.value?['cafe_id'];
     if (terminalCafeId != null) return terminalCafeId.toString();
     return waiterCafeId.value ?? "";
+  }
+
+  void toggleOrdersViewMode() {
+    isOrdersTableView.value = !isOrdersTableView.value;
+  }
+
+  void setEnableKitchenPrint(bool value) {
+    enableKitchenPrint.value = value;
+    storage.write('enable_kitchen_print', value);
+  }
+
+  void setEnableBillPrint(bool value) {
+    enableBillPrint.value = value;
+    storage.write('enable_bill_print', value);
+  }
+
+  void setEnablePaymentPrint(bool value) {
+    enablePaymentPrint.value = value;
+    storage.write('enable_payment_print', value);
   }
 
   // Abstract/Bridge methods that mixins will implement or call

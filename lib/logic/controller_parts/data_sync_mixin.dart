@@ -211,6 +211,21 @@ mixin DataSyncMixin on POSControllerState {
   void savePreparationAreas() => storage.write('preparation_areas', preparationAreas.map((v) => v.toJson()).toList());
   void savePrinters() => storage.write('printers', printers.map((v) => v.toJson()).toList());
 
+  Future<void> updateCafeInfo({String? name, String? address, String? phone}) async {
+    try {
+      Map<String, dynamic> data = {};
+      if (name != null) data['name'] = name;
+      if (address != null) data['address'] = address;
+      if (phone != null) data['phone'] = phone;
+      
+      await api.updateCafe(cafeId, data);
+      await fetchBackendData();
+    } catch (e) {
+      print("Error updating cafe info: $e");
+      rethrow;
+    }
+  }
+
   void setupSocketListeners() {
     socket.onOrderStatusUpdated((data) {
       int index = allOrders.indexWhere((o) => o['id'] == data['orderId']);

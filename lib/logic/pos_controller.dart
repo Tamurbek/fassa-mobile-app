@@ -13,6 +13,7 @@ import 'controller_parts/printer_mixin.dart';
 import 'controller_parts/product_mixin.dart';
 import 'controller_parts/staff_mixin.dart';
 import 'controller_parts/table_mixin.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class POSController extends POSControllerState with 
     UserAuthMixin, 

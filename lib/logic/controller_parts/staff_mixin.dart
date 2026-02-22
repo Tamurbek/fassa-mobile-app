@@ -36,4 +36,51 @@ mixin StaffMixin on POSControllerState {
     users.removeWhere((u) => u['id'] == id);
     storage.write('all_users', users.toList());
   }
+
+  void showWaiterSelectionDialog(String tableId, Function onSelected) {
+    if (users.isEmpty) { onSelected(); return; }
+    final waiters = users.where((u) => u['role'] == "WAITER").toList();
+    if (waiters.isEmpty) { onSelected(); return; }
+    bool didSelect = false;
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Afitsantni tanlang", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: waiters.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final w = waiters[index];
+              return ListTile(
+                leading: CircleAvatar(child: Text(w['name']?[0] ?? "W")),
+                title: Text(w['name'] ?? "Unknown"),
+                onTap: () {
+                  selectedWaiter.value = w['name'];
+                  didSelect = true;
+                  Get.back();
+                  onSelected();
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              selectedWaiter.value = null;
+              didSelect = true;
+              Get.back();
+              onSelected();
+            },
+            child: const Text("O'zimga biriktirish"),
+          ),
+        ],
+      ),
+    ).then((_) {
+      if (!didSelect) clearCurrentOrder();
+    });
+  }
 }

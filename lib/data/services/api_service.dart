@@ -116,7 +116,7 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> getQRToken(String userId) async {
+  Future<Map<String, dynamic>> getStaffQRToken(String userId) async {
     try {
       final response = await _dio.get('/auth/qr-token/$userId');
       return response.data;
@@ -424,6 +424,15 @@ class ApiService {
       return response.data;
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateTable(String id, Map<String, dynamic> data) async {
+    try {
+       final response = await _dio.put('/tables/$id', data: data);
+       return response.data;
+    } catch (e) {
+       rethrow;
     }
   }
 

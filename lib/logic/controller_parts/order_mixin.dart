@@ -84,6 +84,76 @@ mixin OrderMixin on POSControllerState {
     isOrderModified.value = currentJson != originalOrderJson;
   }
 
+  Future<void> updateOrderStatus(int orderId, String status) async {
+    try {
+      await api.updateOrderStatus(orderId, status);
+      int index = allOrders.indexWhere((o) => o['id'] == orderId);
+      if (index != -1) {
+        allOrders[index]['status'] = status.toString().replaceAll("_", " ").split(" ").map((s) => s.toLowerCase().capitalizeFirst).join(" ");
+        allOrders.refresh();
+        saveAllOrders();
+      }
+    } catch (e) {
+      print("Error updating status: $e");
+    }
+  }
+
+  void deleteOrder(int orderId) {
+    allOrders.removeWhere((o) => o['id'] == orderId);
+    printedKitchenQuantities.remove(orderId.toString());
+    storage.write('printed_kitchen_items', Map.from(printedKitchenQuantities));
+    allOrders.refresh();
+    saveAllOrders();
+  }
+
+  Future<void> changeOrderTable(int orderId, String newTableId) async {
+    try {
+      await api.updateOrder(orderId, {"table_number": newTableId});
+      int index = allOrders.indexWhere((o) => o['id'] == orderId);
+      if (index != -1) {
+        allOrders[index]['table'] = newTableId;
+        allOrders.refresh();
+        saveAllOrders();
+      }
+      Get.snackbar("Stol o'zgartirildi", "Buyurtma $newTableId-stolga o'tkazildi", 
+        backgroundColor: Colors.green, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    } catch (e) {
+      print("Error updating table: $e");
+      Get.snackbar("Xato", "Stolni o'zgartirishda xatolik yuz berdi", 
+        backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  void showQuantityDialog(int index) {
+    final TextEditingController controller = TextEditingController(
+      text: currentOrder[index]['quantity'].toString()
+    );
+    Get.dialog(
+      AlertDialog(
+        title: Text(currentOrder[index]['item'].name),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: "Miqdori"),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish")),
+          ElevatedButton(
+            onPressed: () {
+              int? val = int.tryParse(controller.text);
+              if (val != null) {
+                setAbsoluteQuantity(index, val);
+                Get.back();
+              }
+            },
+            child: const Text("Saqlash"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void clearCurrentOrder() {
     if (selectedTable.value.isNotEmpty) {
       socket.emitTableUnlock(selectedTable.value);

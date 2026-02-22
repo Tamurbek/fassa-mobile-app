@@ -167,4 +167,35 @@ mixin PrinterMixin on POSControllerState {
   Future<void> testPrinter(PrinterModel printer) async {
     await printerService.printTestPage(printer);
   }
+
+  Future<void> addPrinter(PrinterModel printer) async {
+    try {
+      final json = printer.toJson();
+      json['cafe_id'] = cafeId;
+      final newPrinter = await api.createPrinter(json);
+      printers.add(PrinterModel.fromJson(newPrinter));
+      savePrinters();
+    } catch (e) { print("Error adding printer: $e"); }
+  }
+
+  Future<void> updatePrinter(PrinterModel printer) async {
+    try {
+      final json = printer.toJson();
+      json.remove('id');
+      final updatedPrinter = await api.updatePrinter(printer.id, json);
+      int index = printers.indexWhere((p) => p.id == printer.id);
+      if (index != -1) {
+        printers[index] = PrinterModel.fromJson(updatedPrinter);
+        savePrinters();
+      }
+    } catch (e) { print("Error updating printer: $e"); }
+  }
+
+  Future<void> deletePrinter(String id) async {
+    try {
+      await api.deletePrinter(id);
+      printers.removeWhere((p) => p.id == id);
+      savePrinters();
+    } catch (e) { print("Error deleting printer: $e"); }
+  }
 }

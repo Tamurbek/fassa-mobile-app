@@ -219,6 +219,10 @@ mixin UserAuthMixin on POSControllerState {
     }
   }
 
+  void lockTerminal() {
+    logout(forced: false);
+  }
+
   void setPinCode(String code) {
     pinCode.value = code;
     storage.write('pin_code', code);
@@ -228,14 +232,16 @@ mixin UserAuthMixin on POSControllerState {
     isPinAuthenticated.value = status;
   }
 
-  Future<void> switchUserWithPin(String userId, String pin) async {
+  Future<bool> switchUserWithPin(String userId, String pin) async {
     try {
       final response = await api.loginWithPin(userId, pin);
       setCurrentUser(response['user']);
       authenticatePin(true);
       Get.offAllNamed('/main-navigation');
+      return true;
     } catch (e) {
       Get.snackbar("Xato", "PIN kod noto'g'ri", backgroundColor: Colors.red, colorText: Colors.white);
+      return false;
     }
   }
 
