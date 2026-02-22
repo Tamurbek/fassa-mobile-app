@@ -17,6 +17,14 @@ class StaffManagementScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Xodimlar boshqaruvi"),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_rounded, color: AppColors.primary),
+            onPressed: () => _showGeneralQRDialog(context, pos),
+            tooltip: "Umumiy ulanish QR kodi",
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Obx(() {
         final staff = pos.users.where((u) => u['role'] == "WAITER" || u['role'] == "CASHIER").toList();
@@ -87,6 +95,51 @@ class StaffManagementScreen extends StatelessWidget {
         onPressed: () => _showStaffDialog(context, pos),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
+      ),
+    );
+  }
+
+  void _showGeneralQRDialog(BuildContext context, POSController pos) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("Umumiy ulanish QR kodi", textAlign: TextAlign.center, 
+          style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Yangi xodimlar ushbu kodni skanerlab kafega ulanishlari mumkin", 
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: QrImageView(
+                data: "${ApiService().currentBaseUrl}|${pos.cafeId}",
+                version: QrVersions.auto,
+                size: 220.0,
+                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.circle, color: Colors.black),
+                dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(pos.restaurantName.value, 
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          Center(
+            child: TextButton(
+              onPressed: () => Get.back(), 
+              child: const Text("Yopish", style: TextStyle(fontWeight: FontWeight.bold))
+            ),
+          )
+        ],
       ),
     );
   }
