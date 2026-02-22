@@ -114,7 +114,15 @@ class POSController extends GetxController {
   bool get isWaiter => currentUser.value?['role'] == "WAITER";
   bool get isCashier => currentUser.value?['role'] == "CASHIER";
 
-  String get cafeId => currentUser.value?['cafe_id'] ?? "";
+  String get cafeId {
+    final userCafeId = currentUser.value?['cafe_id'];
+    if (userCafeId != null) return userCafeId.toString();
+    
+    final terminalCafeId = currentTerminal.value?['cafe_id'];
+    if (terminalCafeId != null) return terminalCafeId.toString();
+    
+    return waiterCafeId.value ?? "";
+  }
 
   @override
   void onInit() {

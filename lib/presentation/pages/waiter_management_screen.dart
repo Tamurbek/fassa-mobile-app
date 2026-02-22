@@ -100,6 +100,12 @@ class StaffManagementScreen extends StatelessWidget {
   }
 
   void _showGeneralQRDialog(BuildContext context, POSController pos) {
+    print("Opening general QR dialog for cafe: ${pos.cafeId}");
+    if (pos.cafeId.isEmpty) {
+      Get.snackbar("Xato", "Kafe ID topilmadi. Iltimos, qayta kiring.", backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -128,8 +134,8 @@ class StaffManagementScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Text(pos.restaurantName.value, 
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            Obx(() => Text(pos.restaurantName.value, 
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))),
           ],
         ),
         actions: [
@@ -145,62 +151,79 @@ class StaffManagementScreen extends StatelessWidget {
   }
 
   void _showQRDialog(BuildContext context, POSController pos, Map<String, dynamic> member) async {
+    final String userId = member['id']?.toString() ?? "";
+    print("Requesting QR token for user: $userId");
+
+    if (userId.isEmpty) {
+      Get.snackbar("Xato", "Xodim ID topilmadi", backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
     Get.dialog(
       const Center(child: CircularProgressIndicator()),
       barrierDismissible: false,
     );
 
-    final token = await pos.getStaffQRToken(member['id']);
-    Get.back(); // Close loading
+    try {
+      final token = await pos.getStaffQRToken(userId);
+      
+      if (Get.isDialogOpen ?? false) Get.back(); // Close loading
 
-    if (token == null) {
-      Get.snackbar("Xato", "QR kod yaratib bo'lmadi", backgroundColor: Colors.red, colorText: Colors.white);
-      return;
-    }
+      if (token == null) {
+        Get.snackbar("Xato", "QR kod yaratib bo'lmadi", backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
 
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(member['name'], textAlign: TextAlign.center, 
-          style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Telefoningizdan ushbu QR kodni skanerlang", 
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+      Get.dialog(
+        AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(member['name'], textAlign: TextAlign.center, 
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Telefoningizdan ushbu QR kodni skanerlang", 
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                ),
+                child: QrImageView(
+                  data: "${ApiService().currentBaseUrl}|$token",
+                  version: QrVersions.auto,
+                  size: 200.0,
+                  eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.circle, color: Colors.black),
+                  dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: Colors.black),
+                ),
               ),
-              child: QrImageView(
-                data: "${ApiService().currentBaseUrl}|$token",
-                version: QrVersions.auto,
-                size: 200.0,
-                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.circle, color: Colors.black),
-                dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: Colors.black),
+              const SizedBox(height: 16),
+              const Text("Bu kod 5 daqiqa davomida amal qiladi", 
+                style: TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w500)),
+            ],
+          ),
+          actions: [
+            Center(
+              child: TextButton(
+                onPressed: () => Get.back(), 
+                child: const Text("Yopish", style: TextStyle(fontWeight: FontWeight.bold))
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text("Bu kod 5 daqiqa davomida amal qiladi", 
-              style: TextStyle(fontSize: 11, color: Colors.orange, fontWeight: FontWeight.w500)),
+            )
           ],
         ),
-        actions: [
-          Center(
-            child: TextButton(
-              onPressed: () => Get.back(), 
-              child: const Text("Yopish", style: TextStyle(fontWeight: FontWeight.bold))
-            ),
-          )
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      if (Get.isDialogOpen ?? false) Get.back();
+      print("Error in _showQRDialog: $e");
+      Get.snackbar("Xato", "Xatolik yuz berdi: $e", backgroundColor: Colors.red, colorText: Colors.white);
+    }
   }
+
+
 
   void _showStaffDialog(BuildContext context, POSController pos, {Map<String, dynamic>? member}) {
     final isEditing = member != null;
