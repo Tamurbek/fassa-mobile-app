@@ -119,7 +119,7 @@ class ReportsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            _buildStickyFooter(context),
+            _buildStickyFooter(context, todayRevenue),
           ],
         );
       }),
@@ -279,7 +279,7 @@ class ReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStickyFooter(BuildContext context) {
+  Widget _buildStickyFooter(BuildContext context, double todayRevenue) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
