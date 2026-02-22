@@ -632,195 +632,207 @@ class POSController extends GetxController {
   Future<void> _fetchBackendData() async {
     if (currentUser.value == null) return;
     
-    // Fetch Cafe Info (including service fees)
-    try {
-      final cafe = await _api.getCafe(cafeId);
-      restaurantName.value = cafe['name'] ?? "";
-      restaurantAddress.value = cafe['address'] ?? "";
-      restaurantPhone.value = cafe['phone'] ?? "";
-      restaurantLogo.value = cafe['logo'] ?? "";
-      currency.value = cafe['currency'] ?? "UZS";
-      serviceFeeDineIn.value = (cafe['service_fee_dine_in'] ?? 10.0).toDouble();
-      serviceFeeTakeaway.value = (cafe['service_fee_takeaway'] ?? 0.0).toDouble();
-      serviceFeeDelivery.value = (cafe['service_fee_delivery'] ?? 3000.0).toDouble();
-      
-      receiptStyle.value = cafe['receipt_style'] ?? "STANDARD";
-      receiptHeader.value = cafe['receipt_header'] ?? "";
-      receiptFooter.value = cafe['receipt_footer'] ?? "Xaridingiz uchun rahmat!";
-      showLogo.value = cafe['show_logo'] ?? true;
-      showWaiter.value = cafe['show_waiter'] ?? true;
-      showWifi.value = cafe['show_wifi'] ?? false;
-      wifiSsid.value = cafe['wifi_ssid'] ?? "";
-      wifiPassword.value = cafe['wifi_password'] ?? "";
-      instagram.value = cafe['instagram'] ?? "";
-      telegram.value = cafe['telegram'] ?? "";
-      allowWaiterMobileOrders.value = cafe['allow_waiter_mobile_orders'] ?? true;
-      
-      _storage.write('restaurant_name', restaurantName.value);
-      _storage.write('restaurant_address', restaurantAddress.value);
-      _storage.write('restaurant_phone', restaurantPhone.value);
-      _storage.write('restaurant_logo', restaurantLogo.value);
-      _storage.write('currency', currency.value);
-      _storage.write('service_fee_dine_in', serviceFeeDineIn.value);
-      _storage.write('service_fee_takeaway', serviceFeeTakeaway.value);
-      _storage.write('service_fee_delivery', serviceFeeDelivery.value);
-      
-      _storage.write('receipt_style', receiptStyle.value);
-      _storage.write('receipt_header', receiptHeader.value);
-      _storage.write('receipt_footer', receiptFooter.value);
-      _storage.write('show_logo', showLogo.value);
-      _storage.write('show_waiter', showWaiter.value);
-      _storage.write('show_wifi', showWifi.value);
-      _storage.write('wifi_ssid', wifiSsid.value);
-      _storage.write('wifi_password', wifiPassword.value);
-      _storage.write('instagram', instagram.value);
-      _storage.write('telegram', telegram.value);
-      _storage.write('allow_waiter_mobile_orders', allowWaiterMobileOrders.value);
-    } catch (e) {
-      print("Error fetching cafe info: $e");
-    }
-    
-    // Fetch Categories
-    try {
-      final backendCategories = await _api.getCategories();
-      categoriesObjects.assignAll(List<Map<String, dynamic>>.from(backendCategories));
-      categories.assignAll(["All", ...backendCategories.map((c) => c['name'].toString())]);
-      _storage.write('categories_objects', categoriesObjects.toList());
-      saveCategories();
-    } catch (e) {
-      print("Error fetching categories: $e");
-    }
-
-    // Fetch Products
-    try {
-      final backendProducts = await _api.getProducts();
-      print("Fetched ${backendProducts.length} products from backend");
-      
-      List<FoodItem> parsedProducts = [];
-      for (var p in backendProducts) {
+    await Future.wait([
+      // 1. Fetch Cafe Info
+      () async {
         try {
-          parsedProducts.add(FoodItem.fromJson(p));
+          final cafe = await _api.getCafe(cafeId);
+          restaurantName.value = cafe['name'] ?? "";
+          restaurantAddress.value = cafe['address'] ?? "";
+          restaurantPhone.value = cafe['phone'] ?? "";
+          restaurantLogo.value = cafe['logo'] ?? "";
+          currency.value = cafe['currency'] ?? "UZS";
+          serviceFeeDineIn.value = (cafe['service_fee_dine_in'] ?? 10.0).toDouble();
+          serviceFeeTakeaway.value = (cafe['service_fee_takeaway'] ?? 0.0).toDouble();
+          serviceFeeDelivery.value = (cafe['service_fee_delivery'] ?? 3000.0).toDouble();
+          
+          receiptStyle.value = cafe['receipt_style'] ?? "STANDARD";
+          receiptHeader.value = cafe['receipt_header'] ?? "";
+          receiptFooter.value = cafe['receipt_footer'] ?? "Xaridingiz uchun rahmat!";
+          showLogo.value = cafe['show_logo'] ?? true;
+          showWaiter.value = cafe['show_waiter'] ?? true;
+          showWifi.value = cafe['show_wifi'] ?? false;
+          wifiSsid.value = cafe['wifi_ssid'] ?? "";
+          wifiPassword.value = cafe['wifi_password'] ?? "";
+          instagram.value = cafe['instagram'] ?? "";
+          telegram.value = cafe['telegram'] ?? "";
+          allowWaiterMobileOrders.value = cafe['allow_waiter_mobile_orders'] ?? true;
+          
+          _storage.write('restaurant_name', restaurantName.value);
+          _storage.write('restaurant_address', restaurantAddress.value);
+          _storage.write('restaurant_phone', restaurantPhone.value);
+          _storage.write('restaurant_logo', restaurantLogo.value);
+          _storage.write('currency', currency.value);
+          _storage.write('service_fee_dine_in', serviceFeeDineIn.value);
+          _storage.write('service_fee_takeaway', serviceFeeTakeaway.value);
+          _storage.write('service_fee_delivery', serviceFeeDelivery.value);
+          
+          _storage.write('receipt_style', receiptStyle.value);
+          _storage.write('receipt_header', receiptHeader.value);
+          _storage.write('receipt_footer', receiptFooter.value);
+          _storage.write('show_logo', showLogo.value);
+          _storage.write('show_waiter', showWaiter.value);
+          _storage.write('show_wifi', showWifi.value);
+          _storage.write('wifi_ssid', wifiSsid.value);
+          _storage.write('wifi_password', wifiPassword.value);
+          _storage.write('instagram', instagram.value);
+          _storage.write('telegram', telegram.value);
+          _storage.write('allow_waiter_mobile_orders', allowWaiterMobileOrders.value);
         } catch (e) {
-          print("Skipping product due to parse error: $e");
+          print("Error fetching cafe info: $e");
         }
-      }
-      
-      products.assignAll(parsedProducts);
-      print("Successfully parsed ${products.length} products: ${products.map((e) => e.name).join(', ')}");
-      saveProducts();
-    } catch (e) {
-      print("Error fetching products: $e");
-    }
+      }(),
 
-    // Fetch Preparation Areas
-    try {
-      final backendPrepAreas = await _api.getPreparationAreas();
-      preparationAreas.assignAll(backendPrepAreas.map((a) => PreparationAreaModel.fromJson(a)).toList());
-      savePreparationAreas();
-    } catch (e) {
-      print("Error fetching preparation areas: $e");
-    }
-
-    // Fetch Printers
-    try {
-      final backendPrinters = await _api.getPrinters();
-      printers.assignAll(backendPrinters.map((p) => PrinterModel.fromJson(p)).toList());
-      savePrinters();
-    } catch (e) {
-      print("Error fetching printers: $e");
-    }
-
-    // Fetch Orders
-    try {
-      final backendOrders = await _api.getOrders();
-      allOrders.assignAll(backendOrders.map((o) => _normalizeOrder(o)).toList());
-      saveAllOrders();
-    } catch (e) {
-      print("Error fetching orders: $e");
-    }
-
-    // Fetch Tables & Floor Plan
-    try {
-      final backendAreas = await _api.getTableAreas();
-      if (backendAreas.isNotEmpty) {
-        tableAreas.assignAll(backendAreas.map((a) => a['name'].toString()).toList());
-        for (var a in backendAreas) {
-          final String name = a['name'].toString();
-          tableAreaBackendIds[name] = a['id'].toString();
-          tableAreaDetails[name] = {
-            "width_m": (a['width_m'] as num?)?.toDouble() ?? 10.0,
-            "height_m": (a['height_m'] as num?)?.toDouble() ?? 10.0,
-          };
+      // 2. Fetch Categories
+      () async {
+        try {
+          final backendCategories = await _api.getCategories();
+          categoriesObjects.assignAll(List<Map<String, dynamic>>.from(backendCategories));
+          categories.assignAll(["All", ...backendCategories.map((c) => c['name'].toString())]);
+          _storage.write('categories_objects', categoriesObjects.toList());
+          saveCategories();
+        } catch (e) {
+          print("Error fetching categories: $e");
         }
-      }
+      }(),
 
-      final backendTables = await _api.getTables();
-      if (backendTables.isNotEmpty || backendAreas.isNotEmpty) {
-        Map<String, List<String>> tba = {};
-        for (var area in tableAreas) {
-           tba[area] = [];
-        }
-
-        for (var t in backendTables) {
-          final String loc = t['area'] ?? t['location'] ?? "Zal"; 
-          final String tableNum = t['number'] != null ? t['number'].toString() : "01";
-          final String tableId = "$loc-$tableNum";
-
-          if (!tba.containsKey(loc)) {
-            tba[loc] = [];
-            if (!tableAreas.contains(loc)) tableAreas.add(loc);
+      // 3. Fetch Products
+      () async {
+        try {
+          final backendProducts = await _api.getProducts();
+          List<FoodItem> parsedProducts = [];
+          for (var p in backendProducts) {
+            try {
+              parsedProducts.add(FoodItem.fromJson(p));
+            } catch (e) {
+              print("Skipping product due to parse error: $e");
+            }
           }
-          tba[loc]!.add(tableNum);
-          
-          tableBackendIds[tableId] = t['id'].toString();
-          
-          if (t['x'] != null && t['y'] != null) {
-            tablePositions[tableId] = {
-              "x": (t['x'] as num).toDouble(),
-              "y": (t['y'] as num).toDouble()
-            };
+          products.assignAll(parsedProducts);
+          saveProducts();
+        } catch (e) {
+          print("Error fetching products: $e");
+        }
+      }(),
+
+      // 4. Fetch Prep Areas
+      () async {
+        try {
+          final backendPrepAreas = await _api.getPreparationAreas();
+          preparationAreas.assignAll(backendPrepAreas.map((a) => PreparationAreaModel.fromJson(a)).toList());
+          savePreparationAreas();
+        } catch (e) {
+          print("Error fetching preparation areas: $e");
+        }
+      }(),
+
+      // 5. Fetch Printers
+      () async {
+        try {
+          final backendPrinters = await _api.getPrinters();
+          printers.assignAll(backendPrinters.map((p) => PrinterModel.fromJson(p)).toList());
+          savePrinters();
+        } catch (e) {
+          print("Error fetching printers: $e");
+        }
+      }(),
+
+      // 6. Fetch Orders
+      () async {
+        try {
+          final backendOrders = await _api.getOrders();
+          allOrders.assignAll(backendOrders.map((o) => _normalizeOrder(o)).toList());
+          saveAllOrders();
+        } catch (e) {
+          print("Error fetching orders: $e");
+        }
+      }(),
+
+      // 7. Fetch Tables & Floor Plan
+      () async {
+        try {
+          final backendAreas = await _api.getTableAreas();
+          if (backendAreas.isNotEmpty) {
+            tableAreas.assignAll(backendAreas.map((a) => a['name'].toString()).toList());
+            for (var a in backendAreas) {
+              final String name = a['name'].toString();
+              tableAreaBackendIds[name] = a['id'].toString();
+              tableAreaDetails[name] = {
+                "width_m": (a['width_m'] as num?)?.toDouble() ?? 10.0,
+                "height_m": (a['height_m'] as num?)?.toDouble() ?? 10.0,
+              };
+            }
           }
-          
-          tableProperties[tableId] = {
-            "width": (t['width'] as num?)?.toDouble() ?? 80.0,
-            "height": (t['height'] as num?)?.toDouble() ?? 80.0,
-            "shape": t['shape']?.toString() ?? "square",
-          };
+
+          final backendTables = await _api.getTables();
+          if (backendTables.isNotEmpty || backendAreas.isNotEmpty) {
+            Map<String, List<String>> tba = {};
+            for (var area in tableAreas) {
+               tba[area] = [];
+            }
+
+            for (var t in backendTables) {
+              final String loc = t['area'] ?? t['location'] ?? "Zal"; 
+              final String tableNum = t['number'] != null ? t['number'].toString() : "01";
+              final String tableId = "$loc-$tableNum";
+
+              if (!tba.containsKey(loc)) {
+                tba[loc] = [];
+                if (!tableAreas.contains(loc)) tableAreas.add(loc);
+              }
+              tba[loc]!.add(tableNum);
+              
+              tableBackendIds[tableId] = t['id'].toString();
+              
+              if (t['x'] != null && t['y'] != null) {
+                tablePositions[tableId] = {
+                  "x": (t['x'] as num).toDouble(),
+                  "y": (t['y'] as num).toDouble()
+                };
+              }
+              
+              tableProperties[tableId] = {
+                "width": (t['width'] as num?)?.toDouble() ?? 80.0,
+                "height": (t['height'] as num?)?.toDouble() ?? 80.0,
+                "shape": t['shape']?.toString() ?? "square",
+              };
+            }
+            
+            for (var a in tableAreas) {
+                if (!tba.containsKey(a)) tba[a] = [];
+            }
+
+            tba.forEach((key, value) {
+              value.sort((a, b) {
+                 int numA = int.tryParse(a) ?? 0;
+                 int numB = int.tryParse(b) ?? 0;
+                 if (numA != 0 && numB != 0) return numA.compareTo(numB);
+                 return a.compareTo(b);
+              });
+            });
+
+            tablesByArea.assignAll(tba);
+            _storage.write('table_positions', Map.from(tablePositions));
+            _storage.write('table_properties', Map.from(tableProperties));
+          }
+        } catch (e) {
+          print("Error fetching tables: $e");
         }
-        
-        // Ensure all areas are present in tba
-        for (var a in tableAreas) {
-            if (!tba.containsKey(a)) tba[a] = [];
+      }(),
+
+      // 8. Fetch Users
+      () async {
+        if (isAdmin || isCashier) {
+          try {
+            final backendUsers = await _api.getUsers();
+            users.assignAll(List<Map<String, dynamic>>.from(backendUsers));
+            _storage.write('all_users', users.toList());
+          } catch (e) {
+            print("Error fetching users: $e");
+          }
         }
-
-        // Sort table numbers if they represent numbers natively
-        tba.forEach((key, value) {
-          value.sort((a, b) {
-             int numA = int.tryParse(a) ?? 0;
-             int numB = int.tryParse(b) ?? 0;
-             if (numA != 0 && numB != 0) return numA.compareTo(numB);
-             return a.compareTo(b);
-          });
-        });
-
-        tablesByArea.assignAll(tba);
-        _storage.write('table_positions', Map.from(tablePositions));
-        _storage.write('table_properties', Map.from(tableProperties));
-      }
-    } catch (e) {
-      print("Error fetching tables: $e");
-    }
-
-    // Fetch Users (Waiters)
-    if (isAdmin || isCashier) {
-      try {
-        final backendUsers = await _api.getUsers();
-        users.assignAll(List<Map<String, dynamic>>.from(backendUsers));
-        _storage.write('all_users', users.toList());
-      } catch (e) {
-        print("Error fetching users: $e");
-      }
-    }
+      }(),
+    ]);
   }
 
   Map<String, dynamic> _normalizeOrder(Map<String, dynamic> o) {
