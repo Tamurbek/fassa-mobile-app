@@ -100,9 +100,18 @@ class StaffManagementScreen extends StatelessWidget {
   }
 
   void _showGeneralQRDialog(BuildContext context, POSController pos) {
+    print("General QR requested. CafeId: '${pos.cafeId}', BaseUrl: '${ApiService().currentBaseUrl}'");
+    
     if (pos.cafeId.isEmpty) {
-      Get.snackbar("Xato", "Kafe ID topilmadi", backgroundColor: Colors.red, colorText: Colors.white);
+      Get.snackbar("Xato", "Kafe ID topilmadi. Iltimos, qayta kiring.", 
+        backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
       return;
+    }
+
+    // Modernize the URL (remove trailing slash for cleaner QR data)
+    String baseUrl = ApiService().currentBaseUrl;
+    if (baseUrl.endsWith('/')) {
+      baseUrl = baseUrl.substring(0, baseUrl.length - 1);
     }
 
     Get.dialog(
@@ -124,12 +133,16 @@ class StaffManagementScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.grey.withOpacity(0.2)),
               ),
-              child: QrImageView(
-                data: "${ApiService().currentBaseUrl}|${pos.cafeId}",
-                version: QrVersions.auto,
-                size: 220.0,
-                eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.circle, color: Colors.black),
-                dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: Colors.black),
+              child: SizedBox(
+                width: 220,
+                height: 220,
+                child: QrImageView(
+                  data: "$baseUrl|${pos.cafeId}",
+                  version: QrVersions.auto,
+                  size: 220.0,
+                  eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.circle, color: Colors.black),
+                  dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: Colors.black),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -151,6 +164,8 @@ class StaffManagementScreen extends StatelessWidget {
 
   void _showQRDialog(BuildContext context, POSController pos, Map<String, dynamic> member) async {
     final String userId = member['id']?.toString() ?? "";
+    print("Staff QR requested for user: $userId (${member['name']})");
+
     if (userId.isEmpty) {
       Get.snackbar("Xato", "Xodim ID topilmadi", backgroundColor: Colors.red, colorText: Colors.white);
       return;
@@ -163,11 +178,22 @@ class StaffManagementScreen extends StatelessWidget {
 
     try {
       final token = await pos.getStaffQRToken(userId);
+      print("Token received: ${token != null ? 'YES' : 'NULL'}");
+      
       if (Get.isDialogOpen ?? false) Get.back();
 
       if (token == null) {
-        Get.snackbar("Xato", "QR kod yaratib bo'lmadi", backgroundColor: Colors.red, colorText: Colors.white);
+        Get.snackbar("Xato", "QR kod yaratib bo'lmadi (Server xatosi)", 
+          backgroundColor: Colors.red, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
         return;
+      }
+
+      // Small delay to ensure previous dialog is fully closed and layout is stable
+      await Future.delayed(const Duration(milliseconds: 150));
+
+      String baseUrl = ApiService().currentBaseUrl;
+      if (baseUrl.endsWith('/')) {
+        baseUrl = baseUrl.substring(0, baseUrl.length - 1);
       }
 
       Get.dialog(
@@ -189,12 +215,16 @@ class StaffManagementScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.grey.withOpacity(0.2)),
                 ),
-                child: QrImageView(
-                  data: "${ApiService().currentBaseUrl}|$token",
-                  version: QrVersions.auto,
-                  size: 200.0,
-                  eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.circle, color: Colors.black),
-                  dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: Colors.black),
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: QrImageView(
+                    data: "$baseUrl|$token",
+                    version: QrVersions.auto,
+                    size: 200.0,
+                    eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.circle, color: Colors.black),
+                    dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.circle, color: Colors.black),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -214,6 +244,7 @@ class StaffManagementScreen extends StatelessWidget {
       );
     } catch (e) {
       if (Get.isDialogOpen ?? false) Get.back();
+      print("Exception in _showQRDialog: $e");
       Get.snackbar("Xato", "Xatolik yuz berdi: $e", backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
