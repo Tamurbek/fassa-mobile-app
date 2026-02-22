@@ -604,41 +604,100 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          _buildSidebarBtn("kitchen_print_sidebar".tr, const Color(0xFF3B82F6), Icons.print, () async {
-          if (!pos.hasNewItems) {
-            Get.snackbar("Eslatma", "Oshxonaga yuborish uchun yangi mahsulot qo'shilmadi", 
-              backgroundColor: Colors.orange, colorText: Colors.white);
-            return;
-          }
-          bool success = await pos.submitOrder(isPaid: false);
-          if (success) {
-            Get.offAll(() => const MainNavigationScreen());
-          }
-        }),
-          const SizedBox(height: 12),
-          _buildSidebarBtn("Hisob chekini chiqarish", const Color(0xFF64748B), Icons.receipt_long_rounded, () {
-            final tempOrder = {
-              "id": pos.editingOrderId.value ?? "NEW",
-              "table": pos.selectedTable.value.isNotEmpty ? pos.selectedTable.value : "-",
-              "mode": pos.currentMode.value,
-              "total": pos.total,
-              "details": pos.currentOrder.map((e) => {
-                "id": (e['item'] as FoodItem).id,
-                "name": (e['item'] as FoodItem).name,
-                "qty": e['quantity'],
-                "price": (e['item'] as FoodItem).price,
-              }).toList(),
-            };
-            pos.printOrder(tempOrder, receiptTitle: "HISOB CHEKI");
-          }),
-          const SizedBox(height: 12),
-          _buildSidebarBtn("pay_finish_sidebar".tr, const Color(0xFFFF9500), Icons.payments, () async {
-            bool success = await pos.submitOrder(isPaid: true);
-            if (success) {
-              Get.offAll(() => const MainNavigationScreen());
-            }
-          }),
+          Row(
+            children: [
+              // Kitchen Print
+              Expanded(
+                child: _buildActionBtn(Icons.soup_kitchen_rounded, const Color(0xFF3B82F6), () async {
+                  if (!pos.hasNewItems) {
+                    Get.snackbar("Eslatma", "Oshxonaga yuborish uchun yangi mahsulot qo'shilmadi", 
+                      backgroundColor: Colors.orange, colorText: Colors.white);
+                    return;
+                  }
+                  bool success = await pos.submitOrder(isPaid: false);
+                  if (success) {
+                    Get.offAll(() => const MainNavigationScreen());
+                  }
+                }, tooltip: "kitchen_print_sidebar".tr),
+              ),
+              const SizedBox(width: 8),
+              // Receipt Print
+              Expanded(
+                child: _buildActionBtn(Icons.receipt_long_rounded, const Color(0xFF64748B), () {
+                  final tempOrder = {
+                    "id": pos.editingOrderId.value ?? "NEW",
+                    "table": pos.selectedTable.value.isNotEmpty ? pos.selectedTable.value : "-",
+                    "mode": pos.currentMode.value,
+                    "total": pos.total,
+                    "details": pos.currentOrder.map((e) => {
+                      "id": (e['item'] as FoodItem).id,
+                      "name": (e['item'] as FoodItem).name,
+                      "qty": e['quantity'],
+                      "price": (e['item'] as FoodItem).price,
+                    }).toList(),
+                  };
+                  pos.printOrder(tempOrder, receiptTitle: "HISOB CHEKI");
+                }, tooltip: "Hisob chekini chiqarish"),
+              ),
+              const SizedBox(width: 8),
+              // Pay & Finish
+              Expanded(
+                child: _buildActionBtn(Icons.payments_rounded, const Color(0xFFFF9500), () async {
+                  bool success = await pos.submitOrder(isPaid: true);
+                  if (success) {
+                    Get.offAll(() => const MainNavigationScreen());
+                  }
+                }, tooltip: "pay_finish_sidebar".tr),
+              ),
+              const SizedBox(width: 8),
+              // Cancel
+              Expanded(
+                child: _buildActionBtn(Icons.delete_forever_rounded, const Color(0xFFEF4444), () {
+                  Get.dialog(
+                    AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      title: Text("cancel_order_confirm_title".tr),
+                      content: Text("cancel_order_confirm_msg".tr),
+                      actions: [
+                        TextButton(onPressed: () => Get.back(), child: Text("back".tr)),
+                        TextButton(
+                          onPressed: () {
+                            pos.clearCurrentOrder();
+                            Get.back();
+                          }, 
+                          child: Text("yes_cancel".tr, style: const TextStyle(color: Colors.red))
+                        ),
+                      ],
+                    )
+                  );
+                }, tooltip: "cancel_order".tr),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionBtn(IconData icon, Color color, VoidCallback onTap, {String? tooltip}) {
+    return Tooltip(
+      message: tooltip ?? "",
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Center(
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
+          ),
+        ),
       ),
     );
   }
