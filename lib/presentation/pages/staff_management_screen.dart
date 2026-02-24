@@ -3,8 +3,53 @@ import 'package:get/get.dart';
 import '../../logic/pos_controller.dart';
 import '../../theme/app_colors.dart';
 
+import 'package:qr_flutter/qr_flutter.dart';
+
 class StaffManagementScreen extends StatelessWidget {
   const StaffManagementScreen({super.key});
+
+  void _showQRDialog(POSController pos, dynamic waiter) async {
+    Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+    final qrToken = await pos.getStaffQRToken(waiter['id'].toString());
+    Get.back();
+
+    if (qrToken == null) {
+      Get.snackbar("Xato", "QR kod olish imkoni bo'lmadi", backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Column(
+          children: [
+            Text(waiter['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+            const Text("Tizimga bog'lash", style: TextStyle(fontSize: 14, color: Colors.grey)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text("Afitsant ushbu kodni o'z telefonida skaner qilishi kerak", 
+              textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: 250,
+              height: 250,
+              child: QrImageView(
+                data: qrToken,
+                version: QrVersions.auto,
+                size: 250.0,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Yopish")),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,15 +90,26 @@ class StaffManagementScreen extends StatelessWidget {
                 ),
                 title: Text(waiter['name'] ?? "Noma'lum", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 subtitle: Text(waiter['role'] ?? ""),
-                trailing: ElevatedButton.icon(
-                  onPressed: () => pos.callWaiter(waiter),
-                  icon: const Icon(Icons.notifications_active_rounded, size: 18),
-                  label: const Text("Chaqirish"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.qr_code_2_rounded, color: Colors.blue),
+                      tooltip: "Tizimga bog'lash",
+                      onPressed: () => _showQRDialog(pos, waiter),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () => pos.callWaiter(waiter),
+                      icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                      label: const Text("Chaqirish"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
