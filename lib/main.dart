@@ -40,13 +40,15 @@ class FastFoodApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Get stored locale or default to uz_UZ
     final storage = GetStorage();
+    final pos = Get.find<POSController>();
+    pos.restaurantName.value = storage.read('restaurant_name') ?? "Fayz POS";
     String? storedLang = storage.read('lang');
     Locale initialLocale = storedLang != null 
         ? Locale(storedLang.split('_')[0], storedLang.split('_')[1])
         : const Locale('uz', 'UZ');
 
     return GetMaterialApp(
-      title: 'Fast Food POS',
+      title: 'Fayz POS',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       translations: AppTranslations(),
@@ -55,13 +57,11 @@ class FastFoodApp extends StatelessWidget {
       builder: (context, child) => LocationChecker(child: child!),
       home: _getInitialScreen(),
       getPages: [
-        GetPage(name: '/', page: () => const RoleSelectionScreen()),
         GetPage(name: '/login', page: () => const LoginPage()),
         GetPage(name: '/pin', page: () => const PinCodeScreen()),
         GetPage(name: '/main', page: () => const MainNavigationScreen()),
         GetPage(name: '/settings', page: () => const SettingsScreen()),
         GetPage(name: '/reports', page: () => const ReportsScreen()),
-        GetPage(name: '/role-selection', page: () => const RoleSelectionScreen()),
         GetPage(name: '/staff-selection', page: () => const StaffSelectionPage()),
         GetPage(name: '/terminal-login', page: () => const TerminalLoginPage()),
       ],
@@ -71,39 +71,19 @@ class FastFoodApp extends StatelessWidget {
   Widget _getInitialScreen() {
     final pos = Get.find<POSController>();
     
-    // 0. Check if device role is selected
-    if (pos.deviceRole.value == null) {
-      return const RoleSelectionScreen();
+    // Always force Terminal (CASHIER) role for this app
+    if (pos.deviceRole.value != "CASHIER") {
+      pos.setDeviceRole("CASHIER");
     }
     
-    // 1. CASHIER (Terminal) Mode
-    if (pos.deviceRole.value == "CASHIER") {
-      if (pos.currentTerminal.value == null) {
-        return const LoginPage(); // Needs terminal login
-      }
-      if (!pos.isPinAuthenticated.value) {
-        return const StaffSelectionPage(); // Always choose staff on restart
-      }
+    // 1. Check if terminal is linked/logged in
+    if (pos.currentTerminal.value == null) {
+      return const LoginPage(); 
     }
     
-    // 2. WAITER (Phone) Mode
-    if (pos.deviceRole.value == "WAITER") {
-      if (pos.currentUser.value == null) {
-        if (pos.waiterCafeId.value != null) {
-          return StaffSelectionPage(cafeId: pos.waiterCafeId.value, isFromTerminal: false);
-        } else {
-          return const QRScannerPage();
-        }
-      }
-      
-      // Staff is logged in, check personal PIN
-      if (!pos.isPinAuthenticated.value) {
-        if (pos.pinCode.value == null) {
-          return const PinCodeScreen(isSettingNewPin: true);
-        } else {
-          return const PinCodeScreen();
-        }
-      }
+    // 2. Check if staff is authenticated (PIN screen)
+    if (!pos.isPinAuthenticated.value) {
+      return const StaffSelectionPage(); 
     }
     
     // 3. Authenticated - Go to Main Screen
