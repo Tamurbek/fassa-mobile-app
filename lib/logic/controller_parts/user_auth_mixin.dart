@@ -227,18 +227,25 @@ mixin UserAuthMixin on POSControllerState {
     } else if (forced) {
        Get.offAllNamed('/login');
     } else {
-      // In terminal app, logout means unlinking terminal
+      // In terminal app (POS), logout means unlinking terminal and going to Login
       currentTerminal.value = null;
       storage.remove('terminal');
       storage.remove('terminal_token');
-      Get.offAll(() => const QRScannerPage()); 
+      deviceRole.value = null;
+      storage.remove('device_role');
+      Get.offAllNamed('/login'); 
     }
   }
 
   void lockTerminal() {
     authenticatePin(false);
-    // Always go to PIN screen to lock the current session
-    Get.offAll(() => const PinCodeScreen());
+    // Clear current user but keep terminal context
+    setCurrentUser(null);
+    pinCode.value = null;
+    storage.remove('pin_code');
+    
+    // Go back to staff selection list
+    Get.offAll(() => const StaffSelectionPage());
   }
 
   void setPinCode(String code) {
