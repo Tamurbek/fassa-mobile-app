@@ -64,10 +64,26 @@ class StaffManagementScreen extends StatelessWidget {
         centerTitle: false,
       ),
       body: Obx(() {
-        final waiters = pos.users.where((u) => u['role'] == "WAITER").toList();
+        final waiters = pos.users.where((u) {
+          final role = u['role']?.toString().toUpperCase();
+          return role == "WAITER";
+        }).toList();
         
         if (waiters.isEmpty) {
-          return const Center(child: Text("Ofitsiantlar topilmadi"));
+          if (pos.users.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text("Sizning kafengizda hali ofitsiantlar mavjud emas.", style: TextStyle(color: Colors.grey)),
+                TextButton(onPressed: () => pos.refreshData(), child: const Text("Yangilash")),
+              ],
+            ),
+          );
         }
 
         return ListView.builder(
