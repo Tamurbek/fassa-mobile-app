@@ -116,12 +116,27 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
             onPressed: () {
-              final pos = Get.find<POSController>();
-              if (widget.isFromTerminal) ApiService().clearTerminalToken();
-              pos.setDeviceRole(null);
-              pos.setWaiterCafeId(null);
-              pos.setCurrentTerminal(null);
-              pos.logout();
+              Get.dialog(
+                AlertDialog(
+                  title: const Text("Tizimdan chiqish"),
+                  content: const Text("Terminalni ro'yxatdan o'tkazish oynasiga qaytmoqchimisiz?"),
+                  actions: [
+                    TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish")),
+                    TextButton(
+                      onPressed: () {
+                        Get.back();
+                        final pos = Get.find<POSController>();
+                        if (widget.isFromTerminal) ApiService().clearTerminalToken();
+                        pos.setDeviceRole(null);
+                        pos.setWaiterCafeId(null);
+                        pos.setCurrentTerminal(null);
+                        pos.logout();
+                      },
+                      child: const Text("Chiqish", style: TextStyle(color: Colors.red)),
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ],

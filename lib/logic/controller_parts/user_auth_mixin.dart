@@ -218,7 +218,7 @@ mixin UserAuthMixin on POSControllerState {
     currentOrder.clear();
 
     if (deviceRole.value == null) {
-      Get.offAllNamed('/role-selection');
+      Get.offAllNamed('/login');
     } else if (wasTerminal) {
       Get.offAll(() => const StaffSelectionPage());
     } else if (deviceRole.value == "WAITER" && waiterCafeId.value != null) {
