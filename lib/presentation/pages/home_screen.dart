@@ -254,7 +254,7 @@ class HomeScreen extends StatelessWidget {
       onTap: () => pos.addToCart(item),
       child: Obx(() {
         final int qty = pos.currentOrder
-            .where((e) => (e['item'] as FoodItem).id == item.id)
+            .where((e) => (e['item'] as FoodItem).id == item.id && e['isNew'] == true)
             .fold(0, (sum, e) => sum + (e['quantity'] as int));
 
         return Stack(
