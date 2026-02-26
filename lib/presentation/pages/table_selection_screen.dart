@@ -523,7 +523,7 @@ class _TableWidget extends StatelessWidget {
                       ? Colors.indigo.withOpacity(0.4)
                       : (isServedByOther 
                           ? Colors.blueGrey.withOpacity(0.4) 
-                          : (isOccupied ? Colors.red.withOpacity(0.3) : Colors.grey.shade200))),
+                          : (isOccupied ? Colors.red.withOpacity(0.3) : Colors.grey.shade200)))),
           width: (isEditMode || isLockedByOther || isServedByOther || isBilled) ? 2 : 1,
         ),
         boxShadow: [

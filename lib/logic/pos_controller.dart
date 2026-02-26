@@ -424,7 +424,7 @@ class POSController extends POSControllerState with
       // 4. Exit if waiter
       if (isWaiter) {
         clearCurrentOrder(); // Clear local state
-        Get.offAll(() => const MainNavigationScreen());
+        Get.offAll(() => MainNavigationScreen());
       }
     } catch (e) {
       Get.snackbar("Xatolik", "Hisob chiqarishda xato: $e", 
