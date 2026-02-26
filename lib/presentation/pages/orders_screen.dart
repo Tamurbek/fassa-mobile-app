@@ -804,7 +804,7 @@ class OrdersScreen extends StatelessWidget {
               label: "edit".tr,
             ),
           ],
-          if (isActive && (order?['mode'] == "Dine-in" || order?['mode'] == null)) ...[
+          if (isActive && (order['mode'] == "Dine-in" || order['mode'] == null)) ...[
             const SizedBox(width: 8),
             _buildToolbarButton(
               onPressed: () => _showChangeTableDialog(context, order, pos),
