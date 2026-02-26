@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../data/models/food_item.dart';
 import 'pos_controller_state.dart';
+import '../../presentation/widgets/virtual_keyboard.dart';
 
 mixin OrderMixin on POSControllerState {
   double get subtotal => currentOrder.fold(0, (sum, item) {
