@@ -143,6 +143,6 @@ abstract class POSControllerState extends GetxController {
   void savePrinters();
   void checkIfModified();
   void clearCurrentOrder();
-  Future<void> printOrder(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle});
-  Future<void> printLocally(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle});
+  Future<void> printOrder(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle, bool skipCancellation = false});
+  Future<void> printLocally(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle, bool skipCancellation = false});
 }

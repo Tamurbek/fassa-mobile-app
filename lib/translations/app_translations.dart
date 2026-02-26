@@ -230,6 +230,13 @@ class AppTranslations extends Translations {
           'reprint_kitchen': 'Reprint Kitchen',
           'receipt_table_areas': 'Receipt Table Areas',
           'receipt_area_selection_tip': 'Select table areas for bills and final receipts',
+          'has_variants': 'Has variants?',
+          'add_variant': 'Add Variant',
+          'variant_name': 'Variant Name',
+          'variant_price': 'Price',
+          'delete_variant': 'Delete Variant',
+          'base_info': 'Basic Info',
+          'pricing': 'Pricing',
         },
         'uz_UZ': {
           'order_management': 'Buyurtmalar boshqaruvi',
@@ -457,6 +464,13 @@ class AppTranslations extends Translations {
           'reprint_order': 'Qayta chop etish',
           'reprint_kitchen': 'Oshxonaga qayta yuborish',
           'receipt_area_selection_tip': 'Hisob va to\'lov cheklari chiqadigan hududlarni tanlang',
+          'has_variants': 'Variantlar bormi?',
+          'add_variant': 'Variant qo\'shish',
+          'variant_name': 'Variant nomi',
+          'variant_price': 'Narxi',
+          'delete_variant': 'Variantni o\'chirish',
+          'base_info': 'Asosiy ma\'lumotlar',
+          'pricing': 'Narx',
         },
         'ru_RU': {
           'order_management': 'Управление заказами',
@@ -680,6 +694,13 @@ class AppTranslations extends Translations {
           'reprint_kitchen': 'Повтор на кухню',
           'receipt_table_areas': 'Зоны для чеков',
           'receipt_area_selection_tip': 'Выберите зоны столов для гостевых счетов и финальных чеков',
+          'has_variants': 'Есть варианты?',
+          'add_variant': 'Добавить вариант',
+          'variant_name': 'Название варианта',
+          'variant_price': 'Цена',
+          'delete_variant': 'Удалить вариант',
+          'base_info': 'Основная информация',
+          'pricing': 'Цена',
         }
       };
 }

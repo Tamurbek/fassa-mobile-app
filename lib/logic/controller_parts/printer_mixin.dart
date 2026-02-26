@@ -5,7 +5,8 @@ import 'pos_controller_state.dart';
 import '../../data/models/food_item.dart';
 
 mixin PrinterMixin on POSControllerState {
-  Future<void> printOrder(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle}) async {
+  @override
+  Future<void> printOrder(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle, bool skipCancellation = false}) async {
     if (!isWithinGeofence.value && currentUser.value?['role'] == "WAITER") {
       Get.snackbar("Diqqat", "Siz ish joyidan tashqaridasiz.", backgroundColor: Colors.red, colorText: Colors.white);
       return;
@@ -21,6 +22,7 @@ mixin PrinterMixin on POSControllerState {
         'order': order,
         'isKitchenOnly': isKitchenOnly,
         'receiptTitle': receiptTitle,
+        'skipCancellation': skipCancellation,
         'sender': currentUser.value?['name'] ?? "Waiter",
       });
       Get.snackbar("Chop etish yuborildi", "Kassaga yuborildi", 
@@ -33,10 +35,11 @@ mixin PrinterMixin on POSControllerState {
       return;
     }
 
-    await printLocally(order, isKitchenOnly: isKitchenOnly, receiptTitle: receiptTitle);
+    await printLocally(order, isKitchenOnly: isKitchenOnly, receiptTitle: receiptTitle, skipCancellation: skipCancellation);
   }
 
-  Future<void> printLocally(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle}) async {
+  @override
+  Future<void> printLocally(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle, bool skipCancellation = false}) async {
     isPrinting.value = true;
     List<String> successPrinters = [];
     List<String> failedPrinters = [];
@@ -136,7 +139,7 @@ mixin PrinterMixin on POSControllerState {
                 if (success) { successPrinters.add("${printer.name} (Yangilar)"); jobPrinted = true; } 
                 else failedPrinters.add(printer.name);
               }
-              if (cancelledItems.isNotEmpty) {
+              if (cancelledItems.isNotEmpty && !skipCancellation) {
                 success = await printerService.printCancellationTicket(printer, order, cancelledItems);
                 if (success) { successPrinters.add("${printer.name} (Bekor)"); jobPrinted = true; } 
                 else failedPrinters.add("${printer.name} (Bekor xatosi)");

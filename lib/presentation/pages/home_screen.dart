@@ -303,12 +303,31 @@ class HomeScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   if (item.hasVariants && item.variants.isNotEmpty)
-                                    const Text("Variantlar",
-                                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF0EA5E9)))
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text("Variantlar",
+                                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: Color(0xFF0EA5E9))),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            Text("${NumberFormat("#,###", "uz_UZ").format(item.variants.first.price)}", 
+                                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFFFF9500))),
+                                            const SizedBox(width: 4),
+                                            Text(pos.currencySymbol, style: const TextStyle(fontSize: 9, color: Color(0xFFFF9500), fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ],
+                                    )
                                   else
-                                    Text("${NumberFormat("#,###", "uz_UZ").format(item.price)}", 
-                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFFFF9500))),
-                                  Text(pos.currencySymbol, style: const TextStyle(fontSize: 10, color: Color(0xFFFF9500), fontWeight: FontWeight.bold)),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text("${NumberFormat("#,###", "uz_UZ").format(item.price)}", 
+                                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Color(0xFFFF9500))),
+                                        Text(pos.currencySymbol, style: const TextStyle(fontSize: 10, color: Color(0xFFFF9500), fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
                                 ],
                               ),
                             ),
@@ -616,7 +635,10 @@ class HomeScreen extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(item.name, 
+                        child: Text(
+                          item.hasVariants && cartItem['variant'] != null
+                            ? "${item.name} (${cartItem['variant']?.name})"
+                            : item.name, 
                           style: TextStyle(
                             fontWeight: FontWeight.bold, 
                             fontSize: 13,
@@ -640,7 +662,7 @@ class HomeScreen extends StatelessWidget {
                     const Text("Bekor qilingan", 
                       style: TextStyle(color: Colors.red, fontSize: 9, fontWeight: FontWeight.bold))
                   else
-                    Text("${NumberFormat("#,###", "uz_UZ").format(item.price)} ${pos.currencySymbol}", 
+                    Text("${NumberFormat("#,###", "uz_UZ").format(cartItem['variant']?.price ?? item.price)} ${pos.currencySymbol}", 
                       style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 11, fontWeight: FontWeight.bold)),
                 ],
               ),
@@ -711,9 +733,13 @@ class HomeScreen extends StatelessWidget {
             children: [
               // Kitchen Print (Always visible)
               Expanded(
-                child: _buildActionBtn(Icons.soup_kitchen_rounded, "Oshxona", const Color(0xFF3B82F6), () async {
-                  if (!pos.hasNewItems) {
-                    Get.snackbar("Eslatma", "Oshxonaga yuborish uchun yangi mahsulot qo'shilmadi", 
+                child: _buildActionBtn(
+                  Icons.soup_kitchen_rounded, 
+                  pos.isOrderModified.value ? "Saqlash" : "Oshxona", 
+                  const Color(0xFF3B82F6), 
+                  () async {
+                  if (!pos.isOrderModified.value) {
+                    Get.snackbar("Eslatma", "O'zgarishlar yo'q", 
                       backgroundColor: Colors.orange, colorText: Colors.white);
                     return;
                   }

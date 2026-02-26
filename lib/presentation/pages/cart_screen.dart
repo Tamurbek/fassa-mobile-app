@@ -310,9 +310,15 @@ class CartScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, decoration: TextDecoration.lineThrough)),
+                Text(
+                  cartItem['variant'] != null
+                    ? "${item.name} (${cartItem['variant']?.name})"
+                    : item.name, 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey, decoration: TextDecoration.lineThrough)
+                ),
                 const SizedBox(height: 2),
-                Text("-${(item.price * cancelledQty).toStringAsFixed(0)} ($cancelledQty ta)", style: TextStyle(color: Colors.red.shade300, fontWeight: FontWeight.w600, fontSize: 11)),
+                Text("-${((cartItem['variant']?.price ?? item.price) * cancelledQty).toStringAsFixed(0)} ($cancelledQty ta)", 
+                  style: TextStyle(color: Colors.red.shade300, fontWeight: FontWeight.w600, fontSize: 11)),
               ],
             ),
           ),

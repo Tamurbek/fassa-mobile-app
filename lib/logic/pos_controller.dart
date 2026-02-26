@@ -163,8 +163,9 @@ class POSController extends POSControllerState with
         final Map<String, dynamic> order = Map<String, dynamic>.from(data['order']);
         if (data['sender'] != null) order['waiter_name'] = data['sender'];
         final bool isKitchenOnly = data['isKitchenOnly'] == true;
+        final bool skipCancellation = data['skipCancellation'] == true;
         
-        await printLocally(order, isKitchenOnly: isKitchenOnly, receiptTitle: data['receiptTitle']);
+        await printLocally(order, isKitchenOnly: isKitchenOnly, receiptTitle: data['receiptTitle'], skipCancellation: skipCancellation);
         
         // If it was a persistent job from DB, acknowledge it
         if (data['job_id'] != null) {
@@ -325,12 +326,22 @@ class POSController extends POSControllerState with
         }
       });
 
+      int index = allOrders.indexWhere((o) => o['id'] == editingOrderId.value);
+      bool wasBillPrinted = false;
+      if (index != -1) {
+        wasBillPrinted = allOrders[index]['status'] == "Bill Printed";
+      }
+
       await api.updateOrderStatus(editingOrderId.value!, newStatus);
       await api.updateOrder(editingOrderId.value!, {
-        "items": consolidatedList.map((i) => { "product_id": i["id"], "quantity": i["qty"], "price": i["price"] }).toList()
+        "items": consolidatedList.map((i) => { 
+          "product_id": i["product_id"], 
+          "variant_id": i["variant_id"],
+          "quantity": i["qty"], 
+          "price": i["price"] 
+        }).toList()
       });
       
-      int index = allOrders.indexWhere((o) => o['id'].toString() == editingOrderId.value.toString());
       if (index != -1) {
         final orderToPrint = Map<String, dynamic>.from(allOrders[index]);
         orderToPrint['items'] = totalItems;
@@ -351,6 +362,7 @@ class POSController extends POSControllerState with
       }
 
       await printOrder(orderToPrint, isKitchenOnly: !isPaid, 
+          skipCancellation: wasBillPrinted && !isPaid,
           receiptTitle: isPaid ? "TO'LOV CHEKI" : "HISOB CHEKI");
 
         allOrders.refresh();

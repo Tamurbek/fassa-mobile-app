@@ -175,6 +175,16 @@ class _FloorPlanView extends StatelessWidget {
                     !["Completed", "Cancelled"].contains(o['status'])
                   );
                   if (order != null) {
+                    // Restriction: Waiter cannot edit other waiters' orders
+                    if (pos.isWaiter) {
+                      final currentWaiterName = pos.currentUser.value?['name'];
+                      if (order['waiter_name'] != null && order['waiter_name'] != currentWaiterName) {
+                        Get.snackbar("Ruxsat berilmagan", "Bu stolga hozirda ${order['waiter_name']} xizmat ko'rsatmoqda", 
+                          backgroundColor: Colors.orange, colorText: Colors.white);
+                        return;
+                      }
+                    }
+
                     if (order['status'] == "Bill Printed" && !(pos.isAdmin || pos.isCashier)) {
                       Get.snackbar("Xatolik", "Ushbu buyurtma cheki chiqarilgan (qulflangan)", 
                           backgroundColor: Colors.red, colorText: Colors.white);
@@ -193,13 +203,20 @@ class _FloorPlanView extends StatelessWidget {
                   Get.to(() => const HomeScreen());
                 }
               },
-              child: _TableWidget(
-                tableNum: tableNum,
-                isOccupied: isOccupied,
-                isEditMode: false,
-                lockedByUser: lockedByUser,
-                isLockedByOther: isLockedByOther,
-              ),
+              child: () {
+                final order = pos.allOrders.firstWhereOrNull((o) => 
+                  o['table'] == tableId && 
+                  !["Completed", "Cancelled"].contains(o['status'])
+                );
+                return _TableWidget(
+                  tableNum: tableNum,
+                  isOccupied: isOccupied,
+                  isEditMode: false,
+                  lockedByUser: lockedByUser,
+                  isLockedByOther: isLockedByOther,
+                  waiterName: order?['waiter_name'],
+                );
+              }(),
             );
           });
         },
@@ -309,6 +326,16 @@ class _FloorPlanView extends StatelessWidget {
                             !["Completed", "Cancelled"].contains(o['status'])
                           );
                           if (order != null) {
+                            // Restriction: Waiter cannot edit other waiters' orders
+                            if (pos.isWaiter) {
+                              final currentWaiterName = pos.currentUser.value?['name'];
+                              if (order['waiter_name'] != null && order['waiter_name'] != currentWaiterName) {
+                                Get.snackbar("Ruxsat berilmagan", "Bu stolga hozirda ${order['waiter_name']} xizmat ko'rsatmoqda", 
+                                  backgroundColor: Colors.orange, colorText: Colors.white);
+                                return;
+                              }
+                            }
+
                             if (order['status'] == "Bill Printed" && !(pos.isAdmin || pos.isCashier)) {
                               Get.snackbar("Xatolik", "Ushbu buyurtma cheki chiqarilgan (qulflangan)", 
                                   backgroundColor: Colors.red, colorText: Colors.white);
@@ -337,16 +364,23 @@ class _FloorPlanView extends StatelessWidget {
                           }
                         }
                       }),
-                      child: _TableWidget(
-                        tableNum: tableNum,
-                        isOccupied: isOccupied,
-                        isEditMode: pos.isEditMode.value,
-                        lockedByUser: lockedByUser,
-                        isLockedByOther: isLockedByOther,
-                        width: tableWidth,
-                        height: tableHeight,
-                        shape: tableShape,
-                      ),
+                      child: () {
+                        final order = pos.allOrders.firstWhereOrNull((o) => 
+                          o['table'] == tableId && 
+                          !["Completed", "Cancelled"].contains(o['status'])
+                        );
+                        return _TableWidget(
+                          tableNum: tableNum,
+                          isOccupied: isOccupied,
+                          isEditMode: pos.isEditMode.value,
+                          lockedByUser: lockedByUser,
+                          isLockedByOther: isLockedByOther,
+                          width: tableWidth,
+                          height: tableHeight,
+                          shape: tableShape,
+                          waiterName: order?['waiter_name'],
+                        );
+                      }(),
                     ),
                   );
                 }).toList(),
@@ -421,6 +455,7 @@ class _TableWidget extends StatelessWidget {
   final double width;
   final double height;
   final String shape;
+  final String? waiterName;
 
   const _TableWidget({
     required this.tableNum,
@@ -431,6 +466,7 @@ class _TableWidget extends StatelessWidget {
     this.width = 80.0,
     this.height = 80.0,
     this.shape = "square",
+    this.waiterName,
   });
 
   @override
@@ -485,9 +521,15 @@ class _TableWidget extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             )
           else if (isOccupied && !isEditMode)
-            Text(
-              "occupied".tr,
-              style: const TextStyle(fontSize: 8, color: Colors.red),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: Text(
+                waiterName ?? "occupied".tr,
+                style: const TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.w900),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
             ),
         ],
       ),

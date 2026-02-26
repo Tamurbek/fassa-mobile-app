@@ -103,8 +103,42 @@ class ProductManagementScreen extends StatelessWidget {
                         fit: BoxFit.cover,
                       ),
                     ),
-                    title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text("${item.category} • \$${item.price.toStringAsFixed(2)}"),
+                    title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              item.category,
+                              style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (item.hasVariants)
+                            Row(
+                              children: [
+                                const Icon(Icons.sell_outlined, size: 12, color: Colors.blue),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "${item.variants.length} variant",
+                                  style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            )
+                          else
+                            Text(
+                              "${item.price.toStringAsFixed(0)} ${'currency'.tr}",
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                        ],
+                      ),
+                    ),
                     trailing: !Responsive.isMobile(context) 
                       ? Row(
                           mainAxisSize: MainAxisSize.min,
