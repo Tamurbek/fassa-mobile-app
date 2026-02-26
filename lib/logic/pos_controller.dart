@@ -216,16 +216,23 @@ class POSController extends POSControllerState with
       "items": () {
         final Map<String, Map<String, dynamic>> grouped = {};
         for (var e in currentOrder) {
-          final String id = (e['item'] as FoodItem).id.toString();
+          final FoodItem item = e['item'] as FoodItem;
+          final FoodVariant? variant = e['variant'] as FoodVariant?;
+          final String id = item.id.toString();
+          final String? variantId = variant?.id;
+          final String groupKey = variantId != null ? "${id}_$variantId" : id;
           final int qty = e['quantity'] as int;
           if (qty <= 0) continue;
-          if (grouped.containsKey(id)) {
-            grouped[id]!['quantity'] += qty;
+
+          if (grouped.containsKey(groupKey)) {
+            grouped[groupKey]!['quantity'] += qty;
           } else {
-            grouped[id] = {
+            grouped[groupKey] = {
               "product_id": id,
+              "variant_id": variantId,
+              "variant_name": variant?.name,
               "quantity": qty,
-              "price": (e['item'] as FoodItem).price
+              "price": variant?.price ?? item.price
             };
           }
         }
@@ -275,24 +282,29 @@ class POSController extends POSControllerState with
 
       for (var e in currentOrder) {
         final item = e['item'] as FoodItem;
+        final FoodVariant? variant = e['variant'] as FoodVariant?;
         final String id = item.id.toString();
+        final String? variantId = variant?.id;
+        final String groupKey = variantId != null ? "${id}_$variantId" : id;
         final int qty = e['quantity'];
         final int sentQty = e['sentQty'] ?? 0;
 
-        totalSentQty[id] = (totalSentQty[id] ?? 0) + sentQty;
+        totalSentQty[groupKey] = (totalSentQty[groupKey] ?? 0) + sentQty;
 
         if (qty > 0) {
-          if (grouped.containsKey(id)) {
-            grouped[id]!['qty'] += qty;
-            grouped[id]!['quantity'] += qty;
+          if (grouped.containsKey(groupKey)) {
+            grouped[groupKey]!['qty'] += qty;
+            grouped[groupKey]!['quantity'] += qty;
           } else {
-            grouped[id] = {
+            grouped[groupKey] = {
               "id": id,
               "product_id": id,
-              "name": item.name,
+              "variant_id": variantId,
+              "variant_name": variant?.name,
+              "name": variant != null ? "${item.name} (${variant.name})" : item.name,
               "qty": qty,
               "quantity": qty,
-              "price": item.price,
+              "price": variant?.price ?? item.price,
             };
           }
         }

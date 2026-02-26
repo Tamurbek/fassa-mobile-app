@@ -249,7 +249,15 @@ class CartScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 2),
-                  Text("${item.price.toStringAsFixed(0)} ${pos.currency.value}", style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                  Text(
+                    () {
+                      final variant = cartItem['variant'] as FoodVariant?;
+                      final price = variant?.price ?? item.price;
+                      final label = variant != null ? "${item.name} (${variant.name})" : item.name;
+                      return "$label — ${price.toStringAsFixed(0)} ${pos.currency.value}";
+                    }(),
+                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -406,11 +414,16 @@ class CartScreen extends StatelessWidget {
                         "table": pos.selectedTable.value.isNotEmpty ? pos.selectedTable.value : "-",
                         "mode": pos.currentMode.value,
                         "total": pos.total,
-                        "details": pos.currentOrder.map((e) => {
-                          "id": (e['item'] as FoodItem).id,
-                          "name": (e['item'] as FoodItem).name,
-                          "qty": e['quantity'],
-                          "price": (e['item'] as FoodItem).price,
+                        "details": pos.currentOrder.map((e) {
+                          final ei = e['item'] as FoodItem;
+                          final ev = e['variant'] as FoodVariant?;
+                          return {
+                            "id": ei.id,
+                            "variant_id": ev?.id,
+                            "name": ev != null ? "${ei.name} (${ev.name})" : ei.name,
+                            "qty": e['quantity'],
+                            "price": ev?.price ?? ei.price,
+                          };
                         }).toList(),
                       };
                       pos.printOrder(tempOrder, receiptTitle: "HISOB CHEKI");
