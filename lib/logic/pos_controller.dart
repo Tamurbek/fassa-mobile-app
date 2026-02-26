@@ -15,6 +15,7 @@ import 'controller_parts/staff_mixin.dart';
 import 'controller_parts/table_mixin.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
+import '../presentation/pages/main_navigation_screen.dart';
 
 class POSController extends POSControllerState with 
     UserAuthMixin, 
