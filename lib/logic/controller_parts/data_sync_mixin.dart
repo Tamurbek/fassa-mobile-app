@@ -260,6 +260,9 @@ mixin DataSyncMixin on POSControllerState {
       "waiter_name": o['waiter_name'],
       "timestamp": timestamp,
       "details": details,
+      "discount_type": o['discount_type'],
+      "discount_value": o['discount_value'],
+      "discount_amount": o['discount_amount'],
     };
   }
 

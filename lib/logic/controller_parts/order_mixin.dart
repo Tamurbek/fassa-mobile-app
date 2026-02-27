@@ -324,6 +324,9 @@ mixin OrderMixin on POSControllerState {
       "qty": e['quantity'],
     }).toList().toString();
     isOrderModified.value = false;
+    
+    discountType.value = order['discount_type'] ?? "percent";
+    discountValue.value = (order['discount_value'] as num?)?.toDouble() ?? 0.0;
 
     // Sync printed quantities for kitchen
     final String orderIdStr = order['id'].toString();

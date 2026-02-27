@@ -479,6 +479,12 @@ class POSController extends POSControllerState with
         orderToPrint['details'] = consolidatedList;
         orderToPrint['cancelled_items'] = cancelledItems; // Pass to printer
         
+        if (discountValue.value > 0) {
+          orderToPrint['discount_type'] = discountType.value;
+          orderToPrint['discount_value'] = discountValue.value;
+          orderToPrint['discount_amount'] = discountAmount;
+        }
+        
         // Update allOrders with new details
         allOrders[index] = orderToPrint;
 
@@ -525,6 +531,11 @@ class POSController extends POSControllerState with
       if (index != -1) {
         orderToPrint = Map<String, dynamic>.from(allOrders[index]);
         orderToPrint['status'] = "Bill Printed";
+        if (discountValue.value > 0) {
+          orderToPrint['discount_type'] = discountType.value;
+          orderToPrint['discount_value'] = discountValue.value;
+          orderToPrint['discount_amount'] = discountAmount;
+        }
         allOrders[index] = orderToPrint;
         allOrders.refresh();
         saveAllOrders();
@@ -541,6 +552,11 @@ class POSController extends POSControllerState with
             "qty": e['quantity'],
             "price": (e['item'] as FoodItem).price,
           }).toList(),
+          if (discountValue.value > 0) ...{
+            "discount_type": discountType.value,
+            "discount_value": discountValue.value,
+            "discount_amount": discountAmount,
+          },
         };
       }
 

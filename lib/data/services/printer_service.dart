@@ -201,7 +201,8 @@ class PrinterService {
         serviceFee = feeDelivery;
       }
       
-      double finalTotal = itemsSubtotal + serviceFee;
+      final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
+      double finalTotal = (itemsSubtotal + serviceFee - discountAmt).clamp(0.0, double.infinity);
 
       bytes += generator.row([
         PosColumn(text: _normalizeString('JAMI:'), width: 7),
@@ -216,7 +217,6 @@ class PrinterService {
       }
 
       // Discount row
-      final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
       if (discountAmt > 0) {
         bytes += generator.row([
           PosColumn(text: _normalizeString('CHEGIRMA:'), width: 7, styles: const PosStyles(bold: true)),
