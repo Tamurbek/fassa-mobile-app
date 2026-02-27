@@ -78,6 +78,18 @@ class _LoginPageState extends State<LoginPage> {
         final iosInfo = await deviceInfo.iosInfo;
         deviceId = iosInfo.identifierForVendor ?? "ios_device";
         deviceName = iosInfo.name;
+      } else if (Platform.isWindows) {
+        final winInfo = await deviceInfo.windowsInfo;
+        deviceId = winInfo.deviceId;
+        deviceName = winInfo.computerName;
+      } else if (Platform.isMacOS) {
+        final macInfo = await deviceInfo.macOsInfo;
+        deviceId = macInfo.systemGUID ?? "macos_device";
+        deviceName = macInfo.computerName;
+      } else if (Platform.isLinux) {
+        final linuxInfo = await deviceInfo.linuxInfo;
+        deviceId = linuxInfo.machineId ?? "linux_device";
+        deviceName = linuxInfo.name;
       }
     } catch (e) {
       print("Error getting device info: $e");
