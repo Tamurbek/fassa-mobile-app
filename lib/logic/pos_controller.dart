@@ -16,6 +16,7 @@ import 'controller_parts/table_mixin.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:vibration/vibration.dart';
 import '../presentation/pages/main_navigation_screen.dart';
+import '../data/services/offline_service.dart';
 
 class POSController extends POSControllerState with 
     UserAuthMixin, 
@@ -329,6 +330,7 @@ class POSController extends POSControllerState with
 
     try {
       final newOrder = await api.createOrder(orderData);
+      isOffline.value = false;
       final normalized = normalizeOrder(newOrder);
       
       // Check if already added by socket to prevent duplicates
@@ -339,17 +341,44 @@ class POSController extends POSControllerState with
         allOrders[index] = normalized;
       }
       
-    final orderId = normalized['id']?.toString();
-    if (orderId != null) {
-      _processedPrintIds[orderId] = DateTime.now();
-    }
+      final orderId = normalized['id']?.toString();
+      if (orderId != null) {
+        _processedPrintIds[orderId] = DateTime.now();
+      }
 
-    await printOrder(normalized, isKitchenOnly: !isPaid, 
-        receiptTitle: isPaid ? "TO'LOV CHEKI" : "HISOB CHEKI");
+      await printOrder(normalized, isKitchenOnly: !isPaid, 
+          receiptTitle: isPaid ? "TO'LOV CHEKI" : "HISOB CHEKI");
+
+      // ── Try sync queue ──
+      OfflineService().syncQueue().then((_) {
+        pendingOfflineOrders.value = OfflineService().queueCount;
+      });
 
       clearCurrentOrder();
       saveAllOrders();
       return true;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout || 
+          e.type == DioExceptionType.sendTimeout || 
+          e.type == DioExceptionType.receiveTimeout || 
+          e.type == DioExceptionType.connectionError) {
+        
+        isOffline.value = true;
+        await OfflineService().queueOrder(orderData);
+        pendingOfflineOrders.value = OfflineService().queueCount;
+        
+        Get.snackbar(
+          "Oflayn rejim", 
+          "Internet yo'q. Buyurtma lokal xotiraga saqlandi va internet ulanganda yuboriladi.",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 5),
+        );
+        
+        clearCurrentOrder();
+        return true; 
+      }
+      return false;
     } catch (e) {
       return false;
     }

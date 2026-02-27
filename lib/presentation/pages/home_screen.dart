@@ -195,6 +195,15 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
+          // Offline Indicator
+          Obx(() => pos.isOffline.value || pos.pendingOfflineOrders.value > 0 ? 
+            _buildTopStatusBadge(
+              pos.isOffline.value ? Icons.cloud_off_rounded : Icons.cloud_sync_rounded,
+              pos.pendingOfflineOrders.value.toString(),
+              pos.isOffline.value ? Colors.red : Colors.orange,
+              onTap: () => pos.refreshData() // Refresh tries to sync
+            ) : const SizedBox.shrink()),
+          const SizedBox(width: 12),
           _buildTopIcon(Icons.notifications_outlined),
           const SizedBox(width: 12),
           _buildTopIcon(Icons.lock_rounded, onTap: () => pos.lockTerminal()),
@@ -203,6 +212,28 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(width: 12),
           _buildTopIcon(Icons.settings_outlined, onTap: () => Get.toNamed('/settings')),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTopStatusBadge(IconData icon, String label, Color color, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
       ),
     );
   }

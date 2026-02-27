@@ -54,6 +54,8 @@ abstract class POSControllerState extends GetxController {
   var editingOrderId = RxnInt(); // Track if we are editing an existing order
   String originalOrderJson = ""; // To check if any changes were made
   var isOrderModified = false.obs;
+  var isOffline = false.obs;
+  var pendingOfflineOrders = 0.obs;
 
   // Discount
   var discountType = "percent".obs; // "percent" | "fixed"

@@ -5,6 +5,7 @@ import '../../data/models/food_item.dart';
 import '../../data/models/printer_model.dart';
 import '../../data/models/preparation_area_model.dart';
 import 'pos_controller_state.dart';
+import '../../data/services/offline_service.dart';
 
 mixin DataSyncMixin on POSControllerState {
   Future<void> refreshData({bool showMessage = true}) async {
@@ -19,7 +20,12 @@ mixin DataSyncMixin on POSControllerState {
 
   Future<void> fetchBackendData() async {
     if (currentUser.value == null) return;
-    
+
+    // Try syncing offline queue first
+    OfflineService().syncQueue().then((_) {
+      pendingOfflineOrders.value = OfflineService().queueCount;
+    });
+
     await Future.wait([
       // 1. Fetch Cafe Info
       () async {
