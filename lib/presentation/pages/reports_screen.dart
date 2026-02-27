@@ -299,10 +299,10 @@ class ReportsScreen extends StatelessWidget {
         spacing: 16,
         runSpacing: 16,
         children: [
-          _buildReportButton(context, "x_report".tr, Icons.assessment_outlined, Colors.blue, todayOrders, "X-Report (Shift)"),
-          _buildReportButton(context, "z_report".tr, Icons.summarize_outlined, Colors.orange, todayOrders, "Z-Report (Daily)"),
-          _buildReportButton(context, "sales_report".tr, Icons.receipt_long_outlined, Colors.green, todayOrders, "Daily Sales"),
-          _buildReportButton(context, "category_report".tr, Icons.category_outlined, Colors.purple, todayOrders, "Sales By Category"),
+          _buildReportButton(context, "x_report".tr, Icons.assessment_outlined, Colors.blue, todayOrders, "X-Report (Smena holati)"),
+          _buildReportButton(context, "z_report".tr, Icons.summarize_outlined, Colors.orange, todayOrders, "Z-Report (Kun yakuniy)"),
+          _buildReportButton(context, "sales_report".tr, Icons.receipt_long_outlined, Colors.green, todayOrders, "Savdo hisoboti"),
+          _buildReportButton(context, "category_report".tr, Icons.category_outlined, Colors.purple, todayOrders, "Category savdosi"),
         ],
       );
     });
@@ -372,10 +372,18 @@ class ReportsScreen extends StatelessWidget {
   }
 
   Future<dynamic> _generateReport(List<Map<String, dynamic>> orders, String title, POSController pos) async {
-    if (title.contains("Category")) {
-      return await ReportGenerator.generateCategoryReport(title, orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol);
+    final cafeName = pos.restaurantName.value ?? "Cafe";
+    final currency = pos.currencySymbol;
+    final cashierName = pos.currentUser.value?['name']?.toString();
+
+    if (title.contains("X-Report")) {
+      return await ReportGenerator.generateXReport(orders, cafeName, currency, cashierName);
+    } else if (title.contains("Z-Report")) {
+      return await ReportGenerator.generateZReport(orders, cafeName, currency, cashierName);
+    } else if (title.contains("Category")) {
+      return await ReportGenerator.generateCategoryReport(title, orders, cafeName, currency);
     }
-    return await ReportGenerator.generateSalesReport(title, orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol);
+    return await ReportGenerator.generateSalesReport(title, orders, cafeName, currency);
   }
 
   Widget _buildActionButton(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
@@ -468,7 +476,8 @@ class ReportsScreen extends StatelessWidget {
             onPressed: () async {
               Get.back();
               // 1. Generate and print Z-Report automatically
-              final pdf = await ReportGenerator.generateSalesReport("Z-Report (Kun Yopilishi)", orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol);
+              final cashierName = pos.currentUser.value?['name']?.toString();
+              final pdf = await ReportGenerator.generateZReport(orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol, cashierName);
               await ReportGenerator.printPdf(pdf);
               
               // 2. Notify all waiters that shift is closed

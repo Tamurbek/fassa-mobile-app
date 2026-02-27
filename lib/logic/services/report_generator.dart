@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -8,130 +7,584 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 class ReportGenerator {
-  static final NumberFormat _formatter = NumberFormat("#,###", "uz_UZ");
+  static final NumberFormat _formatter = NumberFormat('#,###', 'uz_UZ');
 
-  static Future<pw.Document> generateSalesReport(
-      String title, List<Map<String, dynamic>> orders, String cafeName, String currency) async {
-    final pdf = pw.Document();
+  // ─── Color Palette ───────────────────────────────────────────────────────
+  static const PdfColor _primary    = PdfColor.fromInt(0xFF4318FF);
+  static const PdfColor _accent     = PdfColor.fromInt(0xFF00B5D8);
+  static const PdfColor _success    = PdfColor.fromInt(0xFF38A169);
+  static const PdfColor _warning    = PdfColor.fromInt(0xFFDD6B20);
+  static const PdfColor _bg         = PdfColor.fromInt(0xFFF7F8FC);
+  static const PdfColor _border     = PdfColor.fromInt(0xFFE2E8F0);
+  static const PdfColor _text       = PdfColor.fromInt(0xFF1A202C);
+  static const PdfColor _textLight  = PdfColor.fromInt(0xFF718096);
+  static const PdfColor _white      = PdfColors.white;
 
-    double totalRevenue = 0;
-    int totalOrders = orders.length;
-    for (var o in orders) {
-      totalRevenue += (o['total'] as double);
-    }
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        build: (pw.Context context) {
-          return [
-            pw.Header(
-              level: 0,
-              child: pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text(cafeName, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                  pw.Text(DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())),
-                ],
-              ),
-            ),
-            pw.SizedBox(height: 20),
-            pw.Center(child: pw.Text(title, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold))),
-            pw.SizedBox(height: 20),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-              children: [
-                _buildSummaryBox("Buyurtmalar", totalOrders.toString()),
-                _buildSummaryBox("Jami Savdo", "${_formatter.format(totalRevenue)} $currency"),
-              ],
-            ),
-            pw.SizedBox(height: 30),
-            pw.Table.fromTextArray(
-              context: context,
-              headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-              border: pw.TableBorder.all(color: PdfColors.grey300),
-              headerDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
-              headers: ['No', 'Vaqt', 'Stol', 'Ofitsiant', 'Status', 'Summa'],
-              data: List<List<dynamic>>.generate(
-                orders.length,
-                (index) {
-                  final o = orders[index];
-                  return [
-                    (index + 1),
-                    DateFormat('HH:mm').format(DateTime.parse(o['timestamp'])),
-                    o['table'] ?? "-",
-                    o['waiter_name'] ?? "-",
-                    o['status'] ?? "-",
-                    "${_formatter.format(o['total'])} $currency",
-                  ];
-                },
-              ),
-            ),
-          ];
-        },
-      ),
-    );
-
-    return pdf;
-  }
-
-  static pw.Widget _buildSummaryBox(String label, String value) {
+  // ─── Common header widget ────────────────────────────────────────────────
+  static pw.Widget _buildHeader({
+    required String cafeName,
+    required String reportTitle,
+    required String reportSubtitle,
+    required PdfColor accentColor,
+  }) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey400),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        gradient: pw.LinearGradient(
+          colors: [accentColor, accentColor.shade(0.7)],
+          begin: pw.Alignment.topLeft,
+          end: pw.Alignment.bottomRight,
+        ),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
       ),
-      child: pw.Column(
+      padding: const pw.EdgeInsets.all(24),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text(label, style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
-          pw.Text(value, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                cafeName.toUpperCase(),
+                style: pw.TextStyle(
+                  fontSize: 11,
+                  color: _white.shade(0.85),
+                  letterSpacing: 1.5,
+                ),
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                reportTitle,
+                style: pw.TextStyle(
+                  fontSize: 22,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _white,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                reportSubtitle,
+                style: pw.TextStyle(fontSize: 11, color: _white.shade(0.8)),
+              ),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text(
+                DateFormat('dd.MM.yyyy').format(DateTime.now()),
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _white,
+                ),
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                DateFormat('HH:mm').format(DateTime.now()),
+                style: pw.TextStyle(fontSize: 13, color: _white.shade(0.85)),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  static Future<pw.Document> generateCategoryReport(
-      String title, List<Map<String, dynamic>> orders, String cafeName, String currency) async {
+  // ─── KPI card ────────────────────────────────────────────────────────────
+  static pw.Widget _buildKpiCard(String label, String value, PdfColor color) {
+    return pw.Expanded(
+      child: pw.Container(
+        margin: const pw.EdgeInsets.symmetric(horizontal: 6),
+        padding: const pw.EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: pw.BoxDecoration(
+          color: color.shade(0.08),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
+          border: pw.Border.all(color: color.shade(0.3), width: 1),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            pw.Container(
+              width: 6, height: 6,
+              decoration: pw.BoxDecoration(color: color, shape: pw.BoxShape.circle),
+            ),
+            pw.SizedBox(height: 8),
+            pw.Text(
+              value,
+              style: pw.TextStyle(
+                fontSize: 18,
+                fontWeight: pw.FontWeight.bold,
+                color: color,
+              ),
+            ),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              label,
+              style: pw.TextStyle(fontSize: 9, color: _textLight),
+              textAlign: pw.TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Section heading ─────────────────────────────────────────────────────
+  static pw.Widget _buildSectionTitle(String title) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(top: 20, bottom: 10),
+      child: pw.Row(
+        children: [
+          pw.Container(width: 4, height: 16, color: _primary),
+          pw.SizedBox(width: 8),
+          pw.Text(
+            title.toUpperCase(),
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: _text,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Footer ──────────────────────────────────────────────────────────────
+  static pw.Widget _buildFooter(pw.Context context) {
+    return pw.Container(
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(top: pw.BorderSide(color: _border)),
+      ),
+      padding: const pw.EdgeInsets.only(top: 8),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text('Tizim tomonidan avtomatik yaratildi',
+              style: pw.TextStyle(fontSize: 8, color: _textLight)),
+          pw.Text('Sahifa ${context.pageNumber} / ${context.pagesCount}',
+              style: pw.TextStyle(fontSize: 8, color: _textLight)),
+        ],
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  X-REPORT  (shift snapshot — don't close shift)
+  // ════════════════════════════════════════════════════════════════════════
+  static Future<pw.Document> generateXReport(
+    List<Map<String, dynamic>> orders,
+    String cafeName,
+    String currency,
+    String? cashierName,
+  ) async {
+    return _generateShiftReport(
+      orders: orders,
+      cafeName: cafeName,
+      currency: currency,
+      cashierName: cashierName,
+      title: 'X-REPORT',
+      subtitle: 'Smena holati hisoboti (Yopilmaydi)',
+      accentColor: _accent,
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  Z-REPORT  (close of day — used when cashier closes shift)
+  // ════════════════════════════════════════════════════════════════════════
+  static Future<pw.Document> generateZReport(
+    List<Map<String, dynamic>> orders,
+    String cafeName,
+    String currency,
+    String? cashierName,
+  ) async {
+    return _generateShiftReport(
+      orders: orders,
+      cafeName: cafeName,
+      currency: currency,
+      cashierName: cashierName,
+      title: 'Z-REPORT',
+      subtitle: 'Kun yakuniy hisoboti (Smena yopilishi)',
+      accentColor: _warning,
+    );
+  }
+
+  static Future<pw.Document> _generateShiftReport({
+    required List<Map<String, dynamic>> orders,
+    required String cafeName,
+    required String currency,
+    required String? cashierName,
+    required String title,
+    required String subtitle,
+    required PdfColor accentColor,
+  }) async {
     final pdf = pw.Document();
 
-    Map<String, double> categories = {};
-    for (var order in orders) {
-      final details = order['details'] as List? ?? [];
-      for (var item in details) {
-        String cat = item['category'] ?? 'Boshqa';
-        double price = (item['price'] as num).toDouble();
-        int qty = (item['qty'] as num).toInt();
-        categories[cat] = (categories[cat] ?? 0) + (price * qty);
+    // ── KPIs ──
+    double totalRevenue = 0;
+    double dineInRevenue = 0;
+    double takeawayRevenue = 0;
+    double deliveryRevenue = 0;
+    int dineInCount = 0;
+    int takeawayCount = 0;
+    int deliveryCount = 0;
+
+    Map<String, double> itemRevenue = {};
+    Map<String, int> itemQty = {};
+
+    for (var o in orders) {
+      final double total = (o['total'] as num).toDouble();
+      totalRevenue += total;
+      final mode = (o['mode'] ?? '').toString().toLowerCase();
+      if (mode.contains('dine')) { dineInRevenue += total; dineInCount++; }
+      else if (mode.contains('take')) { takeawayRevenue += total; takeawayCount++; }
+      else if (mode.contains('deliv')) { deliveryRevenue += total; deliveryCount++; }
+
+      for (var item in (o['details'] as List? ?? [])) {
+        final name = (item['name'] ?? 'Nomalum').toString();
+        final qty = (item['qty'] as num).toInt();
+        final price = (item['price'] as num).toDouble();
+        itemRevenue[name] = (itemRevenue[name] ?? 0) + (price * qty);
+        itemQty[name] = (itemQty[name] ?? 0) + qty;
       }
     }
 
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+    final avgBill = orders.isEmpty ? 0.0 : totalRevenue / orders.length;
+    final sortedItems = itemRevenue.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top5 = sortedItems.take(5).toList();
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+      footer: _buildFooter,
+      build: (context) => [
+        _buildHeader(
+          cafeName: cafeName,
+          reportTitle: title,
+          reportSubtitle: subtitle,
+          accentColor: accentColor,
+        ),
+        pw.SizedBox(height: 20),
+
+        // KPI row
+        pw.Row(
+          children: [
+            _buildKpiCard("Jami buyurtmalar", orders.length.toString(), _primary),
+            _buildKpiCard("Jami savdo", "${_formatter.format(totalRevenue)} $currency", _success),
+            _buildKpiCard("O'rtacha chek", "${_formatter.format(avgBill)} $currency", _accent),
+          ],
+        ),
+        pw.SizedBox(height: 12),
+
+        // Sales by type
+        _buildSectionTitle("Buyurtma turlari bo'yicha"),
+        pw.Table(
+          border: pw.TableBorder.all(color: _border),
+          columnWidths: {0: const pw.FlexColumnWidth(3), 1: const pw.FlexColumnWidth(2), 2: const pw.FlexColumnWidth(2)},
+          children: [
+            // Header
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: _bg),
+              children: [
+                _tableCell("Tur", bold: true),
+                _tableCell("Buyurtmalar", bold: true, align: pw.TextAlign.center),
+                _tableCell("Summa", bold: true, align: pw.TextAlign.right),
+              ],
+            ),
+            _buildTypeRow("Zalda", dineInCount, dineInRevenue, currency),
+            _buildTypeRow("Olib ketish", takeawayCount, takeawayRevenue, currency),
+            _buildTypeRow("Yetkazib berish", deliveryCount, deliveryRevenue, currency),
+            // Total
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: _bg),
+              children: [
+                _tableCell("JAMI", bold: true),
+                _tableCell(orders.length.toString(), bold: true, align: pw.TextAlign.center),
+                _tableCell("${_formatter.format(totalRevenue)} $currency", bold: true, align: pw.TextAlign.right),
+              ],
+            ),
+          ],
+        ),
+
+        // Top items
+        if (top5.isNotEmpty) ...[
+          _buildSectionTitle("Eng ko'p sotilganlar (Top 5)"),
+          pw.Table(
+            border: pw.TableBorder.all(color: _border),
+            columnWidths: {0: const pw.FixedColumnWidth(28), 1: const pw.FlexColumnWidth(5), 2: const pw.FlexColumnWidth(2), 3: const pw.FlexColumnWidth(3)},
             children: [
-              pw.Text(cafeName, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 10),
-              pw.Text(title, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 20),
-              pw.Table.fromTextArray(
-                context: context,
-                headers: ['Kategoriya', 'Jami Savdo'],
-                data: categories.entries.map((e) => [e.key, "${_formatter.format(e.value)} $currency"]).toList(),
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: _bg),
+                children: [
+                  _tableCell("#", bold: true, align: pw.TextAlign.center),
+                  _tableCell("Mahsulot", bold: true),
+                  _tableCell("Soni", bold: true, align: pw.TextAlign.center),
+                  _tableCell("Savdo", bold: true, align: pw.TextAlign.right),
+                ],
               ),
+              ...top5.asMap().entries.map((e) => pw.TableRow(children: [
+                _tableCell("${e.key + 1}", align: pw.TextAlign.center),
+                _tableCell(e.value.key),
+                _tableCell("${itemQty[e.value.key] ?? 0}", align: pw.TextAlign.center),
+                _tableCell("${_formatter.format(e.value.value)} $currency", align: pw.TextAlign.right),
+              ])),
             ],
-          );
-        },
-      ),
-    );
+          ),
+        ],
+
+        // Cashier info
+        if (cashierName != null) ...[
+          _buildSectionTitle("Kassir ma'lumotlari"),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: _bg,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              border: pw.Border.all(color: _border),
+            ),
+            child: pw.Row(
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text("Kassir:", style: pw.TextStyle(fontSize: 10, color: _textLight)),
+                    pw.SizedBox(height: 4),
+                    pw.Text(cashierName, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: _text)),
+                  ],
+                ),
+                pw.Spacer(),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text("Hisobot vaqti:", style: pw.TextStyle(fontSize: 10, color: _textLight)),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now()),
+                      style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: _text),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    ));
 
     return pdf;
   }
 
+  // ════════════════════════════════════════════════════════════════════════
+  //  SALES REPORT  (general)
+  // ════════════════════════════════════════════════════════════════════════
+  static Future<pw.Document> generateSalesReport(
+    String title,
+    List<Map<String, dynamic>> orders,
+    String cafeName,
+    String currency,
+  ) async {
+    final pdf = pw.Document();
+
+    double totalRevenue = orders.fold(0, (s, o) => s + (o['total'] as num).toDouble());
+    double avgBill = orders.isEmpty ? 0 : totalRevenue / orders.length;
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+      footer: _buildFooter,
+      build: (context) => [
+        _buildHeader(
+          cafeName: cafeName,
+          reportTitle: 'SAVDO HISOBOTI',
+          reportSubtitle: title,
+          accentColor: _success,
+        ),
+        pw.SizedBox(height: 20),
+        pw.Row(
+          children: [
+            _buildKpiCard("Buyurtmalar", orders.length.toString(), _primary),
+            _buildKpiCard("Jami savdo", "${_formatter.format(totalRevenue)} $currency", _success),
+            _buildKpiCard("O'rtacha chek", "${_formatter.format(avgBill)} $currency", _accent),
+          ],
+        ),
+        _buildSectionTitle("Barcha buyurtmalar"),
+        pw.Table(
+          border: pw.TableBorder.all(color: _border),
+          columnWidths: {
+            0: const pw.FixedColumnWidth(28),
+            1: const pw.FlexColumnWidth(2),
+            2: const pw.FlexColumnWidth(2),
+            3: const pw.FlexColumnWidth(2),
+            4: const pw.FlexColumnWidth(2),
+            5: const pw.FlexColumnWidth(3),
+          },
+          children: [
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: _bg),
+              children: [
+                _tableCell("#", bold: true),
+                _tableCell("Vaqt", bold: true),
+                _tableCell("Stol", bold: true, align: pw.TextAlign.center),
+                _tableCell("Ofitsiant", bold: true),
+                _tableCell("Status", bold: true),
+                _tableCell("Summa", bold: true, align: pw.TextAlign.right),
+              ],
+            ),
+            ...orders.asMap().entries.map((e) {
+              final o = e.value;
+              String timeStr = "-";
+              try {
+                if (o['timestamp'] != null) {
+                  timeStr = DateFormat('HH:mm').format(DateTime.parse(o['timestamp'].toString()));
+                }
+              } catch (_) {}
+              return pw.TableRow(
+                decoration: e.key % 2 == 1 ? const pw.BoxDecoration(color: _bg) : null,
+                children: [
+                  _tableCell("${e.key + 1}", align: pw.TextAlign.center),
+                  _tableCell(timeStr),
+                  _tableCell(o['table']?.toString() ?? "-", align: pw.TextAlign.center),
+                  _tableCell(o['waiter_name']?.toString() ?? "-"),
+                  _tableCell(o['status']?.toString() ?? "-"),
+                  _tableCell("${_formatter.format((o['total'] as num).toDouble())} $currency", align: pw.TextAlign.right),
+                ],
+              );
+            }),
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: _bg),
+              children: [
+                _tableCell("", bold: true),
+                _tableCell("JAMI", bold: true),
+                _tableCell("", bold: true),
+                _tableCell("", bold: true),
+                _tableCell("", bold: true),
+                _tableCell("${_formatter.format(totalRevenue)} $currency", bold: true, align: pw.TextAlign.right),
+              ],
+            ),
+          ],
+        ),
+      ],
+    ));
+
+    return pdf;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  CATEGORY SALES REPORT
+  // ════════════════════════════════════════════════════════════════════════
+  static Future<pw.Document> generateCategoryReport(
+    String title,
+    List<Map<String, dynamic>> orders,
+    String cafeName,
+    String currency,
+  ) async {
+    final pdf = pw.Document();
+
+    Map<String, double> catRevenue = {};
+    Map<String, int> catQty = {};
+    double totalRevenue = 0;
+
+    for (var order in orders) {
+      for (var item in (order['details'] as List? ?? [])) {
+        final cat = (item['category'] ?? 'Boshqa').toString();
+        final qty = (item['qty'] as num).toInt();
+        final price = (item['price'] as num).toDouble();
+        catRevenue[cat] = (catRevenue[cat] ?? 0) + (price * qty);
+        catQty[cat] = (catQty[cat] ?? 0) + qty;
+        totalRevenue += price * qty;
+      }
+    }
+
+    final sorted = catRevenue.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+      footer: _buildFooter,
+      build: (context) => [
+        _buildHeader(
+          cafeName: cafeName,
+          reportTitle: 'KATEGORIYA SAVDOSI',
+          reportSubtitle: title,
+          accentColor: PdfColor.fromInt(0xFF805AD5),
+        ),
+        pw.SizedBox(height: 20),
+        pw.Row(
+          children: [
+            _buildKpiCard("Kategoriyalar", catRevenue.length.toString(), _primary),
+            _buildKpiCard("Jami savdo", "${_formatter.format(totalRevenue)} $currency", _success),
+          ],
+        ),
+        _buildSectionTitle("Kategoriyalar bo'yicha savdo"),
+        pw.Table(
+          border: pw.TableBorder.all(color: _border),
+          columnWidths: {
+            0: const pw.FixedColumnWidth(28),
+            1: const pw.FlexColumnWidth(4),
+            2: const pw.FlexColumnWidth(2),
+            3: const pw.FlexColumnWidth(3),
+            4: const pw.FlexColumnWidth(2),
+          },
+          children: [
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: _bg),
+              children: [
+                _tableCell("#", bold: true),
+                _tableCell("Kategoriya", bold: true),
+                _tableCell("Soni", bold: true, align: pw.TextAlign.center),
+                _tableCell("Savdo", bold: true, align: pw.TextAlign.right),
+                _tableCell("Ulush", bold: true, align: pw.TextAlign.right),
+              ],
+            ),
+            ...sorted.asMap().entries.map((e) {
+              final pct = totalRevenue > 0 ? (e.value.value / totalRevenue * 100).toStringAsFixed(1) : "0.0";
+              return pw.TableRow(
+                decoration: e.key % 2 == 1 ? const pw.BoxDecoration(color: _bg) : null,
+                children: [
+                  _tableCell("${e.key + 1}", align: pw.TextAlign.center),
+                  _tableCell(e.value.key),
+                  _tableCell("${catQty[e.value.key] ?? 0}", align: pw.TextAlign.center),
+                  _tableCell("${_formatter.format(e.value.value)} $currency", align: pw.TextAlign.right),
+                  _tableCell("$pct%", align: pw.TextAlign.right),
+                ],
+              );
+            }),
+          ],
+        ),
+      ],
+    ));
+
+    return pdf;
+  }
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  static pw.TableRow _buildTypeRow(String label, int count, double revenue, String currency) {
+    return pw.TableRow(children: [
+      _tableCell(label),
+      _tableCell(count.toString(), align: pw.TextAlign.center),
+      _tableCell("${_formatter.format(revenue)} $currency", align: pw.TextAlign.right),
+    ]);
+  }
+
+  static pw.Widget _tableCell(String text, {bool bold = false, pw.TextAlign align = pw.TextAlign.left}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: pw.Text(
+        text,
+        textAlign: align,
+        style: pw.TextStyle(
+          fontSize: 9,
+          fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+          color: bold ? _text : _textLight,
+        ),
+      ),
+    );
+  }
+
+  // ─── Share / Print ───────────────────────────────────────────────────────
   static Future<void> sharePdf(pw.Document pdf, String filename) async {
     final bytes = await pdf.save();
     final dir = await getTemporaryDirectory();
