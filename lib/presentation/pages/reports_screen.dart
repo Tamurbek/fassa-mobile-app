@@ -341,24 +341,37 @@ class ReportsScreen extends StatelessWidget {
         final POSController pos = Get.find<POSController>();
         Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
         try {
-          final pdfDoc = await _generateReport(orders, title, pos);
-          final bytes = await pdfDoc.save();
-          
-          // Try to find Receipt Printer
+          // Try to find Receipt Printer for Direct ESC/POS printing
           final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
           
           if (receiptPrinters.isNotEmpty) {
             bool anySuccess = false;
+            final String? cashierName = pos.currentUser.value?['name']?.toString();
+            
             for (var p in receiptPrinters) {
-              final ok = await pos.printerService.printPdfAsImage(p, bytes);
+              bool ok = false;
+              if (title.contains("X-Report")) {
+                ok = await pos.printerService.printXorZReport(p, orders, title: "X-REPORT", cashierName: cashierName);
+              } else if (title.contains("Z-Report")) {
+                ok = await pos.printerService.printXorZReport(p, orders, title: "Z-REPORT", cashierName: cashierName);
+              } else if (title.contains("Category")) {
+                ok = await pos.printerService.printCategoryReport(p, orders, title);
+              } else if (title.contains("Payment")) {
+                ok = await pos.printerService.printPaymentMethodReport(p, orders, title);
+              } else if (title.contains("Hourly")) {
+                ok = await pos.printerService.printHourlySalesReport(p, orders, title);
+              } else {
+                ok = await pos.printerService.printSalesReport(p, orders, title);
+              }
               if (ok) anySuccess = true;
             }
-            if (!anySuccess) {
-              await ReportGenerator.printPdf(pdfDoc);
-            }
-          } else {
-            await ReportGenerator.printPdf(pdfDoc);
+            
+            if (anySuccess) return; // Printed successfully via ESC/POS
           }
+
+          // Fallback to PDF if no printers or ESC/POS failed
+          final pdfDoc = await _generateReport(orders, title, pos);
+          await ReportGenerator.printPdf(pdfDoc);
         } catch (e) {
           Get.snackbar("Xatolik", "Hisobotni chop etib bo'lmadi");
         } finally {
@@ -475,17 +488,20 @@ class ReportsScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Get.back();
-              // 1. Generate and print Z-Report automatically
+              // 1. Generate and print Z-Report directly via ESC/POS
               final cashierName = pos.currentUser.value?['name']?.toString();
-              final pdfDoc = await ReportGenerator.generateZReport(orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol, cashierName);
-              final bytes = await pdfDoc.save();
-
               final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
+              
+              bool printedViaEscPos = false;
               if (receiptPrinters.isNotEmpty) {
                 for (var p in receiptPrinters) {
-                  await pos.printerService.printPdfAsImage(p, bytes);
+                  final ok = await pos.printerService.printXorZReport(p, orders, title: "Z-REPORT", cashierName: cashierName);
+                  if (ok) printedViaEscPos = true;
                 }
-              } else {
+              }
+
+              if (!printedViaEscPos) {
+                final pdfDoc = await ReportGenerator.generateZReport(orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol, cashierName);
                 await ReportGenerator.printPdf(pdfDoc);
               }
               
