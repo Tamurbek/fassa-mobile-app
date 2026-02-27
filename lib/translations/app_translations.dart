@@ -477,6 +477,7 @@ class AppTranslations extends Translations {
           'category_report': 'Kategoriya bo\'yicha',
           'waiter_performance': 'Ofitsiantlar unumdorligi',
           'payment_method_report': 'To\'lov turi bo\'yicha',
+          'best_hours': 'Eng yaxshi soatlar',
           'share': 'Ulashish',
           'save_as_pdf': 'PDF yaratish',
           'print': 'Chop etish',

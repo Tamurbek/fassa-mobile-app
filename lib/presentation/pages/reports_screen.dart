@@ -305,6 +305,7 @@ class ReportsScreen extends StatelessWidget {
           _buildReportButton(context, "sales_report".tr, Icons.receipt_long_outlined, Colors.green, todayOrders, "Savdo hisoboti"),
           _buildReportButton(context, "category_report".tr, Icons.category_outlined, Colors.purple, todayOrders, "Category savdosi"),
           _buildReportButton(context, "payment_method_report".tr, Icons.payments_outlined, Colors.teal, todayOrders, "To'lov turlari"),
+          _buildReportButton(context, "best_hours".tr, Icons.access_time_rounded, Colors.indigo, todayOrders, "Eng yaxshi soatlar"),
           // Waiter Performance — opens a full page
           InkWell(
             onTap: () => Get.to(() => const WaiterPerformancePage()),
@@ -409,6 +410,8 @@ class ReportsScreen extends StatelessWidget {
       return await ReportGenerator.generateCategoryReport(title: title, orders: orders, cafeName: cafeName, currency: currency);
     } else if (title.contains("To'lov")) {
       return await ReportGenerator.generatePaymentMethodReport(orders: orders, cafeName: cafeName, currency: currency);
+    } else if (title.contains("Soat")) {
+      return await ReportGenerator.generateHourlySalesReport(orders: orders, cafeName: cafeName, currency: currency);
     }
     return await ReportGenerator.generateSalesReport(title: title, orders: orders, cafeName: cafeName, currency: currency);
   }

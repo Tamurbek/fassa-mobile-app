@@ -815,4 +815,129 @@ class ReportGenerator {
 
     return pdf;
   }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  HOURLY SALES REPORT
+  // ════════════════════════════════════════════════════════════════════════
+  static Future<pw.Document> generateHourlySalesReport({
+    required List<Map<String, dynamic>> orders,
+    required String cafeName,
+    required String currency,
+  }) async {
+    final pdf = pw.Document();
+
+    final Map<int, double> hourlyRevenue = {};
+    final Map<int, int> hourlyCount = {};
+    for (int i = 0; i < 24; i++) {
+      hourlyRevenue[i] = 0.0;
+      hourlyCount[i] = 0;
+    }
+
+    double totalRevenue = 0.0;
+    int maxRevenueHour = -1;
+    double maxRevenue = 0.0;
+
+    for (var o in orders) {
+      if (o['status'] == 'Cancelled') continue;
+      
+      try {
+        final dt = DateTime.parse(o['timestamp'].toString());
+        final hour = dt.hour;
+        final total = (o['total'] as num? ?? 0).toDouble();
+        
+        hourlyRevenue[hour] = hourlyRevenue[hour]! + total;
+        hourlyCount[hour] = hourlyCount[hour]! + 1;
+        totalRevenue += total;
+        
+        if (hourlyRevenue[hour]! > maxRevenue) {
+          maxRevenue = hourlyRevenue[hour]!;
+          maxRevenueHour = hour;
+        }
+      } catch (_) {}
+    }
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+      footer: _buildFooter,
+      build: (context) => [
+        _buildHeader(
+          cafeName: cafeName,
+          reportTitle: "ENG YAXSHI SOATLAR",
+          reportSubtitle: 'Kun davomida savdo unumdorligi tahlili',
+          accentColor: _primary,
+        ),
+        pw.SizedBox(height: 20),
+        
+        // Summary Cards
+        pw.Row(
+          children: [
+            _buildKpiCard('Jami savdo', '${_formatter.format(totalRevenue)} $currency', _primary),
+            _buildKpiCard('Eng yaxshi soat', maxRevenueHour == -1 ? '-' : '$maxRevenueHour:00', _success),
+            _buildKpiCard('O\'rtacha soatlik', '${_formatter.format(totalRevenue / 24)} $currency', _accent),
+          ],
+        ),
+        
+        _buildSectionTitle("Soatlik savdo grafigi (Vizual)"),
+        pw.Container(
+          height: 200,
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: List.generate(24, (index) {
+              final val = hourlyRevenue[index] ?? 0;
+              final heightPct = maxRevenue > 0 ? (val / maxRevenue) : 0.0;
+              return pw.Column(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Container(
+                    width: 12,
+                    height: (heightPct * 150) + 1, // min 1px
+                    decoration: pw.BoxDecoration(
+                      color: index == maxRevenueHour ? _success : _primary.withOpacity(0.6),
+                      borderRadius: const pw.BorderRadius.vertical(top: pw.Radius.circular(4)),
+                    ),
+                  ),
+                  pw.SizedBox(height: 4),
+                  pw.Text('$index', style: const pw.TextStyle(fontSize: 8)),
+                ],
+              );
+            }),
+          ),
+        ),
+        
+        _buildSectionTitle("Batafsil ma'lumot"),
+        pw.Table(
+          border: pw.TableBorder.all(color: _border),
+          children: [
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: _bg),
+              children: [
+                _tableCell("Vaqt oralig'i", bold: true),
+                _tableCell("Buyurtmalar", bold: true, align: pw.TextAlign.center),
+                _tableCell("Savdo miqdori", bold: true, align: pw.TextAlign.right),
+                _tableCell("Ulush (%)", bold: true, align: pw.TextAlign.right),
+              ],
+            ),
+            ...List.generate(24, (i) {
+              final revenue = hourlyRevenue[i] ?? 0;
+              if (revenue == 0 && hourlyCount[i] == 0) return null;
+              final pct = totalRevenue > 0 ? (revenue / totalRevenue * 100).toStringAsFixed(1) : '0.0';
+              return pw.TableRow(
+                decoration: i == maxRevenueHour ? pw.BoxDecoration(color: _success.withOpacity(0.1)) : null,
+                children: [
+                  _tableCell("$i:00 - ${i + 1}:00", bold: i == maxRevenueHour),
+                  _tableCell("${hourlyCount[i]}", align: pw.TextAlign.center),
+                  _tableCell("${_formatter.format(revenue)} $currency", align: pw.TextAlign.right),
+                  _tableCell("$pct%", align: pw.TextAlign.right),
+                ],
+              );
+            }).where((row) => row != null).cast<pw.TableRow>(),
+          ],
+        ),
+      ],
+    ));
+
+    return pdf;
+  }
 }
