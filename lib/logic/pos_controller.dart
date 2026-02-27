@@ -216,18 +216,19 @@ class POSController extends POSControllerState with
     
     socket.onShiftClosed((data) {
       if (isWaiter) {
-        // Show notification before logout
+        // Show notification before locking
         Get.snackbar(
           "Smena yopildi", 
-          "Kassir smenani yopdi. Tizimdan chiqilmoqda...",
+          "Kassir smenani yopdi. PIN kod bilan qayta kiring.",
           backgroundColor: Colors.orange,
           colorText: Colors.white,
           duration: const Duration(seconds: 3)
         );
         
-        // Use a small delay so the user sees the message
+        // Lock terminal → go to StaffSelectionPage (not full logout)
+        // so waiter can re-login with their PIN
         Future.delayed(const Duration(seconds: 3), () {
-          logout(forced: true);
+          lockTerminal();
         });
       }
     });
