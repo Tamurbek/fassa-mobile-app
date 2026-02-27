@@ -216,19 +216,27 @@ class POSController extends POSControllerState with
     
     socket.onShiftClosed((data) {
       if (isWaiter) {
-        // Show notification before locking
+        final bool isOnTerminal = currentTerminal.value != null;
+
         Get.snackbar(
-          "Smena yopildi", 
-          "Kassir smenani yopdi. PIN kod bilan qayta kiring.",
+          "Smena yopildi",
+          isOnTerminal
+              ? "Kassir smenani yopdi. PIN kod bilan qayta kiring."
+              : "Kassir smenani yopdi. Iltimos, terminalga borib qayta kiring.",
           backgroundColor: Colors.orange,
           colorText: Colors.white,
-          duration: const Duration(seconds: 3)
+          duration: const Duration(seconds: 3),
         );
-        
-        // Lock terminal → go to StaffSelectionPage (not full logout)
-        // so waiter can re-login with their PIN
+
         Future.delayed(const Duration(seconds: 3), () {
-          lockTerminal();
+          if (isOnTerminal) {
+            // POS terminal → Staff selection (PIN bilan qayta kirish mumkin)
+            lockTerminal();
+          } else {
+            // Ofitsiantning o'z telefoni → to'liq logout
+            // U terminalga borib PIN ko'rib kirishi kerak
+            logout(forced: true);
+          }
         });
       }
     });
