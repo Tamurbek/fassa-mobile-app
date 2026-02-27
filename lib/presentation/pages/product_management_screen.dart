@@ -140,21 +140,28 @@ class ProductManagementScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    trailing: !Responsive.isMobile(context) 
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              onPressed: () => Get.to(() => SaveProductScreen(item: item)),
-                              icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
-                            ),
-                            IconButton(
-                              onPressed: () => _confirmDeleteProduct(context, pos, item),
-                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                            ),
-                          ],
-                        )
-                      : null,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: () => _showRecipeDialog(context, pos, item),
+                          icon: const Icon(Icons.receipt_long_rounded, color: Colors.teal, size: 22),
+                          tooltip: "Kalkulatsiya",
+                        ),
+                        if (!Responsive.isMobile(context)) ...[
+                          IconButton(
+                            onPressed: () => Get.to(() => SaveProductScreen(item: item)),
+                            icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
+                          ),
+                          IconButton(
+                            onPressed: () => _confirmDeleteProduct(context, pos, item),
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                          ),
+                        ],
+                        if (Responsive.isMobile(context))
+                          const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -162,6 +169,119 @@ class ProductManagementScreen extends StatelessWidget {
           },
         );
       }),
+    );
+  }
+
+  void _showRecipeDialog(BuildContext context, POSController pos, FoodItem product) async {
+    // Get existing recipe
+    final recipeItems = await pos.api.getRecipe(product.id);
+    final List<Map<String, dynamic>> items = List<Map<String, dynamic>>.from(recipeItems);
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text("${product.name} — Kalkulatsiya", style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (items.isEmpty)
+                  const Padding(padding: EdgeInsets.all(20), child: Text("Retsept hali belgilanmagan"))
+                else
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final it = items[index];
+                        return ListTile(
+                          title: Text("${it['ingredient']['name']}"),
+                          subtitle: Text("${it['quantity']} ${it['ingredient']['unit']}"),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red, size: 18),
+                            onPressed: () {
+                              // Delete logic could be added here
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const Divider(),
+                ElevatedButton.icon(
+                  onPressed: () => _showAddRecipeItemDialog(context, pos, product, (newItem) {
+                    setState(() {
+                      items.add(newItem);
+                    });
+                  }),
+                  icon: const Icon(Icons.add),
+                  label: const Text("Xom-ashyo qo'shish"),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Get.back(), child: const Text("Yopish")),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddRecipeItemDialog(BuildContext context, POSController pos, FoodItem product, Function(Map<String, dynamic>) onAdded) {
+    String? selectedIngredientId;
+    final qtyController = TextEditingController();
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text("Xom-ashyo qo'shish"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                isExpanded: true,
+                value: selectedIngredientId,
+                hint: const Text("Xom-ashyo tanlang"),
+                items: pos.ingredients.map((ing) => DropdownMenuItem(
+                  value: ing['id'].toString(),
+                  child: Text("${ing['name']} (${ing['unit']})"),
+                )).toList(),
+                onChanged: (v) => setState(() => selectedIngredientId = v),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: qtyController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: "Miqdori"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish")),
+            ElevatedButton(
+              onPressed: () async {
+                if (selectedIngredientId == null || qtyController.text.isEmpty) return;
+                try {
+                  final res = await pos.api.addRecipeItem({
+                    "product_id": product.id,
+                    "ingredient_id": selectedIngredientId,
+                    "quantity": double.tryParse(qtyController.text) ?? 0,
+                  });
+                  onAdded(res);
+                  Get.back();
+                } catch (e) {
+                  Get.snackbar("Xatolik", e.toString());
+                }
+              },
+              child: const Text("Qo'shish"),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

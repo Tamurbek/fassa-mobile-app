@@ -8,6 +8,7 @@ import 'package:fast_food_app/presentation/pages/product_management_screen.dart'
 import 'package:fast_food_app/presentation/pages/printer_management_screen.dart';
 import 'package:fast_food_app/presentation/pages/preparation_area_management_screen.dart';
 import 'package:fast_food_app/presentation/pages/waiter_management_screen.dart';
+import 'package:fast_food_app/presentation/pages/inventory_management_page.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -89,6 +90,14 @@ class SettingsScreen extends StatelessWidget {
                 _buildSectionLabel("menu_management".tr),
                 _buildSettingsCard([
                   _buildActionItem(Icons.restaurant_menu_rounded, "menu_management".tr, trailingText: "products".tr, onTap: () => Get.to(() => const ProductManagementScreen())),
+                ]),
+              ],
+
+              if (pos.isAdmin) ...[
+                const SizedBox(height: 24),
+                _buildSectionLabel("inventory".tr),
+                _buildSettingsCard([
+                  _buildActionItem(Icons.inventory_2_rounded, "inventory_management".tr, onTap: () => Get.to(() => const InventoryManagementPage())),
                 ]),
               ],
 

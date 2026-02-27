@@ -532,4 +532,70 @@ class ApiService {
       rethrow;
     }
   }
+
+  // Inventory & Calculation
+  Future<List<dynamic>> getIngredients() async {
+    try {
+      final response = await _dio.get('/inventory/ingredients');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> createIngredient(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/inventory/ingredients', data: data);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> updateIngredient(String id, Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.put('/inventory/ingredients/$id', data: data);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<dynamic>> getRecipe(String productId, {String? variantId}) async {
+    try {
+      final response = await _dio.get('/inventory/recipe/$productId', queryParameters: {
+        if (variantId != null) 'variant_id': variantId,
+      });
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> addRecipeItem(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/inventory/recipe', data: data);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> createStockMovement(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/inventory/movements', data: data);
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<dynamic>> getStockMovements() async {
+    try {
+      final response = await _dio.get('/inventory/movements');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

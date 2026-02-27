@@ -200,6 +200,15 @@ mixin DataSyncMixin on POSControllerState {
           storage.write('reservations', reservations.toList());
         } catch (e) { print("Error fetching reservations: $e"); }
       }(),
+
+      // 10. Fetch Ingredients
+      () async {
+        try {
+          final res = await api.getIngredients();
+          ingredients.assignAll(List<Map<String, dynamic>>.from(res));
+          storage.write('ingredients', ingredients.toList());
+        } catch (e) { print("Error fetching ingredients: $e"); }
+      }(),
     ]);
   }
 
