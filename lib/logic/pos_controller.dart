@@ -215,7 +215,7 @@ class POSController extends POSControllerState with
     });
     
     socket.onShiftClosed((data) {
-      if (isWaiter) {
+      if (isWaiter && isShiftBroadcastEnabled.value) {
         final bool isOnTerminal = currentTerminal.value != null;
 
         Get.snackbar(

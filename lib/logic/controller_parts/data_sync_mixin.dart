@@ -45,6 +45,14 @@ mixin DataSyncMixin on POSControllerState {
           instagram.value = cafe['instagram'] ?? "";
           telegram.value = cafe['telegram'] ?? "";
           allowWaiterMobileOrders.value = cafe['allow_waiter_mobile_orders'] ?? true;
+
+          // Feature Flags
+          isGeofencingEnabled.value = cafe['is_geofencing_enabled'] ?? true;
+          isShiftBroadcastEnabled.value = cafe['is_shift_broadcast_enabled'] ?? true;
+          isTableManagementEnabled.value = cafe['is_table_management_enabled'] ?? true;
+          isKitchenPrintEnabled.value = cafe['is_kitchen_print_enabled'] ?? true;
+          isSubscriptionEnforced.value = cafe['is_subscription_enforced'] ?? true;
+          isQrLoginEnabled.value = cafe['is_qr_login_enabled'] ?? true;
           
           storage.write('restaurant_name', restaurantName.value);
           storage.write('restaurant_address', restaurantAddress.value);

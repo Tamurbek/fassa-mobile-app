@@ -81,6 +81,14 @@ abstract class POSControllerState extends GetxController {
   var telegram = "".obs;
   var allowWaiterMobileOrders = true.obs;
 
+  // Feature Flags (from backend)
+  var isGeofencingEnabled = true.obs;
+  var isShiftBroadcastEnabled = true.obs;
+  var isTableManagementEnabled = true.obs;
+  var isKitchenPrintEnabled = true.obs;
+  var isSubscriptionEnforced = true.obs;
+  var isQrLoginEnabled = true.obs;
+
   // Printing Toggles
   var enableKitchenPrint = true.obs;
   var enableBillPrint = true.obs;

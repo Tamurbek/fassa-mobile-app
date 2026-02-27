@@ -22,6 +22,10 @@ mixin UserAuthMixin on POSControllerState {
   }
 
   void initLocationTracking() async {
+    if (!isGeofencingEnabled.value) {
+      isWithinGeofence.value = true; // Feature disabled, always allow
+      return;
+    }
     if (currentUser.value == null || Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
       if (Platform.isAndroid || Platform.isIOS) {
         FlutterBackgroundService().invoke("stopService");
@@ -95,6 +99,7 @@ mixin UserAuthMixin on POSControllerState {
 
   Future<void> checkSubscription({bool showWarning = true}) async {
     if (currentUser.value == null) return;
+    if (!isSubscriptionEnforced.value) return; // Feature flag: subscription check disabled
     try {
       final status = await api.getSubscriptionStatus();
       final bool vip = status['is_vip'] == true;
