@@ -380,12 +380,12 @@ class ReportGenerator {
   // ════════════════════════════════════════════════════════════════════════
   //  SALES REPORT  (general)
   // ════════════════════════════════════════════════════════════════════════
-  static Future<pw.Document> generateSalesReport(
-    String title,
-    List<Map<String, dynamic>> orders,
-    String cafeName,
-    String currency,
-  ) async {
+  static Future<pw.Document> generateSalesReport({
+    required String title,
+    required List<Map<String, dynamic>> orders,
+    required String cafeName,
+    required String currency,
+  }) async {
     final pdf = pw.Document();
 
     double totalRevenue = orders.fold(0, (s, o) => s + (o['total'] as num).toDouble());
@@ -475,12 +475,12 @@ class ReportGenerator {
   // ════════════════════════════════════════════════════════════════════════
   //  CATEGORY SALES REPORT
   // ════════════════════════════════════════════════════════════════════════
-  static Future<pw.Document> generateCategoryReport(
-    String title,
-    List<Map<String, dynamic>> orders,
-    String cafeName,
-    String currency,
-  ) async {
+  static Future<pw.Document> generateCategoryReport({
+    required String title,
+    required List<Map<String, dynamic>> orders,
+    required String cafeName,
+    required String currency,
+  }) async {
     final pdf = pw.Document();
 
     Map<String, double> catRevenue = {};
@@ -705,6 +705,110 @@ class ReportGenerator {
               _tableCell('$totalOrders buyurtma  |  ${_formatter.format(totalRevenue)} $currency', bold: true, align: pw.TextAlign.right),
             ],
           ),
+        ),
+      ],
+    ));
+
+    return pdf;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  PAYMENT METHOD REPORT
+  // ════════════════════════════════════════════════════════════════════════
+  static Future<pw.Document> generatePaymentMethodReport({
+    required List<Map<String, dynamic>> orders,
+    required String cafeName,
+    required String currency,
+  }) async {
+    final pdf = pw.Document();
+
+    final Map<String, double> revenueByMethod = {
+      'Cash': 0.0,
+      'Card': 0.0,
+      'Online': 0.0,
+      'Other': 0.0,
+    };
+    final Map<String, int> countsByMethod = {
+      'Cash': 0,
+      'Card': 0,
+      'Online': 0,
+      'Other': 0,
+    };
+
+    double totalRevenue = 0.0;
+    int totalPaidOrders = 0;
+
+    for (var o in orders) {
+      if (o['is_paid'] != true) continue;
+      
+      String method = (o['payment_method'] ?? 'Other').toString();
+      if (!revenueByMethod.containsKey(method)) method = 'Other';
+      
+      final total = (o['total'] as num? ?? 0).toDouble();
+      revenueByMethod[method] = revenueByMethod[method]! + total;
+      countsByMethod[method] = countsByMethod[method]! + 1;
+      
+      totalRevenue += total;
+      totalPaidOrders++;
+    }
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+      footer: _buildFooter,
+      build: (context) => [
+        _buildHeader(
+          cafeName: cafeName,
+          reportTitle: "TO'LOV TURI BO'YICHA HISOBOT",
+          reportSubtitle: 'Faqat yakunlangan (to\'langan) buyurtmalar',
+          accentColor: _accent,
+        ),
+        pw.SizedBox(height: 20),
+        
+        // Summary Cards
+        pw.Row(
+          children: [
+            _buildKpiCard('Jami savdo', '${_formatter.format(totalRevenue)} $currency', _primary),
+            _buildKpiCard('Naqd pul', '${_formatter.format(revenueByMethod['Cash'])} $currency', _success),
+            _buildKpiCard('Karta / Terminal', '${_formatter.format(revenueByMethod['Card'])} $currency', _accent),
+            _buildKpiCard('Online / Boshqa', '${_formatter.format(revenueByMethod['Online']! + revenueByMethod['Other']!)} $currency', _warning),
+          ],
+        ),
+        
+        _buildSectionTitle("To'lovlar taqsimoti"),
+        pw.Table(
+          border: pw.TableBorder.all(color: _border),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(3),
+            1: const pw.FlexColumnWidth(2),
+            2: const pw.FlexColumnWidth(3),
+            3: const pw.FlexColumnWidth(2),
+          },
+          children: [
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: _bg),
+              children: [
+                _tableCell("To'lov turi", bold: true),
+                _tableCell("Soni", bold: true, align: pw.TextAlign.center),
+                _tableCell("Jamma miqdor", bold: true, align: pw.TextAlign.right),
+                _tableCell("Ulush (%)", bold: true, align: pw.TextAlign.right),
+              ],
+            ),
+            ...revenueByMethod.entries.where((e) => e.value > 0 || countsByMethod[e.key]! > 0).map((e) {
+              final pct = totalRevenue > 0 ? (e.value / totalRevenue * 100).toStringAsFixed(1) : '0.0';
+              final label = e.key == 'Cash' ? 'Naqd pul' :
+                            e.key == 'Card' ? 'Karta / Terminal' :
+                            e.key == 'Online' ? 'Click / Payme' : 'Boshqa';
+              return pw.TableRow(
+                children: [
+                  _tableCell(label),
+                  _tableCell('${countsByMethod[e.key]}', align: pw.TextAlign.center),
+                  _tableCell('${_formatter.format(e.value)} $currency', align: pw.TextAlign.right),
+                  _tableCell('$pct%', align: pw.TextAlign.right),
+                ],
+              );
+            }),
+          ],
         ),
       ],
     ));

@@ -863,45 +863,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _buildActionBtn(Icons.payments_rounded, "To`lov", const Color(0xFFFF9500), () async {
-                      Get.dialog(
-                        AlertDialog(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          title: const Text("To'lovni tasdiqlash", style: TextStyle(fontWeight: FontWeight.bold)),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Jami: ${NumberFormat("#,###", "uz_UZ").format(pos.total)} ${pos.currencySymbol}"),
-                              if (hasDiscount)
-                                Text(
-                                  "Chegirma: -${NumberFormat("#,###", "uz_UZ").format(pos.discountAmount)} ${pos.currencySymbol}",
-                                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                                ),
-                              const SizedBox(height: 8),
-                              Text("To'lov qabul qilindi va buyurtma yakunlansinmi?",
-                                style: TextStyle(color: Colors.grey.shade600)),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(onPressed: () => Get.back(), child: const Text("Yo'q, bekor qilish")),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF9500),
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              onPressed: () async {
-                                Get.back();
-                                bool success = await pos.submitOrder(isPaid: true);
-                                if (success) {
-                                  Get.offAll(() => MainNavigationScreen());
-                                }
-                              },
-                              child: const Text("Ha, tasdiqlayman"),
-                            ),
-                          ],
-                        ),
-                      );
+                      _showPaymentMethodDialog(pos);
                     }, tooltip: "pay_finish_sidebar".tr),
                   ),
                 ],
@@ -910,6 +872,119 @@ class HomeScreen extends StatelessWidget {
           ],
         );
       }),
+    );
+  }
+
+  void _showPaymentMethodDialog(POSController pos) {
+    final hasDiscount = pos.discountValue.value > 0;
+    
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("To'lov usulini tanlang", style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Jami: ${NumberFormat("#,###", "uz_UZ").format(pos.total)} ${pos.currencySymbol}", 
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            if (hasDiscount)
+              Text(
+                "Chegirma: -${NumberFormat("#,###", "uz_UZ").format(pos.discountAmount)} ${pos.currencySymbol}",
+                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+            const SizedBox(height: 20),
+            
+            // Naqd pul
+            _paymentMethodCard(
+              icon: Icons.money_rounded,
+              label: "Naqd pul",
+              color: Colors.green,
+              onTap: () => _confirmPayment(pos, "Cash"),
+            ),
+            const SizedBox(height: 12),
+            
+            // Karta / Terminal
+            _paymentMethodCard(
+              icon: Icons.credit_card_rounded,
+              label: "Karta / Terminal",
+              color: Colors.blue,
+              onTap: () => _confirmPayment(pos, "Card"),
+            ),
+            const SizedBox(height: 12),
+            
+            // Uzto / Payme (Optional custom)
+            _paymentMethodCard(
+              icon: Icons.qr_code_scanner_rounded,
+              label: "Click / Payme",
+              color: const Color(0xFF00BFFF),
+              onTap: () => _confirmPayment(pos, "Online"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish")),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentMethodCard({required IconData icon, required String label, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Spacer(),
+            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmPayment(POSController pos, String method) async {
+    Get.back(); // Close payment method dialog
+    
+    // Final confirmation (optional, but good for safety)
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("To'lovni tasdiqlash"),
+        content: Text("${method == 'Cash' ? 'Naqd pul' : method == 'Card' ? 'Karta' : 'Online'} orqali to'lov qabul qilindi va buyurtma yakunlansinmi?"),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Yo'q")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF9500),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Get.back(); // Close confirm dialog
+              bool success = await pos.submitOrder(isPaid: true, paymentMethod: method);
+              if (success) {
+                Get.offAll(() => MainNavigationScreen());
+              }
+            },
+            child: const Text("Ha, yakunlash"),
+          ),
+        ],
+      ),
     );
   }
 

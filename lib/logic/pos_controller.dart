@@ -280,18 +280,19 @@ class POSController extends POSControllerState with
     }
   }
 
-  Future<bool> submitOrder({bool isPaid = false}) async {
+  Future<bool> submitOrder({bool isPaid = false, String? paymentMethod}) async {
     if (currentOrder.isEmpty) return false;
     bool isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
     if (!isWithinGeofence.value && isWaiter && !isDesktop) return false;
 
-    if (editingOrderId.value != null) return await updateExistingOrder(isPaid: isPaid);
+    if (editingOrderId.value != null) return await updateExistingOrder(isPaid: isPaid, paymentMethod: paymentMethod);
 
     final orderData = {
       "table_number": currentMode.value == "Dine-in" ? selectedTable.value : null,
       "type": currentMode.value.toUpperCase().replaceAll("-", "_"),
       "is_paid": isPaid,
       "waiter_name": selectedWaiter.value ?? currentUser.value?['name'],
+      "payment_method": paymentMethod,
       "cafe_id": cafeId,
       // Discount
       if (discountValue.value > 0) ...{
@@ -354,13 +355,17 @@ class POSController extends POSControllerState with
     }
   }
 
-  Future<bool> updateExistingOrder({bool isPaid = false}) async {
+  Future<bool> updateExistingOrder({bool isPaid = false, String? paymentMethod}) async {
     if (editingOrderId.value == null) return false;
     bool isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
     if (!isWithinGeofence.value && isWaiter && !isDesktop) return false;
     
     try {
       final newStatus = isPaid ? "Completed" : "Preparing";
+      // ... (existing code for grouped and consolidatedList)
+      
+      // I need to make sure I don't break the existing logic.
+      // Let's just update the API call part.
       List<Map<String, dynamic>> consolidatedList = [];
       List<Map<String, dynamic>> cancelledItems = [];
       final Map<String, Map<String, dynamic>> grouped = {};
@@ -419,6 +424,13 @@ class POSController extends POSControllerState with
 
       await api.updateOrderStatus(editingOrderId.value!, newStatus);
       await api.updateOrder(editingOrderId.value!, {
+        "status": newStatus,
+        "payment_method": paymentMethod,
+        if (discountValue.value > 0) ...{
+          "discount_type": discountType.value,
+          "discount_value": discountValue.value,
+          "discount_amount": discountAmount,
+        },
         "items": consolidatedList.map((i) => { 
           "product_id": i["product_id"], 
           "variant_id": i["variant_id"],

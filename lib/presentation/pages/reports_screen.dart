@@ -304,6 +304,7 @@ class ReportsScreen extends StatelessWidget {
           _buildReportButton(context, "z_report".tr, Icons.summarize_outlined, Colors.orange, todayOrders, "Z-Report (Kun yakuniy)"),
           _buildReportButton(context, "sales_report".tr, Icons.receipt_long_outlined, Colors.green, todayOrders, "Savdo hisoboti"),
           _buildReportButton(context, "category_report".tr, Icons.category_outlined, Colors.purple, todayOrders, "Category savdosi"),
+          _buildReportButton(context, "payment_method_report".tr, Icons.payments_outlined, Colors.teal, todayOrders, "To'lov turlari"),
           // Waiter Performance — opens a full page
           InkWell(
             onTap: () => Get.to(() => const WaiterPerformancePage()),
@@ -405,9 +406,11 @@ class ReportsScreen extends StatelessWidget {
     } else if (title.contains("Z-Report")) {
       return await ReportGenerator.generateZReport(orders, cafeName, currency, cashierName);
     } else if (title.contains("Category")) {
-      return await ReportGenerator.generateCategoryReport(title, orders, cafeName, currency);
+      return await ReportGenerator.generateCategoryReport(title: title, orders: orders, cafeName: cafeName, currency: currency);
+    } else if (title.contains("To'lov")) {
+      return await ReportGenerator.generatePaymentMethodReport(orders: orders, cafeName: cafeName, currency: currency);
     }
-    return await ReportGenerator.generateSalesReport(title, orders, cafeName, currency);
+    return await ReportGenerator.generateSalesReport(title: title, orders: orders, cafeName: cafeName, currency: currency);
   }
 
   Widget _buildActionButton(BuildContext context, String label, IconData icon, Color color, VoidCallback onTap) {
