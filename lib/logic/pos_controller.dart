@@ -213,6 +213,24 @@ class POSController extends POSControllerState with
         );
       }
     });
+    
+    socket.onShiftClosed((data) {
+      if (isWaiter) {
+        // Show notification before logout
+        Get.snackbar(
+          "Smena yopildi", 
+          "Kassir smenani yopdi. Tizimdan chiqilmoqda...",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3)
+        );
+        
+        // Use a small delay so the user sees the message
+        Future.delayed(const Duration(seconds: 3), () {
+          logout(forced: true);
+        });
+      }
+    });
   }
 
   Future<void> _playAlertSound() async {

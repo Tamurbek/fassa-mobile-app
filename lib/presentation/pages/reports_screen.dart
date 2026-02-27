@@ -471,7 +471,10 @@ class ReportsScreen extends StatelessWidget {
               final pdf = await ReportGenerator.generateSalesReport("Z-Report (Kun Yopilishi)", orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol);
               await ReportGenerator.printPdf(pdf);
               
-              // 2. Lock terminal (staff selection)
+              // 2. Notify all waiters that shift is closed
+              pos.socket.emitShiftClosed();
+              
+              // 3. Lock terminal (staff selection)
               pos.lockTerminal();
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),

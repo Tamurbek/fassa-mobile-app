@@ -101,6 +101,14 @@ class SocketService {
     socket.emit('callWaiter', data);
   }
 
+  void emitShiftClosed() {
+    socket.emit('shiftClosed', {'cafe_id': _cafeId});
+  }
+
+  void onShiftClosed(Function(dynamic) callback) {
+    socket.on('shiftClosed', (data) => callback(data));
+  }
+
   void disconnect() {
     socket.disconnect();
   }
