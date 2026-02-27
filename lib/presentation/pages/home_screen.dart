@@ -858,11 +858,13 @@ class HomeScreen extends StatelessWidget {
               children: [
                 // Chegirma tugmasi
                 if (pos.isAdmin || pos.isCashier) ...[
-                  _buildActionBtn(
-                    Icons.discount_rounded,
-                    "Chegirma",
-                    hasDiscount ? Colors.green : const Color(0xFF6B7280),
-                    () => _showDiscountDialog(pos),
+                  Expanded(
+                    child: _buildActionBtn(
+                      Icons.discount_rounded,
+                      "Chegirma",
+                      hasDiscount ? Colors.green : const Color(0xFF6B7280),
+                      () => _showDiscountDialog(pos),
+                    ),
                   ),
                   const SizedBox(width: 8),
                 ],
