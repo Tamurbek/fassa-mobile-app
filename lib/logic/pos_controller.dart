@@ -240,6 +240,36 @@ class POSController extends POSControllerState with
         });
       }
     });
+
+    socket.onTestPrint((data) async {
+      final String? printerId = data['printer_id']?.toString();
+      if (printerId == null) return;
+
+      // Find the printer in local list
+      final printer = printers.firstWhereOrNull((p) => p.id == printerId);
+      if (printer == null) {
+        print('Test print: printer $printerId not found locally');
+        return;
+      }
+
+      Get.snackbar(
+        "Test Chop Etish",
+        "${printer.name} printeriga test sahifasi yuborilmoqda...",
+        backgroundColor: Colors.blue,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
+      );
+
+      final success = await printerService.printTestPage(printer);
+
+      Get.snackbar(
+        success ? "✅ Muvaffaqiyatli" : "❌ Xatolik",
+        success ? "${printer.name} test sahifasi chop etildi" : "${printer.name} ga ulanib bo'lmadi",
+        backgroundColor: success ? Colors.green : Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    });
   }
 
   Future<void> _playAlertSound() async {

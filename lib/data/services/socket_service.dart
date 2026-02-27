@@ -109,6 +109,10 @@ class SocketService {
     socket.on('shiftClosed', (data) => callback(data));
   }
 
+  void onTestPrint(Function(dynamic) callback) {
+    socket.on('testPrint', (data) => callback(data));
+  }
+
   void disconnect() {
     socket.disconnect();
   }
