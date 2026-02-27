@@ -27,7 +27,7 @@ jobs:
       - name: Archive Build
         shell: pwsh
         run: |
-          Compress-Archive -Path build/windows/runner/Release/* -DestinationPath mobile-windows-release.zip
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath mobile-windows-release.zip
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
