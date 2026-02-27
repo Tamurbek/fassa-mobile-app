@@ -20,6 +20,19 @@ class ReportGenerator {
   static const PdfColor _textLight  = PdfColor.fromInt(0xFF718096);
   static const PdfColor _white      = PdfColors.white;
 
+  // ─── Font handling for Unicode support ───
+  static pw.Font? _regularFont;
+  static pw.Font? _boldFont;
+
+  static Future<pw.ThemeData> _getTheme() async {
+    _regularFont ??= await PdfGoogleFonts.robotoRegular();
+    _boldFont ??= await PdfGoogleFonts.robotoBold();
+    return pw.ThemeData.withFont(
+      base: _regularFont,
+      bold: _boldFont,
+    );
+  }
+
   // ─── Common header widget ────────────────────────────────────────────────
   static pw.Widget _buildHeader({
     required String cafeName,
@@ -220,7 +233,7 @@ class ReportGenerator {
     required String subtitle,
     required PdfColor accentColor,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(theme: await _getTheme());
 
     // ── KPIs ──
     double totalRevenue = 0;
@@ -386,7 +399,7 @@ class ReportGenerator {
     required String cafeName,
     required String currency,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(theme: await _getTheme());
 
     double totalRevenue = orders.fold(0, (s, o) => s + (o['total'] as num).toDouble());
     double avgBill = orders.isEmpty ? 0 : totalRevenue / orders.length;
@@ -481,7 +494,7 @@ class ReportGenerator {
     required String cafeName,
     required String currency,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(theme: await _getTheme());
 
     Map<String, double> catRevenue = {};
     Map<String, int> catQty = {};
@@ -606,7 +619,7 @@ class ReportGenerator {
     required String currency,
     required String period,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(theme: await _getTheme());
 
     // Build per-waiter stats
     final Map<String, Map<String, dynamic>> map = {};
@@ -720,7 +733,7 @@ class ReportGenerator {
     required String cafeName,
     required String currency,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(theme: await _getTheme());
 
     final Map<String, double> revenueByMethod = {
       'Cash': 0.0,
@@ -824,7 +837,7 @@ class ReportGenerator {
     required String cafeName,
     required String currency,
   }) async {
-    final pdf = pw.Document();
+    final pdf = pw.Document(theme: await _getTheme());
 
     final Map<int, double> hourlyRevenue = {};
     final Map<int, int> hourlyCount = {};
