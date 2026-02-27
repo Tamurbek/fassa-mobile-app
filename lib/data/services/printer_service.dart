@@ -1,5 +1,9 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../models/printer_model.dart';
 import '../../logic/pos_controller.dart';
 import 'package:get/get.dart';
@@ -422,6 +426,50 @@ class PrinterService {
       return true;
     } catch (e) {
       print('Test print error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> printPdfAsImage(PrinterModel printer, List<int> pdfBytes) async {
+    if (printer.ipAddress == null || printer.ipAddress!.isEmpty) return false;
+
+    try {
+      final profile = await CapabilityProfile.load();
+      final generator = Generator(
+          printer.paperSize == '58mm' ? PaperSize.mm58 : PaperSize.mm80, profile);
+      
+      List<int> bytes = [];
+      
+      // Render PDF to images (page by page, though reports are usually 1 page)
+      await for (var page in Printing.raster(pdfBytes, pages: null, dpi: 200)) {
+        final bitmap = await page.toImage(); 
+        final byteData = await bitmap.toByteData(format: ui.ImageByteFormat.png);
+        if (byteData == null) continue;
+        
+        final image = img.decodeImage(byteData.buffer.asUint8List());
+        if (image != null) {
+          // Adjust width for thermal printer
+          final maxWidth = printer.paperSize == '58mm' ? 384 : 512;
+          img.Image resized = image;
+          if (image.width > maxWidth) {
+             resized = img.copyResize(image, width: maxWidth);
+          }
+          
+          bytes += generator.image(resized);
+        }
+      }
+      
+      bytes += generator.feed(3);
+      bytes += generator.cut();
+
+      final socket = await Socket.connect(printer.ipAddress, printer.port,
+          timeout: const Duration(seconds: 10));
+      socket.add(bytes);
+      await socket.flush();
+      await socket.close();
+      return true;
+    } catch (e) {
+      print('PDF thermal print error: $e');
       return false;
     }
   }

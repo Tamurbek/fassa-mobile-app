@@ -5,6 +5,7 @@ import '../../theme/responsive.dart';
 import '../../logic/pos_controller.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../../logic/services/report_generator.dart';
 import 'waiter_performance_page.dart';
 
@@ -340,8 +341,24 @@ class ReportsScreen extends StatelessWidget {
         final POSController pos = Get.find<POSController>();
         Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
         try {
-          final pdf = await _generateReport(orders, title, pos);
-          await ReportGenerator.printPdf(pdf);
+          final pdfDoc = await _generateReport(orders, title, pos);
+          final bytes = await pdfDoc.save();
+          
+          // Try to find Receipt Printer
+          final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
+          
+          if (receiptPrinters.isNotEmpty) {
+            bool anySuccess = false;
+            for (var p in receiptPrinters) {
+              final ok = await pos.printerService.printPdfAsImage(p, bytes);
+              if (ok) anySuccess = true;
+            }
+            if (!anySuccess) {
+              await ReportGenerator.printPdf(pdfDoc);
+            }
+          } else {
+            await ReportGenerator.printPdf(pdfDoc);
+          }
         } catch (e) {
           Get.snackbar("Xatolik", "Hisobotni chop etib bo'lmadi");
         } finally {
@@ -370,7 +387,7 @@ class ReportsScreen extends StatelessWidget {
     );
   }
 
-  Future<dynamic> _generateReport(List<Map<String, dynamic>> orders, String title, POSController pos) async {
+  Future<pw.Document> _generateReport(List<Map<String, dynamic>> orders, String title, POSController pos) async {
     final cafeName = pos.restaurantName.value ?? "Cafe";
     final currency = pos.currencySymbol;
     final cashierName = pos.currentUser.value?['name']?.toString();
@@ -460,8 +477,17 @@ class ReportsScreen extends StatelessWidget {
               Get.back();
               // 1. Generate and print Z-Report automatically
               final cashierName = pos.currentUser.value?['name']?.toString();
-              final pdf = await ReportGenerator.generateZReport(orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol, cashierName);
-              await ReportGenerator.printPdf(pdf);
+              final pdfDoc = await ReportGenerator.generateZReport(orders, pos.restaurantName.value ?? "Cafe", pos.currencySymbol, cashierName);
+              final bytes = await pdfDoc.save();
+
+              final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
+              if (receiptPrinters.isNotEmpty) {
+                for (var p in receiptPrinters) {
+                  await pos.printerService.printPdfAsImage(p, bytes);
+                }
+              } else {
+                await ReportGenerator.printPdf(pdfDoc);
+              }
               
               // 2. Notify all waiters that shift is closed
               pos.socket.emitShiftClosed();
