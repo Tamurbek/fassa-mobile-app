@@ -298,7 +298,6 @@ class ProductManagementScreen extends StatelessWidget {
         },
       ),
     );
-    );
   }
 
   Widget _buildVariantRow(POSController pos, BuildContext context, FoodVariant variant, String parentId, int variantIndex, String key) {
