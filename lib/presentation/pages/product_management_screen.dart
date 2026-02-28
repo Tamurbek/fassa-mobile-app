@@ -86,24 +86,23 @@ class ProductManagementScreen extends StatelessWidget {
                 final targetItem = newIndex < displayItems.length ? displayItems[newIndex] : null;
 
                 if (dragged['type'] == 'product') {
-                  int actualOld = pos.products.indexOf(dragged['data']);
-                  
-                  // If dropped on another product (not between), it's a merge
-                  if (targetItem != null && targetItem['type'] == 'product' && dragged['data'].id != targetItem['data'].id) {
-                     if (!dragged['data'].hasVariants) {
-                       pos.mergeProducts(dragged['data'], targetItem['data']);
-                       return;
-                     }
-                  }
+                  int actualOld = pos.products.indexWhere((p) => p.id == dragged['data'].id);
+                  if (actualOld == -1) return;
 
-                  // Count products before newIndex to find the actual target position in products list
+                  // Target index logic
                   int actualNew = 0;
                   for (int i = 0; i < newIndex; i++) {
-                    if (displayItems[i]['type'] == 'product' && displayItems[i]['data'].id != dragged['data'].id) {
-                      actualNew++;
+                    if (i < displayItems.length) {
+                      final item = displayItems[i];
+                      if (item['type'] == 'product' && item['data'].id != dragged['data'].id) {
+                        actualNew++;
+                      }
                     }
                   }
-                  pos.reorderProducts(actualOld, actualNew);
+                  
+                  if (actualOld != actualNew) {
+                    pos.reorderProducts(actualOld, actualNew);
+                  }
                 } 
                 else if (dragged['type'] == 'variant') {
                   final sourceParent = pos.products.firstWhere((p) => p.id == dragged['parentId']);
@@ -223,6 +222,8 @@ class ProductManagementScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                  child: ReorderableDelayedDragStartListener(
+                  index: index,
                   child: LongPressDraggable<Map<String, dynamic>>(
                     data: {'type': 'product', 'data': item},
                     feedback: Material(
