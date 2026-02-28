@@ -271,7 +271,7 @@ class PrinterService {
     }
   }
 
-  Future<bool> printKitchenTicket(PrinterModel printer, Map<String, dynamic> order, List<dynamic> items) async {
+  Future<bool> printKitchenTicket(PrinterModel printer, Map<String, dynamic> order, List<dynamic> items, {String? title}) async {
     if (printer.ipAddress == null || printer.ipAddress!.isEmpty || items.isEmpty) return false;
 
     try {
@@ -283,7 +283,7 @@ class PrinterService {
 
       // Large Header
       bytes += generator.feed(1);
-      bytes += generator.text(_normalizeString('OSHXONA CHEKI'),
+      bytes += generator.text(_normalizeString(title?.toUpperCase() ?? 'OSHXONA CHEKI'),
           styles: const PosStyles(
             align: PosAlign.center,
             height: PosTextSize.size2,
@@ -336,7 +336,7 @@ class PrinterService {
     }
   }
 
-  Future<bool> printCancellationTicket(PrinterModel printer, Map<String, dynamic> order, List<dynamic> items) async {
+  Future<bool> printCancellationTicket(PrinterModel printer, Map<String, dynamic> order, List<dynamic> items, {String? title}) async {
     if (printer.ipAddress == null || printer.ipAddress!.isEmpty || items.isEmpty) return false;
 
     try {
@@ -348,7 +348,7 @@ class PrinterService {
 
       // Large Header - Red-like warning (Capitalized and Bold)
       bytes += generator.feed(1);
-      bytes += generator.text(_normalizeString('!!! BEKOR QILINDI !!!'),
+      bytes += generator.text(_normalizeString(title != null ? '!!! $title !!!' : '!!! BEKOR QILINDI !!!'),
           styles: const PosStyles(
             align: PosAlign.center,
             height: PosTextSize.size2,
