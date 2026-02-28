@@ -113,6 +113,10 @@ class SocketService {
     socket.on('testPrint', (data) => callback(data));
   }
 
+  void onForceLogoutTerminal(Function(dynamic) callback) {
+    socket.on('forceLogoutTerminal', (data) => callback(data));
+  }
+
   void disconnect() {
     socket.disconnect();
   }

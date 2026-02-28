@@ -277,6 +277,22 @@ class POSController extends POSControllerState with
         duration: const Duration(seconds: 3),
       );
     });
+
+    socket.onForceLogoutTerminal((data) {
+      if (currentTerminal.value != null && data['terminal_id'] == currentTerminal.value!['id']) {
+        if (data['login_instance_id'] != currentTerminal.value!['login_instance_id']) {
+          logout();
+          Get.snackbar(
+            "Sessiya tugadi", 
+            "Ushbu terminal boshqa qurilmada ochilganligi sabab tizimdan chiqdingiz.", 
+            backgroundColor: Colors.red, 
+            colorText: Colors.white,
+            duration: const Duration(seconds: 5),
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      }
+    });
   }
 
   Future<void> _playAlertSound() async {
