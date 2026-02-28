@@ -45,6 +45,99 @@ mixin ProductMixin on POSControllerState {
     } catch (e) { print("Error deleting product: $e"); }
   }
 
+  Future<void> mergeProducts(FoodItem source, FoodItem target) async {
+    if (source.id == target.id) return;
+    if (source.hasVariants) {
+      Get.snackbar("Xato", "Variantlari bor mahsulotni boshqa mahsulotga birlashtirib bo'lmaydi");
+      return;
+    }
+
+    try {
+      final newVariants = List<FoodVariant>.from(target.variants);
+      newVariants.add(FoodVariant(id: '', name: source.name, price: source.price));
+
+      final updatedTarget = FoodItem(
+        id: target.id,
+        name: target.name,
+        description: target.description,
+        price: target.price,
+        imageUrl: target.imageUrl,
+        category: target.category,
+        preparationArea: target.preparationArea,
+        preparationAreaId: target.preparationAreaId,
+        hasVariants: true,
+        variants: newVariants,
+      );
+
+      await updateProduct(updatedTarget);
+      await deleteProduct(source.id);
+      saveProducts();
+      Get.snackbar("Muvaffaqiyatli", "${source.name} ${target.name} variantiga aylantirildi");
+    } catch (e) {
+      print("Error merging products: $e");
+    }
+  }
+
+  Future<void> extractVariant(FoodItem parent, int variantIndex) async {
+    final variant = parent.variants[variantIndex];
+    try {
+      final json = parent.toJson();
+      json.remove('id');
+      json['name'] = variant.name;
+      json['price'] = variant.price;
+      json['has_variants'] = false;
+      json['variants'] = [];
+      json['cafe_id'] = cafeId;
+      json['image'] = parent.imageUrl;
+      final cat = categoriesObjects.firstWhereOrNull((c) => c['name'] == parent.category);
+      if (cat != null) json['category_id'] = cat['id'];
+
+      final newItem = await api.createProduct(json);
+      products.add(FoodItem.fromJson(newItem));
+
+      final newVariants = List<FoodVariant>.from(parent.variants)..removeAt(variantIndex);
+      final updatedParent = FoodItem(
+        id: parent.id,
+        name: parent.name,
+        description: parent.description,
+        price: parent.price,
+        imageUrl: parent.imageUrl,
+        category: parent.category,
+        preparationArea: parent.preparationArea,
+        preparationAreaId: parent.preparationAreaId,
+        hasVariants: newVariants.isNotEmpty,
+        variants: newVariants,
+      );
+      await updateProduct(updatedParent);
+      saveProducts();
+      Get.snackbar("Muvaffaqiyatli", "${variant.name} alohida mahsulotga aylantirildi");
+    } catch (e) {
+      print("Error extracting variant: $e");
+    }
+  }
+
+  Future<void> addVariantToProduct(FoodItem parent, String name, double price) async {
+    try {
+      final newVariants = List<FoodVariant>.from(parent.variants)..add(FoodVariant(id: '', name: name, price: price));
+      final updatedParent = FoodItem(
+        id: parent.id,
+        name: parent.name,
+        description: parent.description,
+        price: parent.price,
+        imageUrl: parent.imageUrl,
+        category: parent.category,
+        preparationArea: parent.preparationArea,
+        preparationAreaId: parent.preparationAreaId,
+        hasVariants: true,
+        variants: newVariants,
+      );
+      await updateProduct(updatedParent);
+      saveProducts();
+    } catch (e) {
+      print("Error adding variant: $e");
+    }
+  }
+
   Future<void> reorderProducts(int oldIndex, int newIndex) async {
     if (newIndex > oldIndex) newIndex -= 1;
     final item = products.removeAt(oldIndex);

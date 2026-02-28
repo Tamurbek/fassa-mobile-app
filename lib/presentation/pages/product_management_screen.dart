@@ -10,7 +10,11 @@ import '../widgets/common_image.dart';
 import '../../theme/responsive.dart';
 
 class ProductManagementScreen extends StatelessWidget {
-  const ProductManagementScreen({super.key});
+  ProductManagementScreen({super.key});
+
+  final RxList<String> expandedProductIds = <String>[].obs;
+  final RxMap<String, TextEditingController> variantNameControllers = <String, TextEditingController>{}.obs;
+  final RxMap<String, TextEditingController> variantPriceControllers = <String, TextEditingController>{}.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -54,132 +58,298 @@ class ProductManagementScreen extends StatelessWidget {
         if (pos.products.isEmpty) {
           return Center(child: Text("no_products".tr));
         }
+
+        final List<dynamic> displayItems = [];
+        for (var product in pos.products) {
+          displayItems.add({'type': 'product', 'data': product});
+          if (expandedProductIds.contains(product.id)) {
+            for (int i = 0; i < product.variants.length; i++) {
+              displayItems.add({'type': 'variant', 'data': product.variants[i], 'parentId': product.id, 'index': i});
+            }
+            displayItems.add({'type': 'add_variant', 'parentId': product.id});
+          }
+        }
+
         return ReorderableListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: pos.products.length,
-          onReorder: (oldIndex, newIndex) => pos.reorderProducts(oldIndex, newIndex),
+          itemCount: displayItems.length,
+          onReorder: (oldIndex, newIndex) {
+            // Only allow reordering products, not variants (simplification for mobile)
+            final oldItem = displayItems[oldIndex];
+            final newItem = displayItems[newIndex > displayItems.length - 1 ? displayItems.length - 1 : newIndex];
+            
+            if (oldItem['type'] == 'product') {
+              // Find actual product index
+              int actualOld = pos.products.indexOf(oldItem['data']);
+              // This is a bit tricky with nested items, but reorderProducts handles the list
+              // For simplicity, we only reorder if both are products or we find the right spot
+              pos.reorderProducts(actualOld, newIndex > pos.products.length ? pos.products.length : newIndex);
+            }
+          },
           itemBuilder: (context, index) {
-            final item = pos.products[index];
-            return Padding(
-              key: ValueKey(item.id),
-              padding: const EdgeInsets.only(bottom: 12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Slidable(
-                  key: ValueKey("slidable_${item.id}"),
-                  enabled: Responsive.isMobile(context),
-                  startActionPane: ActionPane(
-                    motion: const ScrollMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (context) => _confirmDeleteProduct(context, pos, item),
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                        label: 'delete'.tr,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ],
-                  ),
-                  endActionPane: ActionPane(
-                    motion: const ScrollMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (context) => Get.to(() => SaveProductScreen(item: item)),
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        icon: Icons.edit,
-                        label: 'edit'.tr,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ],
-                  ),
-                  child: Container(
-                    color: Colors.white,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.drag_indicator, color: Colors.grey, size: 20),
-                          const SizedBox(width: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: CommonImage(
-                              imageUrl: item.imageUrl,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ],
-                      ),
-                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                item.category,
-                                style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (item.hasVariants)
-                              Row(
-                                children: [
-                                  const Icon(Icons.sell_outlined, size: 12, color: Colors.blue),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    "${item.variants.length} variant",
-                                    style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              )
-                            else
-                              Text(
-                                "${NumberFormat("#,###", "uz_UZ").format(item.price)} ${pos.currencySymbol}",
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.w600),
-                              ),
-                          ],
-                        ),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: () => _showRecipeDialog(context, pos, item),
-                            icon: const Icon(Icons.receipt_long_rounded, color: Colors.teal, size: 22),
-                            tooltip: "Kalkulatsiya",
-                          ),
-                          if (!Responsive.isMobile(context)) ...[
-                            IconButton(
-                              onPressed: () => Get.to(() => SaveProductScreen(item: item)),
-                              icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
-                            ),
-                            IconButton(
-                              onPressed: () => _confirmDeleteProduct(context, pos, item),
-                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                            ),
-                          ],
-                          if (Responsive.isMobile(context))
-                            const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
+            final item = displayItems[index];
+            final String key = item['type'] == 'product' ? "prod_${item['data'].id}" : 
+                               item['type'] == 'variant' ? "var_${item['parentId']}_${item['index']}" :
+                               "add_var_${item['parentId']}";
+
+            if (item['type'] == 'product') {
+              return _buildProductRow(pos, context, item['data'], key);
+            } else if (item['type'] == 'variant') {
+              return _buildVariantRow(pos, context, item['data'], item['parentId'], item['index'], key);
+            } else {
+              return _buildAddVariantRow(pos, context, item['parentId'], key);
+            }
           },
         );
       }),
+    );
+  }
+
+  Widget _buildProductRow(POSController pos, BuildContext context, FoodItem item, String key) {
+    bool isExpanded = expandedProductIds.contains(item.id);
+    return Padding(
+      key: ValueKey(key),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Slidable(
+          key: ValueKey("slidable_${item.id}"),
+          enabled: Responsive.isMobile(context),
+          startActionPane: ActionPane(
+            motion: const ScrollMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) => _confirmDeleteProduct(context, pos, item),
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                icon: Icons.delete,
+                label: 'delete'.tr,
+              ),
+            ],
+          ),
+          endActionPane: ActionPane(
+            motion: const ScrollMotion(),
+            children: [
+              SlidableAction(
+                onPressed: (context) => Get.to(() => SaveProductScreen(item: item)),
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                icon: Icons.edit,
+                label: 'edit'.tr,
+              ),
+            ],
+          ),
+          child: Container(
+            color: Colors.white,
+            child: ListTile(
+              onTap: () {
+                if (isExpanded) {
+                  expandedProductIds.remove(item.id);
+                } else {
+                  expandedProductIds.add(item.id);
+                }
+              },
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              leading: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ReorderableDragStartListener(
+                    index: pos.products.indexOf(item),
+                    child: const Icon(Icons.drag_indicator, color: Colors.grey, size: 20),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      if (isExpanded) {
+                        expandedProductIds.remove(item.id);
+                      } else {
+                        expandedProductIds.add(item.id);
+                      }
+                    },
+                    child: Icon(isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CommonImage(
+                      imageUrl: item.imageUrl,
+                      width: 45,
+                      height: 45,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ],
+              ),
+              title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              subtitle: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item.category,
+                      style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (item.hasVariants)
+                    Text("${item.variants.length} variant", style: const TextStyle(color: Colors.blue, fontSize: 11, fontWeight: FontWeight.w600))
+                  else
+                    Text(
+                      "${NumberFormat("#,###", "uz_UZ").format(item.price)} ${pos.currencySymbol}",
+                      style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                ],
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => _showMergeDialog(context, pos, item),
+                    icon: const Icon(Icons.merge_type, color: Colors.orange, size: 20),
+                    tooltip: "Birlashtirish",
+                  ),
+                  IconButton(
+                    onPressed: () => _showRecipeDialog(context, pos, item),
+                    icon: const Icon(Icons.receipt_long_rounded, color: Colors.teal, size: 20),
+                  ),
+                  if (!Responsive.isMobile(context))
+                    IconButton(
+                      onPressed: () => Get.to(() => SaveProductScreen(item: item)),
+                      icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 18),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVariantRow(POSController pos, BuildContext context, FoodVariant variant, String parentId, int variantIndex, String key) {
+    return Container(
+      key: ValueKey(key),
+      margin: const EdgeInsets.only(left: 40, bottom: 4, right: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: ListTile(
+        visualDensity: VisualDensity.compact,
+        leading: const Icon(Icons.subdirectory_arrow_right, size: 16, color: Colors.grey),
+        title: Text(variant.name, style: const TextStyle(fontSize: 14)),
+        subtitle: Text("${NumberFormat("#,###", "uz_UZ").format(variant.price)} ${pos.currencySymbol}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextButton.icon(
+              onPressed: () {
+                final parent = pos.products.firstWhere((p) => p.id == parentId);
+                pos.extractVariant(parent, variantIndex);
+              },
+              icon: const Icon(Icons.outbound_outlined, size: 14),
+              label: const Text("Alohida qilish", style: TextStyle(fontSize: 11)),
+              style: TextButton.styleFrom(padding: EdgeInsets.zero, foregroundColor: AppColors.primary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddVariantRow(POSController pos, BuildContext context, String parentId, String key) {
+    if (!variantNameControllers.containsKey(parentId)) {
+      variantNameControllers[parentId] = TextEditingController();
+      variantPriceControllers[parentId] = TextEditingController();
+    }
+    
+    return Container(
+      key: ValueKey(key),
+      margin: const EdgeInsets.only(left: 40, bottom: 12, right: 16),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: TextField(
+              controller: variantNameControllers[parentId],
+              decoration: const InputDecoration(hintText: "Variant nomi", isDense: true, border: InputBorder.none, hintStyle: TextStyle(fontSize: 12)),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: variantPriceControllers[parentId],
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(hintText: "Narxi", isDense: true, border: InputBorder.none, hintStyle: TextStyle(fontSize: 12)),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              final name = variantNameControllers[parentId]?.text ?? "";
+              final price = double.tryParse(variantPriceControllers[parentId]?.text ?? "0") ?? 0;
+              if (name.isNotEmpty) {
+                final parent = pos.products.firstWhere((p) => p.id == parentId);
+                pos.addVariantToProduct(parent, name, price);
+                variantNameControllers[parentId]?.clear();
+                variantPriceControllers[parentId]?.clear();
+              }
+            },
+            icon: const Icon(Icons.add_circle, color: Colors.blue, size: 24),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMergeDialog(BuildContext context, POSController pos, FoodItem source) {
+    if (source.hasVariants) {
+      Get.snackbar("Xato", "Variantlari bor mahsulotni boshqa mahsulotga birlashtirib bo'lmaydi");
+      return;
+    }
+
+    Get.dialog(
+      AlertDialog(
+        title: Text("${source.name} ni qaysi mahsulotga birlashtiramiz?"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: pos.products.length,
+            itemBuilder: (context, index) {
+              final target = pos.products[index];
+              if (target.id == source.id) return const SizedBox.shrink();
+              return ListTile(
+                title: Text(target.name),
+                subtitle: Text(target.category),
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: CommonImage(imageUrl: target.imageUrl, width: 30, height: 30, fit: BoxFit.cover),
+                ),
+                onTap: () {
+                  Get.back();
+                  pos.mergeProducts(source, target);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish")),
+        ],
+      ),
     );
   }
 
