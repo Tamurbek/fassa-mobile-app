@@ -82,22 +82,21 @@ class ProductManagementScreen extends StatelessWidget {
               itemCount: displayItems.length,
               buildDefaultDragHandles: false,
               onReorder: (oldIndex, newIndex) {
-                if (newIndex > oldIndex) newIndex -= 1;
                 final dragged = displayItems[oldIndex];
-                final targetItem = displayItems[newIndex];
+                final targetItem = newIndex < displayItems.length ? displayItems[newIndex] : null;
 
                 if (dragged['type'] == 'product') {
                   int actualOld = pos.products.indexOf(dragged['data']);
                   
                   // If dropped on another product (not between), it's a merge
-                  if (targetItem['type'] == 'product' && dragged['data'].id != targetItem['data'].id) {
+                  if (targetItem != null && targetItem['type'] == 'product' && dragged['data'].id != targetItem['data'].id) {
                      if (!dragged['data'].hasVariants) {
                        pos.mergeProducts(dragged['data'], targetItem['data']);
                        return;
                      }
                   }
 
-                  // Find target index in products list
+                  // Count products before newIndex to find the actual target position in products list
                   int actualNew = 0;
                   for (int i = 0; i < newIndex; i++) {
                     if (displayItems[i]['type'] == 'product' && displayItems[i]['data'].id != dragged['data'].id) {
