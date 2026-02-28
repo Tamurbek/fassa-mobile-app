@@ -54,67 +54,120 @@ class ProductManagementScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      body: Obx(() {
-        if (pos.products.isEmpty) {
-          return Center(child: Text("no_products".tr));
-        }
-
-        final List<dynamic> displayItems = [];
-        for (var product in pos.products) {
-          displayItems.add({'type': 'product', 'data': product});
-          if (expandedProductIds.contains(product.id)) {
-            for (int i = 0; i < product.variants.length; i++) {
-              displayItems.add({'type': 'variant', 'data': product.variants[i], 'parentId': product.id, 'index': i});
+      body: DragTarget<Map<String, dynamic>>(
+        onWillAccept: (data) => data?['type'] == 'variant',
+        onAccept: (data) {
+          final sourceParent = pos.products.firstWhere((p) => p.id == data['parentId']);
+          pos.extractVariant(sourceParent, data['index']);
+        },
+        builder: (context, candidateData, rejectedData) {
+          return Obx(() {
+            if (pos.products.isEmpty) {
+              return Center(child: Text("no_products".tr));
             }
-            displayItems.add({'type': 'add_variant', 'parentId': product.id});
-          }
-        }
 
-        return ReorderableListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: displayItems.length,
-          buildDefaultDragHandles: false,
-          onReorder: (oldIndex, newIndex) {
-            final oldItem = displayItems[oldIndex];
-            
-            if (oldItem['type'] == 'product') {
-              int actualOld = pos.products.indexOf(oldItem['data']);
-              
-              // Correct newIndex relative to products list
-              if (newIndex > oldIndex) newIndex -= 1;
-              
-              int actualNew = 0;
-              int productCount = 0;
-              for (int i = 0; i < displayItems.length; i++) {
-                if (displayItems[i]['type'] == 'product') {
-                  if (productCount == newIndex) {
-                    actualNew = pos.products.indexOf(displayItems[i]['data']);
-                    break;
-                  }
-                  productCount++;
+            final List<dynamic> displayItems = [];
+            for (var product in pos.products) {
+              displayItems.add({'type': 'product', 'data': product});
+              if (expandedProductIds.contains(product.id)) {
+                for (int i = 0; i < product.variants.length; i++) {
+                  displayItems.add({'type': 'variant', 'data': product.variants[i], 'parentId': product.id, 'index': i});
                 }
+                displayItems.add({'type': 'add_variant', 'parentId': product.id});
               }
-              if (actualNew == 0 && newIndex >= pos.products.length) actualNew = pos.products.length;
-
-              pos.reorderProducts(actualOld, actualNew);
             }
-          },
-          itemBuilder: (context, index) {
-            final item = displayItems[index];
-            final String key = item['type'] == 'product' ? "prod_${item['data'].id}" : 
-                               item['type'] == 'variant' ? "var_${item['parentId']}_${item['index']}" :
-                               "add_var_${item['parentId']}";
 
-            if (item['type'] == 'product') {
-              return _buildProductRow(pos, context, item['data'], key);
-            } else if (item['type'] == 'variant') {
-              return _buildVariantRow(pos, context, item['data'], item['parentId'], item['index'], key);
-            } else {
-              return _buildAddVariantRow(pos, context, item['parentId'], key);
-            }
-          },
-        );
-      }),
+            return ReorderableListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: displayItems.length,
+              buildDefaultDragHandles: false,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > oldIndex) newIndex -= 1;
+                final dragged = displayItems[oldIndex];
+                final targetItem = displayItems[newIndex];
+
+                if (dragged['type'] == 'product') {
+                  int actualOld = pos.products.indexOf(dragged['data']);
+                  
+                  // If dropped on another product (not between), it's a merge
+                  if (targetItem['type'] == 'product' && dragged['data'].id != targetItem['data'].id) {
+                     if (!dragged['data'].hasVariants) {
+                       pos.mergeProducts(dragged['data'], targetItem['data']);
+                       return;
+                     }
+                  }
+
+                  // Find target index in products list
+                  int actualNew = 0;
+                  int productCount = 0;
+                  for (int i = 0; i < displayItems.length; i++) {
+                    if (displayItems[i]['type'] == 'product') {
+                      if (productCount == newIndex) {
+                        actualNew = pos.products.indexOf(displayItems[i]['data']);
+                        break;
+                      }
+                      productCount++;
+                    }
+                  }
+                  if (actualNew == 0 && newIndex >= pos.products.length) actualNew = pos.products.length;
+                  pos.reorderProducts(actualOld, actualNew);
+                } 
+                else if (dragged['type'] == 'variant') {
+                  final sourceParent = pos.products.firstWhere((p) => p.id == dragged['parentId']);
+                  final draggedVariant = dragged['data'];
+
+                  if (targetItem['type'] == 'product') {
+                    // Move to this product
+                    pos.moveVariantToProduct(sourceParent, dragged['index'], targetItem['data']);
+                  } else if (targetItem['type'] == 'variant') {
+                    if (targetItem['parentId'] == dragged['parentId']) {
+                      // Reorder within same parent
+                      final variants = List<FoodVariant>.from(sourceParent.variants);
+                      final item = variants.removeAt(dragged['index']);
+                      variants.insert(targetItem['index'], item);
+                      final updatedParent = FoodItem(
+                        id: sourceParent.id,
+                        name: sourceParent.name,
+                        description: sourceParent.description,
+                        price: sourceParent.price,
+                        imageUrl: sourceParent.imageUrl,
+                        category: sourceParent.category,
+                        preparationArea: sourceParent.preparationArea,
+                        preparationAreaId: sourceParent.preparationAreaId,
+                        hasVariants: true,
+                        variants: variants,
+                        isAvailable: sourceParent.isAvailable,
+                      );
+                      pos.updateProduct(updatedParent);
+                    } else {
+                      // Move to another parent
+                      final targetParent = pos.products.firstWhere((p) => p.id == targetItem['parentId']);
+                      pos.moveVariantToProduct(sourceParent, dragged['index'], targetParent);
+                    }
+                  } else {
+                    // Dropped on "Add variant" or empty space -> Extract?
+                    pos.extractVariant(sourceParent, dragged['index']);
+                  }
+                }
+              },
+              itemBuilder: (context, index) {
+                final item = displayItems[index];
+                final String key = item['type'] == 'product' ? "prod_${item['data'].id}" : 
+                                   item['type'] == 'variant' ? "var_${item['parentId']}_${item['index']}" :
+                                   "add_var_${item['parentId']}";
+
+                if (item['type'] == 'product') {
+                  return _buildProductRow(pos, context, item['data'], key);
+                } else if (item['type'] == 'variant') {
+                  return _buildVariantRow(pos, context, item['data'], item['parentId'], item['index'], key);
+                } else {
+                  return _buildAddVariantRow(pos, context, item['parentId'], key);
+                }
+              },
+            );
+          });
+        },
+      ),
     );
   }
 
@@ -177,121 +230,101 @@ class ProductManagementScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: ListTile(
-                  onTap: () {
-                    if (isExpanded) {
-                      expandedProductIds.remove(item.id);
-                    } else {
-                      expandedProductIds.add(item.id);
-                    }
-                  },
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  leading: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ReorderableDragStartListener(
-                        index: pos.products.indexOf(item),
-                        child: const Icon(Icons.drag_indicator, color: Colors.grey, size: 20),
+                  child: LongPressDraggable<Map<String, dynamic>>(
+                    data: {'type': 'product', 'data': item},
+                    feedback: Material(
+                      elevation: 12,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.primary, width: 2)),
+                        child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: () {
-                          if (isExpanded) {
-                            expandedProductIds.remove(item.id);
-                          } else {
-                            expandedProductIds.add(item.id);
-                          }
-                        },
-                        child: Icon(
-                          isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right, 
-                          color: AppColors.primary,
-                          size: 28,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Draggable<Map<String, dynamic>>(
-                        data: {'type': 'product', 'data': item},
-                        feedback: Material(
-                          elevation: 8,
-                          borderRadius: BorderRadius.circular(8),
-                          child: ClipRRect(
+                    ),
+                    child: ListTile(
+                      onTap: () {
+                        if (isExpanded) {
+                          expandedProductIds.remove(item.id);
+                        } else {
+                          expandedProductIds.add(item.id);
+                        }
+                      },
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      leading: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ReorderableDragStartListener(
+                            index: pos.products.indexOf(item),
+                            child: const Icon(Icons.drag_indicator, color: Colors.grey, size: 24),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right, 
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 4),
+                          ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: CommonImage(
                               imageUrl: item.imageUrl,
-                              width: 60,
-                              height: 60,
+                              width: 45,
+                              height: 45,
                               fit: BoxFit.cover,
                             ),
                           ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CommonImage(
-                            imageUrl: item.imageUrl,
-                            width: 45,
-                            height: 45,
-                            fit: BoxFit.cover,
+                        ],
+                      ),
+                      title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      subtitle: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              item.category,
+                              style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          if (item.hasVariants)
+                            Text("${item.variants.length} variant", style: const TextStyle(color: Colors.blue, fontSize: 11, fontWeight: FontWeight.w600))
+                          else
+                            Text(
+                              "${NumberFormat("#,###", "uz_UZ").format(item.price)} ${pos.currencySymbol}",
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
+                            ),
+                        ],
                       ),
-                    ],
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Switch.adaptive(
+                            value: item.isAvailable,
+                            onChanged: (v) => pos.toggleProductAvailability(item),
+                            activeColor: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: () => _showMergeDialog(context, pos, item),
+                            icon: const Icon(Icons.merge_type, color: Colors.orange, size: 22),
+                            tooltip: "Birlashtirish",
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(8),
+                          ),
+                          IconButton(
+                            onPressed: () => _showRecipeDialog(context, pos, item),
+                            icon: const Icon(Icons.receipt_long_rounded, color: Colors.teal, size: 22),
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  subtitle: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          item.category,
-                          style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (item.hasVariants)
-                        Text("${item.variants.length} variant", style: const TextStyle(color: Colors.blue, fontSize: 11, fontWeight: FontWeight.w600))
-                      else
-                        Text(
-                          "${NumberFormat("#,###", "uz_UZ").format(item.price)} ${pos.currencySymbol}",
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Switch.adaptive(
-                        value: item.isAvailable,
-                        onChanged: (v) => pos.toggleProductAvailability(item),
-                        activeColor: AppColors.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () => _showMergeDialog(context, pos, item),
-                        icon: const Icon(Icons.merge_type, color: Colors.orange, size: 22),
-                        tooltip: "Birlashtirish",
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(8),
-                      ),
-                      IconButton(
-                        onPressed: () => _showRecipeDialog(context, pos, item),
-                        icon: const Icon(Icons.receipt_long_rounded, color: Colors.teal, size: 22),
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(8),
-                      ),
-                      if (!Responsive.isMobile(context))
-                        IconButton(
-                          onPressed: () => Get.to(() => SaveProductScreen(item: item)),
-                          icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 22),
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(8),
-                        ),
-                    ],
-                  ),
-                ),
               ),
             ),
           );
@@ -311,42 +344,60 @@ class ProductManagementScreen extends StatelessWidget {
       ),
       child: ListTile(
         visualDensity: VisualDensity.compact,
-        leading: Draggable<Map<String, dynamic>>(
-          data: {'type': 'variant', 'data': variant, 'parentId': parentId, 'index': variantIndex},
-          feedback: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-              child: Text(variant.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-            ),
-          ),
-          child: const Icon(Icons.subdirectory_arrow_right, size: 16, color: Colors.grey),
-        ),
-        title: Text(variant.name, style: const TextStyle(fontSize: 14)),
-        subtitle: Text("${NumberFormat("#,###", "uz_UZ").format(variant.price)} ${pos.currencySymbol}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        trailing: Row(
+        leading: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Switch.adaptive(
-              value: variant.isAvailable,
-              onChanged: (v) {
-                final parent = pos.products.firstWhere((p) => p.id == parentId);
-                pos.toggleVariantAvailability(parent, variantIndex);
-              },
-              activeColor: AppColors.primary,
-            ),
-            TextButton.icon(
-              onPressed: () {
-                final parent = pos.products.firstWhere((p) => p.id == parentId);
-                pos.extractVariant(parent, variantIndex);
-              },
-              icon: const Icon(Icons.outbound_outlined, size: 14),
-              label: const Text("Alohida qilish", style: TextStyle(fontSize: 11)),
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, foregroundColor: AppColors.primary),
-            ),
-          ],
+      child: LongPressDraggable<Map<String, dynamic>>(
+        data: {'type': 'variant', 'data': variant, 'parentId': parentId, 'index': variantIndex},
+        feedback: Material(
+          elevation: 12,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.blue, width: 2)),
+            child: Text(variant.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ),
+        child: ListTile(
+          visualDensity: VisualDensity.compact,
+          leading: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(width: 8),
+              Icon(Icons.drag_indicator, size: 20, color: Colors.grey),
+            ],
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.subdirectory_arrow_right, size: 14, color: Colors.grey),
+              const SizedBox(width: 4),
+              Expanded(child: Text(variant.name, style: const TextStyle(fontSize: 14))),
+            ],
+          ),
+          subtitle: Text("${NumberFormat("#,###", "uz_UZ").format(variant.price)} ${pos.currencySymbol}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Switch.adaptive(
+                value: variant.isAvailable,
+                onChanged: (v) {
+                  final parent = pos.products.firstWhere((p) => p.id == parentId);
+                  pos.toggleVariantAvailability(parent, variantIndex);
+                },
+                activeColor: AppColors.primary,
+              ),
+              IconButton(
+                onPressed: () {
+                  final parent = pos.products.firstWhere((p) => p.id == parentId);
+                  pos.extractVariant(parent, variantIndex);
+                },
+                icon: const Icon(Icons.open_in_new, size: 18, color: Colors.blue),
+                tooltip: "Alohida qilish",
+                constraints: const BoxConstraints(),
+                padding: const EdgeInsets.all(8),
+              ),
+            ],
+          ),
         ),
       ),
     );
