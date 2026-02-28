@@ -342,11 +342,6 @@ class ProductManagementScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: ListTile(
-        visualDensity: VisualDensity.compact,
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
       child: LongPressDraggable<Map<String, dynamic>>(
         data: {'type': 'variant', 'data': variant, 'parentId': parentId, 'index': variantIndex},
         feedback: Material(
