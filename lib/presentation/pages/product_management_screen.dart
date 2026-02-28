@@ -99,17 +99,11 @@ class ProductManagementScreen extends StatelessWidget {
 
                   // Find target index in products list
                   int actualNew = 0;
-                  int productCount = 0;
-                  for (int i = 0; i < displayItems.length; i++) {
-                    if (displayItems[i]['type'] == 'product') {
-                      if (productCount == newIndex) {
-                        actualNew = pos.products.indexOf(displayItems[i]['data']);
-                        break;
-                      }
-                      productCount++;
+                  for (int i = 0; i < newIndex; i++) {
+                    if (displayItems[i]['type'] == 'product' && displayItems[i]['data'].id != dragged['data'].id) {
+                      actualNew++;
                     }
                   }
-                  if (actualNew == 0 && newIndex >= pos.products.length) actualNew = pos.products.length;
                   pos.reorderProducts(actualOld, actualNew);
                 } 
                 else if (dragged['type'] == 'variant') {
@@ -157,9 +151,9 @@ class ProductManagementScreen extends StatelessWidget {
                                    "add_var_${item['parentId']}";
 
                 if (item['type'] == 'product') {
-                  return _buildProductRow(pos, context, item['data'], key);
+                  return _buildProductRow(pos, context, item['data'], key, index);
                 } else if (item['type'] == 'variant') {
-                  return _buildVariantRow(pos, context, item['data'], item['parentId'], item['index'], key);
+                  return _buildVariantRow(pos, context, item['data'], item['parentId'], item['index'], key, index, displayItems);
                 } else {
                   return _buildAddVariantRow(pos, context, item['parentId'], key);
                 }
@@ -171,7 +165,7 @@ class ProductManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProductRow(POSController pos, BuildContext context, FoodItem item, String key) {
+  Widget _buildProductRow(POSController pos, BuildContext context, FoodItem item, String key, int index) {
     bool isExpanded = expandedProductIds.contains(item.id);
     return Padding(
       key: ValueKey(key),
@@ -254,7 +248,7 @@ class ProductManagementScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           ReorderableDragStartListener(
-                            index: pos.products.indexOf(item),
+                            index: index,
                             child: const Icon(Icons.drag_indicator, color: Colors.grey, size: 24),
                           ),
                           const SizedBox(width: 8),
@@ -333,7 +327,7 @@ class ProductManagementScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVariantRow(POSController pos, BuildContext context, FoodVariant variant, String parentId, int variantIndex, String key) {
+  Widget _buildVariantRow(POSController pos, BuildContext context, FoodVariant variant, String parentId, int variantIndex, String key, int index, List<dynamic> displayItems) {
     return Container(
       key: ValueKey(key),
       margin: const EdgeInsets.only(left: 40, bottom: 4, right: 16),
@@ -355,11 +349,14 @@ class ProductManagementScreen extends StatelessWidget {
         ),
         child: ListTile(
           visualDensity: VisualDensity.compact,
-          leading: const Row(
+          leading: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(width: 8),
-              Icon(Icons.drag_indicator, size: 20, color: Colors.grey),
+              const SizedBox(width: 8),
+              ReorderableDragStartListener(
+                index: index,
+                child: const Icon(Icons.drag_indicator, size: 20, color: Colors.grey),
+              ),
             ],
           ),
           title: Row(
