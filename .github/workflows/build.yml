@@ -10,38 +10,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-windows:
-    name: Windows Build
+  build:
+    name: Build Windows & Android
     runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build Windows
-        run: flutter build windows --release
-
-      - name: Create Installer (Inno Setup)
-        shell: pwsh
-        run: |
-          iscc windows/installer.iss
-
-      - name: Upload Windows Installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: fassa-pos-windows-installer
-          path: build/windows/x64/runner/Release/installer/FassaPos_Setup.exe
-
-  build-android:
-    name: Android Build
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -60,18 +31,32 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK & AppBundle
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Create Installer (Inno Setup)
+        shell: pwsh
+        run: |
+          iscc windows/installer.iss
+
+      - name: Build Android (APK & AppBundle)
         run: |
           flutter build apk --release
           flutter build appbundle --release
 
-      - name: Upload APK
+      - name: Upload Windows Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: fassa-pos-windows-installer
+          path: build/windows/x64/runner/Release/installer/FassaPos_Setup.exe
+
+      - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: fassa-pos-android-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload AppBundle
+      - name: Upload Android AppBundle
         uses: actions/upload-artifact@v4
         with:
           name: fassa-pos-android-aab
