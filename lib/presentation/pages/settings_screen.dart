@@ -323,7 +323,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildFooter() {
     return const Center(
       child: Text(
-        "© 2024 Fayz Cloud Services",
+        "© 2026 Fassa POS",
         style: TextStyle(color: Color(0xFFD1D5DB), fontSize: 11, fontWeight: FontWeight.w500),
       ),
     );
