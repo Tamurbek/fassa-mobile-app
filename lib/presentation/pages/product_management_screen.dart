@@ -224,18 +224,7 @@ class ProductManagementScreen extends StatelessWidget {
                 ),
                   child: ReorderableDelayedDragStartListener(
                   index: index,
-                  child: LongPressDraggable<Map<String, dynamic>>(
-                    data: {'type': 'product', 'data': item},
-                    feedback: Material(
-                      elevation: 12,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.primary, width: 2)),
-                        child: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                    ),
-                    child: ListTile(
+                  child: ListTile(
                       onTap: () {
                         if (isExpanded) {
                           expandedProductIds.remove(item.id);
@@ -260,11 +249,23 @@ class ProductManagementScreen extends StatelessWidget {
                           const SizedBox(width: 4),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: CommonImage(
-                              imageUrl: item.imageUrl,
-                              width: 45,
-                              height: 45,
-                              fit: BoxFit.cover,
+                            child: LongPressDraggable<Map<String, dynamic>>(
+                              data: {'type': 'product', 'data': item},
+                              feedback: Material(
+                                elevation: 12,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.primary, width: 2)),
+                                  child: CommonImage(imageUrl: item.imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+                                ),
+                              ),
+                              child: CommonImage(
+                                imageUrl: item.imageUrl,
+                                width: 45,
+                                height: 45,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ],
@@ -319,7 +320,6 @@ class ProductManagementScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-                ),
               ),
             ),
           );
