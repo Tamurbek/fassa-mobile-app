@@ -73,17 +73,32 @@ class ProductManagementScreen extends StatelessWidget {
         return ReorderableListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: displayItems.length,
+          buildDefaultDragHandles: false,
           onReorder: (oldIndex, newIndex) {
-            // Only allow reordering products, not variants (simplification for mobile)
+            if (newIndex > oldIndex) newIndex -= 1;
+            
             final oldItem = displayItems[oldIndex];
-            final newItem = displayItems[newIndex > displayItems.length - 1 ? displayItems.length - 1 : newIndex];
             
             if (oldItem['type'] == 'product') {
-              // Find actual product index
               int actualOld = pos.products.indexOf(oldItem['data']);
-              // This is a bit tricky with nested items, but reorderProducts handles the list
-              // For simplicity, we only reorder if both are products or we find the right spot
-              pos.reorderProducts(actualOld, newIndex > pos.products.length ? pos.products.length : newIndex);
+              
+              // Find the target product index
+              // We need to find which product is at target display index
+              int actualNew = 0;
+              int productCount = 0;
+              for (int i = 0; i < displayItems.length; i++) {
+                if (displayItems[i]['type'] == 'product') {
+                  if (productCount == newIndex) {
+                    actualNew = pos.products.indexOf(displayItems[i]['data']);
+                    break;
+                  }
+                  productCount++;
+                }
+              }
+              // Fallback if not found
+              if (actualNew == 0 && newIndex >= pos.products.length) actualNew = pos.products.length;
+
+              pos.reorderProducts(actualOld, actualNew);
             }
           },
           itemBuilder: (context, index) {
