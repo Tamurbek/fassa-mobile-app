@@ -113,7 +113,7 @@ class MainNavigationScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Obx(() => Text(
-                      pos.restaurantName.value.isEmpty ? "Fayz" : pos.restaurantName.value, 
+                      pos.restaurantName.value.isEmpty ? "Fassa" : pos.restaurantName.value, 
                       style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF1A1A1A))
                     )),
                     Text("admin_panel".tr, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.bold)),
