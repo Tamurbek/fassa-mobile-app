@@ -138,6 +138,7 @@ mixin DataSyncMixin on POSControllerState {
           isSubscriptionEnforced.value = cafe['is_subscription_enforced'] ?? true;
           isQrLoginEnabled.value = cafe['is_qr_login_enabled'] ?? true;
           isOfflineSyncEnabled.value = cafe['is_offline_sync_enabled'] ?? true;
+          isStockTrackingEnabled.value = cafe['is_stock_tracking_enabled'] ?? true;
 
           // Feature Flags
           isGeofencingEnabled.value = cafe['is_geofencing_enabled'] ?? true;
@@ -175,6 +176,7 @@ mixin DataSyncMixin on POSControllerState {
           storage.write('is_subscription_enforced', isSubscriptionEnforced.value);
           storage.write('is_qr_login_enabled', isQrLoginEnabled.value);
           storage.write('is_offline_sync_enabled', isOfflineSyncEnabled.value);
+          storage.write('is_stock_tracking_enabled', isStockTrackingEnabled.value);
         } catch (e) { print("Error fetching cafe info: $e"); }
       }(),
 

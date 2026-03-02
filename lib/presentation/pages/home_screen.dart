@@ -359,7 +359,7 @@ class HomeScreen extends StatelessWidget {
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 4))],
               ),
               child: Opacity(
-                opacity: (item.isSoldOut || !item.isAvailable) ? 0.6 : 1.0,
+                opacity: (!item.isAvailable || (pos.isStockTrackingEnabled.value && item.isSoldOut)) ? 0.6 : 1.0,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -374,7 +374,7 @@ class HomeScreen extends StatelessWidget {
                               child: CommonImage(imageUrl: item.imageUrl, fit: BoxFit.cover, width: double.infinity, height: double.infinity),
                             ),
                             // Freshness Badge
-                            if (item.isFresh)
+                            if (pos.isStockTrackingEnabled.value && item.isFresh)
                               Positioned(
                                 top: 8, left: 8,
                                 child: Container(
@@ -384,7 +384,7 @@ class HomeScreen extends StatelessWidget {
                                 ),
                               ),
                             // Low Stock Badge
-                            if (item.isLowStock)
+                            if (pos.isStockTrackingEnabled.value && item.isLowStock)
                               Positioned(
                                 bottom: 8, right: 8,
                                 child: Container(
@@ -394,7 +394,7 @@ class HomeScreen extends StatelessWidget {
                                 ),
                               ),
                             // Sold Out Overlay
-                            if (item.isSoldOut || !item.isAvailable)
+                            if (!item.isAvailable || (pos.isStockTrackingEnabled.value && item.isSoldOut))
                               Positioned.fill(
                                 child: Container(
                                   decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(16)),
@@ -455,7 +455,7 @@ class HomeScreen extends StatelessWidget {
                               ),
                               if (isMobile && qty > 0)
                                 _buildCounterControl(item, qty, pos)
-                              else if (item.isAvailable && !item.isSoldOut)
+                              else if (item.isAvailable && (!pos.isStockTrackingEnabled.value || !item.isSoldOut))
                                 Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: BoxDecoration(
