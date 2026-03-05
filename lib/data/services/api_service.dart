@@ -39,6 +39,15 @@ class ApiService {
                 g.Get.find<logic.POSController>().logout(forced: true);
              } catch (_) {}
            }
+        } else if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.unknown) {
+          // Show technical error for debugging "Security" issues on Windows
+          g.Get.snackbar(
+            "Tarmoq xatosi", 
+            "Serverga ulanib bo'lmadi. Texnik xato: ${e.error ?? e.message}",
+            backgroundColor: Colors.red.withOpacity(0.8),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 10),
+          );
         }
         return handler.next(e);
       }
