@@ -65,7 +65,15 @@ class POSController extends POSControllerState with
   }
 
   Future<void> openCustomerDisplay() async {
-    if (customerWindowId.value != null) return;
+    // Check if the window is actually still open
+    if (customerWindowId.value != null) {
+      final subWindowIds = await DesktopMultiWindow.getAllSubWindowIds();
+      if (!subWindowIds.contains(customerWindowId.value)) {
+        customerWindowId.value = null;
+      } else {
+        return;
+      }
+    }
     
     try {
       final window = await DesktopMultiWindow.createWindow(jsonEncode({
@@ -137,6 +145,8 @@ class POSController extends POSControllerState with
       await DesktopMultiWindow.invokeMethod(customerWindowId.value!, 'updateData', jsonEncode(data));
     } catch (e) {
       print("Customer Display update error: $e");
+      // If communication fails, it's likely the window was closed
+      customerWindowId.value = null;
     }
   }
 
