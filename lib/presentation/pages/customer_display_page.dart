@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
+import '../../theme/app_colors.dart';
 
 class CustomerDisplayPage extends StatefulWidget {
   final Map<String, dynamic> initialData;
@@ -49,8 +50,10 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = const Color(0xFF1a1a1a);
-    final accentColor = const Color(0xFF4318FF);
+    const bgColor = AppColors.background;
+    const accentColor = AppColors.primary;
+    const textColor = AppColors.textPrimary;
+    const secondaryTextColor = AppColors.textSecondary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -62,8 +65,8 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
             child: Container(
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
-                border: Border(right: BorderSide(color: Colors.white.withOpacity(0.1))),
+                color: Colors.white,
+                border: Border(right: BorderSide(color: textColor.withOpacity(0.05))),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,15 +77,15 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: accentColor,
+                          color: accentColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(15),
                         ),
-                        child: const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 30),
+                        child: const Icon(Icons.shopping_cart_outlined, color: accentColor, size: 30),
                       ),
                       const SizedBox(width: 20),
                       const Text(
                         "Sizning Buyurtmangiz",
-                        style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: textColor, fontSize: 32, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -93,18 +96,18 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.restaurant, color: Colors.white.withOpacity(0.1), size: 100),
+                                Icon(Icons.restaurant, color: textColor.withOpacity(0.05), size: 100),
                                 const SizedBox(height: 20),
                                 Text(
                                   "Xush kelibsiz!",
-                                  style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 24),
+                                  style: TextStyle(color: secondaryTextColor, fontSize: 24),
                                 ),
                               ],
                             ),
                           )
                         : ListView.separated(
                             itemCount: items.length,
-                            separatorBuilder: (_, __) => Divider(color: Colors.white.withOpacity(0.05), height: 30),
+                            separatorBuilder: (_, __) => Divider(color: textColor.withOpacity(0.05), height: 30),
                             itemBuilder: (context, index) {
                               final item = items[index];
                               return Row(
@@ -115,24 +118,24 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
                                       children: [
                                         Text(
                                           item['name'] ?? "",
-                                          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600),
+                                          style: const TextStyle(color: textColor, fontSize: 22, fontWeight: FontWeight.w600),
                                         ),
                                         if (item['variant'] != null)
                                           Text(
                                             item['variant'],
-                                            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
+                                            style: const TextStyle(color: secondaryTextColor, fontSize: 16),
                                           ),
                                       ],
                                     ),
                                   ),
                                   Text(
                                     "${item['quantity']} x",
-                                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 20),
+                                    style: const TextStyle(color: secondaryTextColor, fontSize: 20),
                                   ),
                                   const SizedBox(width: 30),
                                   Text(
                                     _formatPrice((item['price'] ?? 0) * (item['quantity'] ?? 1)),
-                                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(color: textColor, fontSize: 22, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               );
@@ -154,30 +157,36 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundColor: Colors.white.withOpacity(0.05),
+                    backgroundColor: accentColor.withOpacity(0.1),
                     child: Text(
                       restaurantName.isNotEmpty ? restaurantName[0] : "F",
-                      style: const TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold),
+                      style: const TextStyle(color: accentColor, fontSize: 50, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(height: 20),
                   Text(
                     restaurantName,
-                    style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: textColor, fontSize: 30, fontWeight: FontWeight.w600),
                   ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: accentColor.withOpacity(0.1),
+                      color: accentColor,
                       borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: accentColor.withOpacity(0.3)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
                         Text(
                           "UMUMIY SUMMA",
-                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 18, letterSpacing: 2),
+                          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 18, letterSpacing: 2, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -191,7 +200,7 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
                   const Text(
                     "Xaridingiz uchun rahmat!",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white54, fontSize: 18),
+                    style: TextStyle(color: secondaryTextColor, fontSize: 18),
                   ),
                   const SizedBox(height: 20),
                 ],
