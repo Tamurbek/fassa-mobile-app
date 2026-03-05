@@ -18,10 +18,21 @@ import 'logic/background_service.dart';
 import 'presentation/components/location_checker.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:tray_manager/tray_manager.dart';
-import 'dart:io';
+import 'dart:convert';
+import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'presentation/pages/customer_display_page.dart';
 
-void main() async {
+void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  if (args.firstOrNull == 'multi_window') {
+    final windowId = int.parse(args[1]);
+    final argument = args.length > 2 ? jsonDecode(args[2]) as Map<String, dynamic> : <String, dynamic>{};
+    
+    runApp(CustomerDisplayApp(windowId: windowId, initialData: argument));
+    return;
+  }
+
   await initializeService();
   await GetStorage.init();
   
@@ -64,6 +75,22 @@ void main() async {
   }
   
   runApp(const FassaApp());
+}
+
+class CustomerDisplayApp extends StatelessWidget {
+  final int windowId;
+  final Map<String, dynamic> initialData;
+  const CustomerDisplayApp({super.key, required this.windowId, required this.initialData});
+
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(
+      title: 'Customer Display',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      home: CustomerDisplayPage(initialData: initialData),
+    );
+  }
 }
 
 class FassaApp extends StatelessWidget {

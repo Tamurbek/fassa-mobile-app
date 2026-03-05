@@ -49,6 +49,59 @@ class POSController extends POSControllerState with
       windowManager.addListener(this);
       trayManager.addListener(this);
     }
+
+    // Customer Display Listeners
+    ever(currentOrder, (_) => updateCustomerDisplay());
+    ever(discountValue, (_) => updateCustomerDisplay());
+    ever(discountType, (_) => updateCustomerDisplay());
+  }
+
+  Future<void> openCustomerDisplay() async {
+    if (customerWindowId.value != null) return;
+    
+    final window = await DesktopMultiWindow.createWindow(jsonEncode({
+      'restaurantName': restaurantName.value,
+      'currency': currencySymbol,
+      'items': [],
+      'total': 0.0,
+    }));
+    
+    customerWindowId.value = window.windowId;
+    window
+      ..setFrame(const Offset(0, 0) & const Size(1024, 768))
+      ..center()
+      ..setTitle("Mijoz Ekran")
+      ..show();
+  }
+
+  @override
+  void updateCustomerDisplay() async {
+    if (customerWindowId.value == null || !Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) return;
+    
+    try {
+      final itemsData = currentOrder.map((e) {
+        final foodItem = e['item'] as FoodItem;
+        final variant = e['variant'] as FoodVariant?;
+        final unitPrice = variant?.price ?? foodItem.price;
+        return {
+          'name': foodItem.name,
+          'variant': variant?.name,
+          'quantity': e['quantity'],
+          'price': unitPrice,
+        };
+      }).toList();
+
+      final data = {
+        'items': itemsData,
+        'total': total,
+        'restaurantName': restaurantName.value,
+        'currency': currencySymbol,
+      };
+
+      await DesktopMultiWindow.invokeMethod(customerWindowId.value!, 'updateData', jsonEncode(data));
+    } catch (e) {
+      print("Customer Display update error: $e");
+    }
   }
 
   @override

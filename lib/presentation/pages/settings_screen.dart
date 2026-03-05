@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -129,6 +130,18 @@ class SettingsScreen extends StatelessWidget {
                     trailingText: pos.restaurantPhone.value, 
                     onTap: () => _showEditDialog(context, "restaurant_phone".tr, pos.restaurantPhone, 'restaurant_phone', onSave: (val) => pos.updateCafeInfo(phone: val))
                   )),
+                ]),
+              ],
+
+              if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) ...[
+                const SizedBox(height: 24),
+                _buildSectionLabel("Displey Sozlamalari"),
+                _buildSettingsCard([
+                  _buildActionItem(
+                    Icons.monitor_rounded, 
+                    "Mijoz ekranini ochish", 
+                    onTap: () => pos.openCustomerDisplay()
+                  ),
                 ]),
               ],
 

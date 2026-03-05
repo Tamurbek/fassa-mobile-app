@@ -112,6 +112,7 @@ abstract class POSControllerState extends GetxController {
   var enableBillPrint = true.obs;
   var enablePaymentPrint = true.obs;
   var isMainPrinterTerminal = false.obs;
+  var customerWindowId = RxnInt();
 
   var isOrdersTableView = false.obs;
 
@@ -186,4 +187,5 @@ abstract class POSControllerState extends GetxController {
   Future<void> printLocally(Map<String, dynamic> order, {bool isKitchenOnly = false, String? receiptTitle, bool skipCancellation = false});
   bool addToSyncQueue(String type, Map<String, dynamic> data);
   Future<void> processSyncQueue();
+  void updateCustomerDisplay();
 }
