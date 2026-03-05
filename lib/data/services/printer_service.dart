@@ -90,7 +90,7 @@ class PrinterService {
           bytes += _row(generator, item['name'], '${item['qty']} x ${_formatPrice(item['price'])}');
         }
         bytes += generator.hr();
-        bytes += _row(generator, 'JAMI:', _formatPrice(order['total']), bold: true);
+        bytes += _row(generator, 'JAMI:', _formatPrice(order['total']), styles: const PosStyles(bold: true));
       } else {
         for (int i = 0; i < layout.length; i++) {
           var element = layout[i];
@@ -318,16 +318,6 @@ class PrinterService {
     
     return bytes;
   }
-      }
-
-      bytes += generator.feed(3);
-      bytes += generator.cut();
-      return await _sendToPrinter(printer, bytes);
-    } catch (e) {
-      print('Manual layout print failed: $e');
-      return false;
-    }
-  }
 
   Future<bool> printKitchenTicket(PrinterModel printer, Map<String, dynamic> order, List<dynamic> items, {String? title}) async {
     final orderForKitchen = Map<String, dynamic>.from(order);
@@ -516,7 +506,7 @@ class PrinterService {
       }
 
       bytes += generator.hr();
-      bytes += _row(generator, 'JAMI:', _formatPrice(totalRevenue), bold: true);
+      bytes += _row(generator, 'JAMI:', _formatPrice(totalRevenue), styles: const PosStyles(bold: true));
       bytes += generator.feed(3);
       bytes += generator.cut();
       return await _sendToPrinter(printer, bytes);
@@ -549,7 +539,7 @@ class PrinterService {
       });
 
       bytes += generator.hr();
-      bytes += _row(generator, 'JAMI:', _formatPrice(total), bold: true);
+      bytes += _row(generator, 'JAMI:', _formatPrice(total), styles: const PosStyles(bold: true));
       bytes += generator.feed(3);
       bytes += generator.cut();
       return await _sendToPrinter(printer, bytes);
@@ -651,13 +641,6 @@ class PrinterService {
       bytes += generator.cut();
       return await _sendToPrinter(printer, bytes);
     } catch (e) { return false; }
-  }
-
-  List<int> _row(Generator g, String left, String right, {bool bold = false}) {
-    return g.row([
-      PosColumn(text: _normalizeString(left), width: 7, styles: PosStyles(bold: bold)),
-      PosColumn(text: _normalizeString(right), width: 5, styles: PosStyles(align: PosAlign.right, bold: bold)),
-    ]);
   }
 
   Future<bool> _sendToPrinter(PrinterModel printer, List<int> bytes) async {
