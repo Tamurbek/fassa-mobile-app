@@ -92,117 +92,192 @@ class PrinterService {
         bytes += generator.hr();
         bytes += _row(generator, 'JAMI:', _formatPrice(order['total']), bold: true);
       } else {
-        for (var element in layout) {
+        for (int i = 0; i < layout.length; i++) {
+          var element = layout[i];
           if (!(element['enabled'] ?? true)) continue;
-          final type = element['type'];
 
-          switch (type) {
-            case 'HEADER':
-              bytes += generator.text(_normalizeString(posController.restaurantName.value), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-              if (posController.restaurantAddress.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantAddress.value), styles: const PosStyles(align: PosAlign.center));
-              if (posController.restaurantPhone.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantPhone.value), styles: const PosStyles(align: PosAlign.center));
-              break;
-            case 'CAFE_LOGO':
-              if (posController.showLogo.value && posController.restaurantLogo.value.isNotEmpty) {
-                try {
-                  final logoUrl = posController.restaurantLogo.value;
-                  final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 5));
-                  if (response.statusCode == 200) {
-                    final image = await compute(_decodeImage, response.bodyBytes);
-                    if (image != null) {
-                      final maxWidth = printer.paperSize == '58mm' ? 150 : 200;
-                      img.Image resized = img.copyResize(image, width: maxWidth);
-                      bytes += generator.image(resized);
-                    }
-                  }
-                } catch (e) { print('Logo error: $e'); }
+          final width = element['width'] ?? 100;
+          
+          if (width == 50 && i + 1 < layout.length) {
+            int nextEnabledIdx = -1;
+            for (int j = i + 1; j < layout.length; j++) {
+              if (layout[j]['enabled'] ?? true) {
+                nextEnabledIdx = j;
+                break;
               }
-              break;
-            case 'ORDER_INFO':
-              if (title != null) bytes += generator.text(_normalizeString(title.toUpperCase()), styles: const PosStyles(align: PosAlign.center, bold: true));
-              bytes += generator.text(_normalizeString('ID: ${order['id'].toString().substring(0, order['id'].toString().length > 8 ? 8 : order['id'].toString().length)}'), styles: const PosStyles(align: PosAlign.center));
-              bytes += generator.text(_normalizeString(DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())), styles: const PosStyles(align: PosAlign.center));
-              if (order['table'] != null && order['table'] != '-') {
-                 bytes += generator.text(_normalizeString('STOL: ${order['table']}'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-              }
-              if (order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
-                 bytes += generator.text(_normalizeString('OFITSIANT: ${order['waiter_name']}'), styles: const PosStyles(align: PosAlign.center));
-              }
-              break;
-            case 'ITEMS_TABLE':
-              bytes += generator.hr(ch: '-');
-              bytes += generator.row([
-                PosColumn(text: _normalizeString('NOMI'), width: 7, styles: const PosStyles(bold: true)),
-                PosColumn(text: _normalizeString('SONI'), width: 2, styles: const PosStyles(bold: true, align: PosAlign.center)),
-                PosColumn(text: _normalizeString('NARXI'), width: 3, styles: const PosStyles(bold: true, align: PosAlign.right)),
-              ]);
-              bytes += generator.hr(ch: '-');
-              final items = order['details'] as List;
-              for (var item in items) {
-                int qty = int.tryParse(item['qty'].toString()) ?? 0;
-                double price = double.tryParse(item['price'].toString()) ?? 0.0;
-                bytes += generator.row([
-                  PosColumn(text: _normalizeString(item['name']), width: 7),
-                  PosColumn(text: _normalizeString(qty.toString()), width: 2, styles: const PosStyles(align: PosAlign.center)),
-                  PosColumn(text: _normalizeString(_formatPrice(qty * price)), width: 3, styles: const PosStyles(align: PosAlign.right)),
-                ]);
-              }
-              bytes += generator.hr(ch: '-');
-              break;
-            case 'TOTAL_BLOCK':
-              double subtotal = 0;
-              for (var item in (order['details'] as List)) {
-                subtotal += (double.tryParse(item['price'].toString()) ?? 0.0) * (int.tryParse(item['qty'].toString()) ?? 0);
-              }
-              bytes += _row(generator, 'SUMMA:', _formatPrice(subtotal));
-              final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
-              if (discountAmt > 0) bytes += _row(generator, 'CHEGIRMA:', '-${_formatPrice(discountAmt)}', bold: true);
+            }
+
+            if (nextEnabledIdx != -1 && layout[nextEnabledIdx]['width'] == 50) {
+              var elLeft = element;
+              var elRight = layout[nextEnabledIdx];
               
-              double finalTotal = subtotal - discountAmt;
-              bytes += generator.hr(ch: '=');
-              bytes += generator.row([
-                PosColumn(text: _normalizeString('JAMI:'), width: 5, styles: const PosStyles(bold: true, height: PosTextSize.size2)),
-                PosColumn(text: _normalizeString('${_formatPrice(finalTotal)}'), width: 7, styles: const PosStyles(bold: true, align: PosAlign.right, height: PosTextSize.size2)),
-              ]);
-              bytes += generator.hr(ch: '=');
-              break;
-            case 'DIVIDER':
-              bytes += generator.hr(ch: '-');
-              break;
-            case 'INSTAGRAM_QR':
-              String instaLink = posController.instagramLink.value;
-              if (instaLink.isEmpty && posController.instagram.value.isNotEmpty) {
-                 instaLink = "https://instagram.com/${posController.instagram.value.replaceAll('@', '')}";
-              }
-              if (instaLink.isNotEmpty) {
-                bytes += generator.qrcode(instaLink, size: QRSize.size4);
-              }
-              break;
-            case 'TELEGRAM_QR':
-              String tgLink = posController.telegramLink.value;
-              if (tgLink.isEmpty && posController.telegram.value.isNotEmpty) {
-                 tgLink = "https://t.me/${posController.telegram.value.replaceAll('t.me/', '')}";
-              }
-              if (tgLink.isNotEmpty) {
-                bytes += generator.qrcode(tgLink, size: QRSize.size4);
-              }
-              break;
-            case 'FOOTER':
-              if (posController.receiptFooter.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.receiptFooter.value), styles: const PosStyles(align: PosAlign.center, bold: true));
-              if (posController.instagram.value.isNotEmpty) bytes += generator.text(_normalizeString('Insta: @${posController.instagram.value.replaceAll('@', '')}'), styles: const PosStyles(align: PosAlign.center));
-              if (posController.telegram.value.isNotEmpty) bytes += generator.text(_normalizeString('TG: t.me/${posController.telegram.value.replaceAll('t.me/', '')}'), styles: const PosStyles(align: PosAlign.center));
-              break;
-            case 'WIFI_INFO':
-               if (posController.wifiSsid.value.isNotEmpty) {
-                 bytes += generator.text(_normalizeString('Wi-Fi: ${posController.wifiSsid.value}'), styles: const PosStyles(align: PosAlign.center));
-                 bytes += generator.text(_normalizeString('Parol: ${posController.wifiPassword.value}'), styles: const PosStyles(align: PosAlign.center));
-               }
-               break;
-            case 'KITCHEN_TITLE':
-              bytes += generator.text(_normalizeString('*** OSHXONA ***'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-              break;
+              bytes += _printSideBySide(generator, elLeft, elRight, order, posController);
+              
+              i = nextEnabledIdx;
+              continue;
+            }
           }
+
+          bytes += await _printElement(generator, element, order, posController, printer, title);
         }
+      }
+
+      bytes += generator.feed(3);
+      bytes += generator.cut();
+      return await _sendToPrinter(printer, bytes);
+    } catch (e) {
+      print('Manual layout print failed: $e');
+      return false;
+    }
+  }
+
+  Future<List<int>> _printElement(Generator generator, Map<String, dynamic> element, Map<String, dynamic> order, POSController posController, PrinterModel printer, String? title) async {
+    List<int> bytes = [];
+    final type = element['type'];
+
+    switch (type) {
+      case 'HEADER':
+      case 'STORE_NAME':
+        bytes += generator.text(_normalizeString(posController.restaurantName.value), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+        if (posController.restaurantAddress.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantAddress.value), styles: const PosStyles(align: PosAlign.center));
+        if (posController.restaurantPhone.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantPhone.value), styles: const PosStyles(align: PosAlign.center));
+        break;
+      case 'LOGO':
+      case 'CAFE_LOGO':
+        if (posController.showLogo.value && posController.restaurantLogo.value.isNotEmpty) {
+          try {
+            final logoUrl = posController.restaurantLogo.value;
+            final response = await http.get(Uri.parse(logoUrl)).timeout(const Duration(seconds: 5));
+            if (response.statusCode == 200) {
+              final image = await compute(_decodeImage, response.bodyBytes);
+              if (image != null) {
+                final maxWidth = printer.paperSize == '58mm' ? 150 : 200;
+                img.Image resized = img.copyResize(image, width: maxWidth);
+                bytes += generator.image(resized);
+              }
+            }
+          } catch (e) { print('Logo error: $e'); }
+        }
+        break;
+      case 'STORE_ADDRESS':
+        if (posController.restaurantAddress.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantAddress.value), styles: const PosStyles(align: PosAlign.center));
+        break;
+      case 'STORE_PHONE':
+        if (posController.restaurantPhone.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantPhone.value), styles: const PosStyles(align: PosAlign.center));
+        break;
+      case 'ORDER_INFO':
+        if (title != null) bytes += generator.text(_normalizeString(title.toUpperCase()), styles: const PosStyles(align: PosAlign.center, bold: true));
+        bytes += generator.text(_normalizeString('ID: ${order['id'].toString().substring(0, order['id'].toString().length > 8 ? 8 : order['id'].toString().length)}'), styles: const PosStyles(align: PosAlign.center));
+        bytes += generator.text(_normalizeString(DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())), styles: const PosStyles(align: PosAlign.center));
+        if (order['table'] != null && order['table'] != '-') {
+           bytes += generator.text(_normalizeString('STOL: ${order['table']}'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+        }
+        if (order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
+           bytes += generator.text(_normalizeString('OFITSIANT: ${order['waiter_name']}'), styles: const PosStyles(align: PosAlign.center));
+        }
+        break;
+      case 'ITEMS_TABLE':
+        bytes += generator.hr(ch: '-');
+        bytes += generator.row([
+          PosColumn(text: _normalizeString('NOMI'), width: 7, styles: const PosStyles(bold: true)),
+          PosColumn(text: _normalizeString('SONI'), width: 2, styles: const PosStyles(bold: true, align: PosAlign.center)),
+          PosColumn(text: _normalizeString('NARXI'), width: 3, styles: const PosStyles(bold: true, align: PosAlign.right)),
+        ]);
+        bytes += generator.hr(ch: '-');
+        final items = order['details'] as List;
+        for (var item in items) {
+          int qty = int.tryParse(item['qty'].toString()) ?? 0;
+          double price = double.tryParse(item['price'].toString()) ?? 0.0;
+          bytes += generator.row([
+            PosColumn(text: _normalizeString(item['name']), width: 7),
+            PosColumn(text: _normalizeString(qty.toString()), width: 2, styles: const PosStyles(align: PosAlign.center)),
+            PosColumn(text: _normalizeString(_formatPrice(qty * price)), width: 3, styles: const PosStyles(align: PosAlign.right)),
+          ]);
+        }
+        bytes += generator.hr(ch: '-');
+        break;
+      case 'TOTAL_BLOCK':
+        double subtotal = 0;
+        for (var item in (order['details'] as List)) {
+          subtotal += (double.tryParse(item['price'].toString()) ?? 0.0) * (int.tryParse(item['qty'].toString()) ?? 0);
+        }
+        bytes += _row(generator, 'SUMMA:', _formatPrice(subtotal));
+        final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
+        if (discountAmt > 0) bytes += _row(generator, 'CHEGIRMA:', '-${_formatPrice(discountAmt)}', bold: true);
+        
+        double finalTotal = subtotal - discountAmt;
+        bytes += generator.hr(ch: '=');
+        bytes += generator.row([
+          PosColumn(text: _normalizeString('JAMI:'), width: 5, styles: const PosStyles(bold: true, height: PosTextSize.size2)),
+          PosColumn(text: _normalizeString('${_formatPrice(finalTotal)}'), width: 7, styles: const PosStyles(bold: true, align: PosAlign.right, height: PosTextSize.size2)),
+        ]);
+        bytes += generator.hr(ch: '=');
+        break;
+      case 'DIVIDER':
+        bytes += generator.hr(ch: '-');
+        break;
+      case 'SPACER':
+        bytes += generator.feed(1);
+        break;
+      case 'INSTAGRAM_QR':
+        String instaLink = posController.instagramLink.value;
+        if (instaLink.isEmpty && posController.instagram.value.isNotEmpty) {
+           instaLink = "https://instagram.com/${posController.instagram.value.replaceAll('@', '')}";
+        }
+        if (instaLink.isNotEmpty) {
+          bytes += generator.text(_normalizeString('INSTAGRAM'), styles: const PosStyles(align: PosAlign.center, bold: true));
+          bytes += generator.qrcode(instaLink, size: QRSize.size4);
+        }
+        break;
+      case 'TELEGRAM_QR':
+        String tgLink = posController.telegramLink.value;
+        if (tgLink.isEmpty && posController.telegram.value.isNotEmpty) {
+           tgLink = "https://t.me/${posController.telegram.value.replaceAll('t.me/', '')}";
+        }
+        if (tgLink.isNotEmpty) {
+          bytes += generator.text(_normalizeString('TELEGRAM'), styles: const PosStyles(align: PosAlign.center, bold: true));
+          bytes += generator.qrcode(tgLink, size: QRSize.size4);
+        }
+        break;
+      case 'FOOTER':
+        if (posController.receiptFooter.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.receiptFooter.value), styles: const PosStyles(align: PosAlign.center, bold: true));
+        if (posController.instagram.value.isNotEmpty) bytes += generator.text(_normalizeString('Insta: @${posController.instagram.value.replaceAll('@', '')}'), styles: const PosStyles(align: PosAlign.center));
+        if (posController.telegram.value.isNotEmpty) bytes += generator.text(_normalizeString('TG: t.me/${posController.telegram.value.replaceAll('t.me/', '')}'), styles: const PosStyles(align: PosAlign.center));
+        break;
+      case 'WIFI_INFO':
+         if (posController.wifiSsid.value.isNotEmpty) {
+           bytes += generator.text(_normalizeString('Wi-Fi: ${posController.wifiSsid.value}'), styles: const PosStyles(align: PosAlign.center));
+           bytes += generator.text(_normalizeString('Parol: ${posController.wifiPassword.value}'), styles: const PosStyles(align: PosAlign.center));
+         }
+         break;
+      case 'KITCHEN_TITLE':
+        bytes += generator.text(_normalizeString(element['props']?['title'] ?? '*** OSHXONA ***'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+        break;
+    }
+    return bytes;
+  }
+
+  List<int> _printSideBySide(Generator generator, Map<String, dynamic> elL, Map<String, dynamic> elR, Map<String, dynamic> order, POSController posController) {
+    // Basic side-by-side for text-based indicators
+    // For QR codes, we print them sequentially for now but with labels
+    List<int> bytes = [];
+    
+    String getLabel(Map<String, dynamic> el) {
+      if (el['type'] == 'INSTAGRAM_QR') return 'INSTAGRAM';
+      if (el['type'] == 'TELEGRAM_QR') return 'TELEGRAM';
+      if (el['type'] == 'WIFI_INFO') return 'WI-FI';
+      return el['label'] ?? "";
+    }
+
+    bytes += generator.row([
+      PosColumn(text: _normalizeString(getLabel(elL)), width: 6, styles: const PosStyles(align: PosAlign.center, bold: true)),
+      PosColumn(text: _normalizeString(getLabel(elR)), width: 6, styles: const PosStyles(align: PosAlign.center, bold: true)),
+    ]);
+    
+    // We can't easily put QR codes in a row, so we print them one after another
+    // but the labels were already printed side-by-side above.
+    return bytes;
+  }
       }
 
       bytes += generator.feed(3);
