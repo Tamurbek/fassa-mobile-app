@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'package:vibration/vibration.dart';
 import '../../logic/pos_controller.dart';
 import '../../theme/app_colors.dart';
-
-import 'package:qr_flutter/qr_flutter.dart';
 
 class StaffManagementScreen extends StatelessWidget {
   const StaffManagementScreen({super.key});
@@ -61,6 +62,92 @@ class StaffManagementScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showNfcRegisterDialog(POSController pos, dynamic waiter) async {
+    bool isNfcAvailable = await NfcManager.instance.isAvailable();
+    if (!isNfcAvailable) {
+      Get.snackbar("Xato", "Ushbu qurilmada NFC mavjud emas", 
+        backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
+    String? scannedId;
+
+    Get.dialog(
+      StatefulBuilder(
+        builder: (context, setState) {
+          if (scannedId == null) {
+            NfcManager.instance.startSession(onDiscovered: (NfcTag tag) async {
+              if (await Vibration.hasVibrator() ?? false) {
+                Vibration.vibrate(duration: 100);
+              }
+              
+              String? nfcId;
+              if (tag.data.containsKey('nfca')) {
+                nfcId = (tag.data['nfca']['identifier'] as List).map((e) => e.toRadixString(16).padLeft(2, '0')).join(':');
+              } else if (tag.data.containsKey('mifareclassic')) {
+                nfcId = (tag.data['mifareclassic']['identifier'] as List).map((e) => e.toRadixString(16).padLeft(2, '0')).join(':');
+              }
+
+              if (nfcId != null) {
+                setState(() => scannedId = nfcId);
+                NfcManager.instance.stopSession();
+              }
+            });
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            title: Text(scannedId == null ? "Karta qo'shish" : "Karta aniqlandi"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (scannedId == null) ...[
+                  const Icon(Icons.nfc_rounded, size: 80, color: Colors.blue),
+                  const SizedBox(height: 20),
+                  const Text("NFC kartani qurilmaga yaqinlashtiring", 
+                    textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w500)),
+                ] else ...[
+                  const Icon(Icons.check_circle_rounded, size: 80, color: Colors.green),
+                  const SizedBox(height: 20),
+                  Text("ID: $scannedId", style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Text("${waiter['name']}ga ushbu kartani biriktirilsinmi?", textAlign: TextAlign.center),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  NfcManager.instance.stopSession();
+                  Get.back();
+                }, 
+                child: const Text("Bekor qilish")
+              ),
+              if (scannedId != null)
+                ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      await pos.api.updateNfcCard(waiter['id'].toString(), scannedId!);
+                      Get.back();
+                      Get.snackbar("Muvaffaqiyatli", "NFC karta saqlandi", 
+                        backgroundColor: Colors.green, colorText: Colors.white);
+                      pos.refreshData();
+                    } catch (e) {
+                      Get.snackbar("Xato", "Saqlashda xatolik: $e", 
+                        backgroundColor: Colors.red, colorText: Colors.white);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                  child: const Text("Saqlash"),
+                ),
+            ],
+          );
+        }
+      ),
+      barrierDismissible: false,
+    ).then((_) => NfcManager.instance.stopSession());
   }
 
   @override
@@ -164,10 +251,15 @@ class StaffManagementScreen extends StatelessWidget {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.qr_code_2_rounded, color: Colors.blue),
-                        tooltip: "Tizimga bog'lash",
+                        tooltip: "QR kod orqali bog'lash",
                         onPressed: () => _showQRDialog(pos, waiter),
                       ),
-                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.credit_card_rounded, color: Colors.orange),
+                        tooltip: "NFC karta biriktirish",
+                        onPressed: () => _showNfcRegisterDialog(pos, waiter),
+                      ),
+                      const SizedBox(width: 4),
                       ElevatedButton.icon(
                         onPressed: () => pos.callWaiter(waiter),
                         icon: const Icon(Icons.notifications_active_rounded, size: 18),
