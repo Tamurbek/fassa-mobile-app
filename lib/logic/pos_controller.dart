@@ -556,10 +556,6 @@ class POSController extends POSControllerState with
     
     try {
       final newStatus = isPaid ? "Completed" : "Preparing";
-      // ... (existing code for grouped and consolidatedList)
-      
-      // I need to make sure I don't break the existing logic.
-      // Let's just update the API call part.
       List<Map<String, dynamic>> consolidatedList = [];
       List<Map<String, dynamic>> cancelledItems = [];
       final Map<String, Map<String, dynamic>> grouped = {};
@@ -597,7 +593,6 @@ class POSController extends POSControllerState with
 
       consolidatedList = grouped.values.toList();
 
-      // track cancellations for receipt display
       totalSentQty.forEach((id, sentQty) {
         final int currentQty = grouped[id]?['qty'] ?? 0;
         if (currentQty < sentQty) {
@@ -615,8 +610,6 @@ class POSController extends POSControllerState with
       if (index != -1) {
         wasBillPrinted = allOrders[index]['status'] == "Bill Printed";
       }
-
-      consolidatedList = grouped.values.toList();
 
       final payload = {
         "status": newStatus,
@@ -656,7 +649,7 @@ class POSController extends POSControllerState with
         orderToPrint['mode'] = currentMode.value;
         orderToPrint['table'] = currentMode.value == "Dine-in" ? selectedTable.value : "-";
         orderToPrint['details'] = consolidatedList;
-        orderToPrint['cancelled_items'] = cancelledItems; // Pass to printer
+        orderToPrint['cancelled_items'] = cancelledItems;
         
         if (discountValue.value > 0) {
           orderToPrint['discount_type'] = discountType.value;
@@ -664,10 +657,8 @@ class POSController extends POSControllerState with
           orderToPrint['discount_amount'] = discountAmount;
         }
         
-        // Update allOrders with new details
         allOrders[index] = orderToPrint;
 
-      
       final orderId = editingOrderId.value?.toString();
       if (orderId != null) {
         _processedPrintIds[orderId] = DateTime.now();
@@ -700,10 +691,7 @@ class POSController extends POSControllerState with
     }
 
     try {
-      // 1. Update status to BILL_PRINTED
       await api.updateOrderStatus(editingOrderId.value!, "BILL_PRINTED");
-      
-      // 2. Prepare order data
       final index = allOrders.indexWhere((o) => o['id'] == editingOrderId.value);
       Map<String, dynamic> orderToPrint;
       
@@ -739,13 +727,11 @@ class POSController extends POSControllerState with
         };
       }
 
-      // 3. Print
       await printOrder(orderToPrint, receiptTitle: "HISOB CHEKI");
 
-      // 4. Exit if waiter
       if (isWaiter) {
-        clearCurrentOrder(); // Clear local state
-        Get.offAll(() => MainNavigationScreen());
+        clearCurrentOrder();
+        Get.offAll(() => const MainNavigationScreen());
       }
     } catch (e) {
       Get.snackbar("Xatolik", "Hisob chiqarishda xato: $e", 
@@ -765,8 +751,6 @@ class POSController extends POSControllerState with
 
   @override
   void onWindowClose() async {
-    // Agar asosiy printer terminali bo'lsa, x ni bosganda shunchaki berkitamiz (hide)
-    // Shunda socket va print ishlashda davom etadi
     bool isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
       Get.snackbar(
@@ -822,8 +806,7 @@ class POSController extends POSControllerState with
     
     if (Platform.isAndroid) {
       if (isAutoStart.value) {
-        // This usually opens the system settings where user must enable it
-        await isAutoStartAvailable; // check
+        await isAutoStartAvailable;
         await getAutoStartPermission();
       }
     }

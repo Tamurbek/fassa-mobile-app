@@ -175,25 +175,24 @@ class SettingsScreen extends StatelessWidget {
 
               const SizedBox(height: 24),
               _buildSectionLabel("system".tr),
-                _buildSettingsCard(context, [
-                  _buildActionItem(
-                    Icons.language_rounded, 
-                    "language".tr, 
-                    trailingText: Get.locale?.languageCode == 'uz' ? "O'zbekcha" : (Get.locale?.languageCode == 'ru' ? "Русский" : "English"), 
-                    onTap: () => _showLanguageSwitcher(context)
-                  ),
-                  if (pos.isAdmin)
-                    _buildActionItem(Icons.delete_forever_rounded, "clear_data".tr, isDestructive: true, onTap: () => _confirmClearData(context, pos, storage)),
-                  _buildActionItem(Icons.info_rounded, "app_version".tr, trailingText: "v1.0.5", onTap: () {}),
-                ]),
-                
-                const SizedBox(height: 48),
-                _buildLogoutButton(pos),
-                const SizedBox(height: 24),
-                _buildFooter(),
-                const SizedBox(height: 24),
-              ],
-            ),
+              _buildSettingsCard(context, [
+                _buildActionItem(
+                  Icons.language_rounded, 
+                  "language".tr, 
+                  trailingText: Get.locale?.languageCode == 'uz' ? "O'zbekcha" : (Get.locale?.languageCode == 'ru' ? "Русский" : "English"), 
+                  onTap: () => _showLanguageSwitcher(context)
+                ),
+                if (pos.isAdmin)
+                  _buildActionItem(Icons.delete_forever_rounded, "clear_data".tr, isDestructive: true, onTap: () => _confirmClearData(context, pos, storage)),
+                _buildActionItem(Icons.info_rounded, "app_version".tr, trailingText: "v1.0.5", onTap: () {}),
+              ]),
+              
+              const SizedBox(height: 48),
+              _buildLogoutButton(pos),
+              const SizedBox(height: 24),
+              _buildFooter(),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ),

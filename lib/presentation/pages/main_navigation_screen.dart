@@ -34,7 +34,6 @@ class MainNavigationScreen extends StatelessWidget {
 
     final filteredMenu = menuItems.where((item) {
       if (item['adminOnly'] == true) {
-        // Cashiers can see Staff, but not Menu or Reports
         if (item['label'] == "staff".tr) return pos.isAdmin || pos.isCashier;
         return pos.isAdmin;
       }
@@ -125,7 +124,7 @@ class MainNavigationScreen extends StatelessWidget {
                   children: [
                     Obx(() => Text(
                       pos.restaurantName.value.isEmpty ? "Fassa" : pos.restaurantName.value, 
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF1A1A1A))
+                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Theme.of(context).textTheme.displayLarge?.color)
                     )),
                     Text("admin_panel".tr, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
@@ -217,96 +216,6 @@ class MainNavigationScreen extends StatelessWidget {
     );
   }
 
-  void _showSwitchUserDialog(POSController pos) {
-    if (pos.users.isEmpty) {
-      Get.snackbar("Xato", "Foydalanuvchilar topilmadi", backgroundColor: Colors.orange, colorText: Colors.white);
-      return;
-    }
-
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Profilni almashtirish", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: SizedBox(
-          width: 300,
-          height: 300,
-          child: ListView.builder(
-            itemCount: pos.users.length,
-            itemBuilder: (context, index) {
-              final user = pos.users[index];
-              return ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: AppColors.primaryLight,
-                  child: Icon(Icons.person, color: AppColors.primary),
-                ),
-                title: Text(user['name'] ?? 'Noma\'lum', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(user['role'] ?? ''),
-                onTap: () {
-                  Get.back();
-                  _showPinDialog(pos, user['id'], user['name']);
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish", style: TextStyle(color: Colors.grey))),
-        ],
-      ),
-    );
-  }
-
-  void _showPinDialog(POSController pos, String userId, String userName) {
-    final pinController = TextEditingController();
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("$userName uchun PIN kod", style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: TextField(
-          controller: pinController,
-          decoration: InputDecoration(
-            hintText: "****",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          keyboardType: TextInputType.number,
-          obscureText: true,
-          maxLength: 4,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 24, letterSpacing: 8),
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish", style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            onPressed: () async {
-              if (pinController.text.length != 4) {
-                Get.snackbar("Xato", "PIN kod 4 ta raqamdan iborat bo'lishi kerak", backgroundColor: Colors.orange, colorText: Colors.white);
-                return;
-              }
-              Get.back(); // Close dialog
-              
-              // Show loading
-              Get.dialog(const Center(child: CircularProgressIndicator(color: AppColors.primary)), barrierDismissible: false);
-              
-              final success = await pos.switchUserWithPin(userId, pinController.text);
-              
-              Get.back(); // close loading
-              
-              if (success) {
-                Get.snackbar("Muvaffaqiyatli", "Xush kelibsiz, $userName", backgroundColor: Colors.green, colorText: Colors.white);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text("Kirish", style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSubscriptionBanner(POSController pos) {
     return Material(
       elevation: 4,
@@ -347,17 +256,19 @@ class MainNavigationScreen extends StatelessWidget {
   }
 
   Widget _buildMobileNavItem(int index, RxInt currentIndex, IconData icon) {
-    final isSel = currentIndex.value == index;
-    return GestureDetector(
-      onTap: () => currentIndex.value = index,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: isSel ? const Color(0xFFFF9500) : const Color(0xFF9CA3AF), size: 26),
-          if (isSel)
-            Container(margin: const EdgeInsets.only(top: 4), width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFFFF9500), shape: BoxShape.circle)),
-        ],
-      ),
-    );
+    return Obx(() {
+      final isSel = currentIndex.value == index;
+      return GestureDetector(
+        onTap: () => currentIndex.value = index,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: isSel ? const Color(0xFFFF9500) : const Color(0xFF9CA3AF), size: 26),
+            if (isSel)
+              Container(margin: const EdgeInsets.only(top: 4), width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFFFF9500), shape: BoxShape.circle)),
+          ],
+        ),
+      );
+    });
   }
 }
