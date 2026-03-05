@@ -169,8 +169,17 @@ class PrinterService {
             case 'DIVIDER':
               bytes += generator.hr(ch: '-');
               break;
-            case 'QR_CODE':
-              // Not yet implemented for ESC/POS but placeholder to avoid missing case
+            case 'INSTAGRAM_QR':
+              if (posController.instagram.value.isNotEmpty) {
+                final instaLink = "https://instagram.com/${posController.instagram.value.replaceAll('@', '')}";
+                bytes += generator.qrcode(instaLink, size: QRSize.size4);
+              }
+              break;
+            case 'TELEGRAM_QR':
+              if (posController.telegram.value.isNotEmpty) {
+                final tgLink = "https://t.me/${posController.telegram.value.replaceAll('t.me/', '')}";
+                bytes += generator.qrcode(tgLink, size: QRSize.size4);
+              }
               break;
             case 'FOOTER':
               if (posController.receiptFooter.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.receiptFooter.value), styles: const PosStyles(align: PosAlign.center, bold: true));
