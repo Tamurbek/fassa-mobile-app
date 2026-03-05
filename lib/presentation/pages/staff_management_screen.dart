@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:nfc_manager/nfc_manager.dart';
 import 'package:vibration/vibration.dart';
+import 'package:flutter/services.dart';
 import '../../logic/pos_controller.dart';
 import '../../theme/app_colors.dart';
 
@@ -15,7 +15,7 @@ class StaffManagementScreen extends StatelessWidget {
     try {
       final DateTime lastUpdate = DateTime.parse(waiter['last_location_update']);
       final difference = DateTime.now().difference(lastUpdate);
-      return difference.inMinutes < 5; // Consider online if updated in last 5 minutes
+      return difference.inMinutes < 5; 
     } catch (e) {
       return false;
     }
@@ -64,90 +64,86 @@ class StaffManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showNfcRegisterDialog(POSController pos, dynamic waiter) async {
-    bool isNfcAvailable = await NfcManager.instance.isAvailable();
-    if (!isNfcAvailable) {
-      Get.snackbar("Xato", "Ushbu qurilmada NFC mavjud emas", 
+  void _showCardRegisterDialog(POSController pos, dynamic waiter) {
+    final TextEditingController cardIdController = TextEditingController();
+    final FocusNode focusNode = FocusNode();
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text("${waiter['name']}ga karta biriktirish"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.credit_card_rounded, size: 64, color: Colors.blue),
+            const SizedBox(height: 16),
+            const Text(
+              "Karta ID-sini kiriting yoki o'quvchi orqali o'tkazing",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: cardIdController,
+              focusNode: focusNode,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: "Karta ID",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                prefixIcon: const Icon(Icons.pin),
+              ),
+              onSubmitted: (val) {
+                if (val.isNotEmpty) {
+                  _saveCard(pos, waiter, val);
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Bekor qilish")),
+          ElevatedButton(
+            onPressed: () => _saveCard(pos, waiter, cardIdController.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text("Saqlash"),
+          ),
+        ],
+      ),
+    );
+
+    // Ensure focus for HID reader
+    Future.delayed(const Duration(milliseconds: 100), () => focusNode.requestFocus());
+  }
+
+  void _saveCard(POSController pos, dynamic waiter, String cardId) async {
+    if (cardId.isEmpty) {
+      Get.snackbar("Xato", "Karta ID-si bo'sh bo'lishi mumkin emas", 
         backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
-    String? scannedId;
+    try {
+      Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
+      await pos.api.updateNfcCard(waiter['id'].toString(), cardId);
+      Get.back(); // close loading
+      Get.back(); // close dialog
+      
+      if (await Vibration.hasVibrator() ?? false) {
+        Vibration.vibrate(duration: 100);
+      }
 
-    Get.dialog(
-      StatefulBuilder(
-        builder: (context, setState) {
-          if (scannedId == null) {
-            NfcManager.instance.startSession(onDiscovered: (NfcTag tag) async {
-              if (await Vibration.hasVibrator() ?? false) {
-                Vibration.vibrate(duration: 100);
-              }
-              
-              String? nfcId;
-              if (tag.data.containsKey('nfca')) {
-                nfcId = (tag.data['nfca']['identifier'] as List).map((e) => e.toRadixString(16).padLeft(2, '0')).join(':');
-              } else if (tag.data.containsKey('mifareclassic')) {
-                nfcId = (tag.data['mifareclassic']['identifier'] as List).map((e) => e.toRadixString(16).padLeft(2, '0')).join(':');
-              }
-
-              if (nfcId != null) {
-                setState(() => scannedId = nfcId);
-                NfcManager.instance.stopSession();
-              }
-            });
-          }
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: Text(scannedId == null ? "Karta qo'shish" : "Karta aniqlandi"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (scannedId == null) ...[
-                  const Icon(Icons.nfc_rounded, size: 80, color: Colors.blue),
-                  const SizedBox(height: 20),
-                  const Text("NFC kartani qurilmaga yaqinlashtiring", 
-                    textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w500)),
-                ] else ...[
-                  const Icon(Icons.check_circle_rounded, size: 80, color: Colors.green),
-                  const SizedBox(height: 20),
-                  Text("ID: $scannedId", style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Text("${waiter['name']}ga ushbu kartani biriktirilsinmi?", textAlign: TextAlign.center),
-                ],
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  NfcManager.instance.stopSession();
-                  Get.back();
-                }, 
-                child: const Text("Bekor qilish")
-              ),
-              if (scannedId != null)
-                ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      await pos.api.updateNfcCard(waiter['id'].toString(), scannedId!);
-                      Get.back();
-                      Get.snackbar("Muvaffaqiyatli", "NFC karta saqlandi", 
-                        backgroundColor: Colors.green, colorText: Colors.white);
-                      pos.refreshData();
-                    } catch (e) {
-                      Get.snackbar("Xato", "Saqlashda xatolik: $e", 
-                        backgroundColor: Colors.red, colorText: Colors.white);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-                  child: const Text("Saqlash"),
-                ),
-            ],
-          );
-        }
-      ),
-      barrierDismissible: false,
-    ).then((_) => NfcManager.instance.stopSession());
+      Get.snackbar("Muvaffaqiyatli", "Karta muvaffaqiyatli saqlandi", 
+        backgroundColor: Colors.green, colorText: Colors.white);
+      pos.refreshData();
+    } catch (e) {
+      Get.back(); // close loading
+      Get.snackbar("Xato", "Xatolik yuz berdi: $e", 
+        backgroundColor: Colors.red, colorText: Colors.white);
+    }
   }
 
   @override
@@ -256,8 +252,8 @@ class StaffManagementScreen extends StatelessWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.credit_card_rounded, color: Colors.orange),
-                        tooltip: "NFC karta biriktirish",
-                        onPressed: () => _showNfcRegisterDialog(pos, waiter),
+                        tooltip: "Karta biriktirish",
+                        onPressed: () => _showCardRegisterDialog(pos, waiter),
                       ),
                       const SizedBox(width: 4),
                       ElevatedButton.icon(
