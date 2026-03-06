@@ -35,6 +35,11 @@ void main(List<String> args) async {
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize locale data early for all windows
+  await initializeDateFormatting('uz_UZ', null);
+  await initializeDateFormatting('en_US', null);
+  await initializeDateFormatting('ru_RU', null);
+
   if (args.firstOrNull == 'multi_window') {
     await GetStorage.init();
     final windowId = int.parse(args[1]);
@@ -46,11 +51,6 @@ void main(List<String> args) async {
 
   await initializeService();
   await GetStorage.init();
-  
-  // Initialize locale data
-  await initializeDateFormatting('uz_UZ', null);
-  await initializeDateFormatting('en_US', null);
-  await initializeDateFormatting('ru_RU', null);
   
   // Initialize Controller
   Get.put(POSController());
