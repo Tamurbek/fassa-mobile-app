@@ -281,6 +281,24 @@ mixin OrderMixin on POSControllerState {
     ).then((_) => focusNode.dispose());
   }
 
+  void syncCartToDisplay() {
+    final cartData = {
+      'items': currentOrder.map((item) {
+        final foodItem = item['item'] as FoodItem;
+        final variant = item['variant'] as FoodVariant?;
+        final price = variant?.price ?? foodItem.price;
+        return {
+          'id': foodItem.id.toString(),
+          'name': variant != null ? "${foodItem.name} (${variant.name})" : foodItem.name,
+          'quantity': item['quantity'],
+          'price': price,
+        };
+      }).toList(),
+      'total': total,
+    };
+    socket.emitCartUpdate(cartData);
+  }
+
   void clearCurrentOrder() {
     if (selectedTable.value.isNotEmpty) {
       socket.emitTableUnlock(selectedTable.value);
@@ -291,9 +309,14 @@ mixin OrderMixin on POSControllerState {
     isOrderModified.value = false;
     discountValue.value = 0.0;
     discountType.value = "percent";
+    socket.emitCartClear();
   }
 
   void loadOrderForEditing(Map<String, dynamic> order, List<FoodItem> catalog) {
+// ... existing code ...
+    isOrderModified.value = false;
+    syncCartToDisplay();
+// ... rest of the code ...
     editingOrderId.value = order['id'];
     currentMode.value = order['mode'] ?? "Dine-in";
     final String tableVal = (order['table'] ?? "").toString();

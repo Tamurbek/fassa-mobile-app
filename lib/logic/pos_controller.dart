@@ -123,6 +123,10 @@ class POSController extends POSControllerState with
 
   @override
   void updateCustomerDisplay() async {
+    // 1. Sync via WebSocket (for remote/web public display)
+    syncCartToDisplay();
+
+    // 2. Local Multi-window sync (for desktop second monitor)
     if (customerWindowId.value == null || !Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) return;
     
     try {
