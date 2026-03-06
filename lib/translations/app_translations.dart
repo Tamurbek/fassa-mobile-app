@@ -237,6 +237,11 @@ class AppTranslations extends Translations {
           'delete_variant': 'Delete Variant',
           'base_info': 'Basic Info',
           'pricing': 'Pricing',
+          'oshxona_ekrani': 'Kitchen Display (KDS)',
+          'faol_buyurtmalar_yoq': 'No active orders',
+          'barcha_bolimlar': 'All Sections',
+          'buyurtma_tayyor_deb_belgilandi': 'Order marked as ready',
+          'holatni_yangilashda_xatolik': 'Error updating status',
         },
         'uz_UZ': {
           'order_management': 'Buyurtmalar boshqaruvi',
@@ -482,6 +487,11 @@ class AppTranslations extends Translations {
           'save_as_pdf': 'PDF yaratish',
           'print': 'Chop etish',
           'select_action': 'Harakatni tanlang',
+          'oshxona_ekrani': 'Oshxona ekrani (KDS)',
+          'faol_buyurtmalar_yoq': 'Faol buyurtmalar yo\'q',
+          'barcha_bolimlar': 'Barcha bo\'limlar',
+          'buyurtma_tayyor_deb_belgilandi': 'Buyurtma tayyor deb belgilandi',
+          'holatni_yangilashda_xatolik': 'Holatni yangilashda xatolik yuz berdi',
         },
         'ru_RU': {
           'order_management': 'Управление заказами',
@@ -712,6 +722,11 @@ class AppTranslations extends Translations {
           'delete_variant': 'Удалить вариант',
           'base_info': 'Основная информация',
           'pricing': 'Цена',
+          'oshxona_ekrani': 'Экран кухни (KDS)',
+          'faol_buyurtmalar_yoq': 'Нет активных заказов',
+          'barcha_bolimlar': 'Все отделы',
+          'buyurtma_tayyor_deb_belgilandi': 'Заказ отмечен как готовый',
+          'holatni_yangilashda_xatolik': 'Ошибка при обновлении статуса',
         }
       };
 }

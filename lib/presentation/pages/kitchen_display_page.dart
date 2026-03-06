@@ -18,40 +18,28 @@ class _KitchenDisplayPageState extends State<KitchenDisplayPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColors.backgroundDark : const Color(0xFFF3F4F6);
+    final appBarColor = isDark ? AppColors.surfaceDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textPrimary;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF111827),
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1F2937),
-        elevation: 0,
-        title: const Text("OSHXONA EKRANI (KDS)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: appBarColor,
+        elevation: 0.5,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textColor, size: 20),
+          onPressed: () => Get.back(),
+        ),
+        title: Text(
+          "oshxona_ekrani".tr.toUpperCase(), 
+          style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1.2)
+        ),
+        centerTitle: false,
         actions: [
-          Obx(() => Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                dropdownColor: const Color(0xFF1F2937),
-                value: selectedArea,
-                hint: const Text("Barcha bo'limlar", style: TextStyle(color: Colors.white70, fontSize: 13)),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text("Barcha bo'limlar", style: TextStyle(color: Colors.white))),
-                  ...pos.preparationAreas.map((a) => DropdownMenuItem(
-                    value: a.name,
-                    child: Text(a.name, style: const TextStyle(color: Colors.white)),
-                  )),
-                ],
-                onChanged: (v) => setState(() => selectedArea = v),
-              ),
-            ),
-          )),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => pos.refreshData(),
-          ),
+          _buildAreaDropdown(isDark, textColor, appBarColor),
+          _buildRefreshButton(textColor),
           const SizedBox(width: 8),
         ],
       ),
@@ -61,32 +49,31 @@ class _KitchenDisplayPageState extends State<KitchenDisplayPage> {
         ).toList();
 
         if (activeOrders.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.restaurant_menu_rounded, size: 64, color: Colors.white24),
-                SizedBox(height: 16),
-                Text("Faol buyurtmalar yo'q", style: TextStyle(color: Colors.white38, fontSize: 18)),
+                Icon(Icons.restaurant_menu_rounded, size: 80, color: textColor.withOpacity(0.1)),
+                const SizedBox(height: 20),
+                Text("faol_buyurtmalar_yoq".tr, style: TextStyle(color: textColor.withOpacity(0.3), fontSize: 20, fontWeight: FontWeight.bold)),
               ],
             ),
           );
         }
 
         return GridView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 400,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.85,
+            maxCrossAxisExtent: 450,
+            mainAxisSpacing: 20,
+            crossAxisSpacing: 20,
+            childAspectRatio: 0.8,
           ),
           itemCount: activeOrders.length,
           itemBuilder: (context, index) {
             final order = activeOrders[index];
             final items = (order['details'] as List? ?? []).where((item) {
               if (selectedArea == null) return true;
-              // Link item to area via product info
               final product = pos.products.firstWhereOrNull((p) => p.id == item['id']);
               if (product == null) return true;
               final area = pos.preparationAreas.firstWhereOrNull((a) => a.id == product.preparationAreaId);
@@ -101,6 +88,43 @@ class _KitchenDisplayPageState extends State<KitchenDisplayPage> {
       }),
     );
   }
+
+  Widget _buildAreaDropdown(bool isDark, Color textColor, Color appBarColor) {
+    return Obx(() => Container(
+      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          dropdownColor: appBarColor,
+          value: selectedArea,
+          icon: Icon(Icons.keyboard_arrow_down_rounded, color: textColor, size: 20),
+          hint: Text("barcha_bolimlar".tr, style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 13, fontWeight: FontWeight.bold)),
+          items: [
+            DropdownMenuItem(value: null, child: Text("barcha_bolimlar".tr, style: TextStyle(color: textColor, fontWeight: FontWeight.bold))),
+            ...pos.preparationAreas.map((a) => DropdownMenuItem(
+              value: a.name,
+              child: Text(a.name, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+            )),
+          ],
+          onChanged: (v) => setState(() => selectedArea = v),
+        ),
+      ),
+    ));
+  }
+
+  Widget _buildRefreshButton(Color textColor) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      child: IconButton(
+        icon: Icon(Icons.refresh_rounded, color: textColor),
+        onPressed: () => pos.refreshData(),
+      ),
+    );
+  }
 }
 
 class _OrderCard extends StatelessWidget {
@@ -112,41 +136,92 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final DateTime createdAt = DateTime.tryParse(order['timestamp']?.toString() ?? "") ?? DateTime.now();
     final duration = DateTime.now().difference(createdAt);
-    final color = duration.inMinutes > 20 ? Colors.red : (duration.inMinutes > 10 ? Colors.orange : Colors.green);
+    
+    Color statusColor = Colors.green;
+    if (duration.inMinutes > 20) {
+      statusColor = Colors.red;
+    } else if (duration.inMinutes > 10) {
+      statusColor = Colors.orange;
+    }
+
+    final cardBg = isDark ? AppColors.surfaceDark : Colors.white;
+    final textColor = isDark ? Colors.white : AppColors.textPrimary;
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1F2937),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3), width: 2),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black26 : Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+        border: Border.all(
+          color: statusColor.withOpacity(isDark ? 0.3 : 0.1), 
+          width: 2
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
+          // Card Header
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              color: statusColor.withOpacity(0.08),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("STOL ${order['table']}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text(order['waiter_name'] ?? "Ofitsiant", style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (order['table'] == null || order['table'] == "-" || order['table'] == "") 
+                          ? "takeaway".tr.toUpperCase()
+                          : "${"table".tr} ${order['table']}".toUpperCase(), 
+                        style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 18)
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.person_outline_rounded, size: 14, color: textColor.withOpacity(0.4)),
+                          const SizedBox(width: 4),
+                          Text(
+                            order['waiter_name'] ?? "Kassir", 
+                            style: TextStyle(color: textColor.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold)
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text("${duration.inMinutes} min", style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text(DateFormat('HH:mm').format(createdAt), style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        "${duration.inMinutes} min", 
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.w900, fontSize: 16)
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      DateFormat('HH:mm').format(createdAt), 
+                      style: TextStyle(color: textColor.withOpacity(0.3), fontSize: 12, fontWeight: FontWeight.bold)
+                    ),
                   ],
                 ),
               ],
@@ -156,26 +231,45 @@ class _OrderCard extends StatelessWidget {
           // Items List
           Expanded(
             child: ListView.separated(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               itemCount: items.length,
-              separatorBuilder: (context, index) => const Divider(color: Colors.white12, height: 1),
+              separatorBuilder: (context, index) => Divider(color: textColor.withOpacity(0.05), height: 1),
               itemBuilder: (context, index) {
                 final item = items[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(6),
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
                         ),
-                        child: Text("${item['qty']}x", style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          "${item['qty']}x", 
+                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 14)
+                        ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
-                        child: Text("${item['name']}", style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${item['name']}", 
+                              style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.2)
+                            ),
+                            if (item['variant_name'] != null)
+                              Text(
+                                item['variant_name'],
+                                style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -186,22 +280,25 @@ class _OrderCard extends StatelessWidget {
 
           // Actions
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _markOrderReady(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text("TAYYOR", style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: ElevatedButton(
+              onPressed: () => _markOrderReady(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: statusColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shadowColor: statusColor.withOpacity(0.4),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Text("TAYYOR".tr.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                ],
+              ),
             ),
           ),
         ],
@@ -209,14 +306,24 @@ class _OrderCard extends StatelessWidget {
     );
   }
 
-  void _markOrderReady(BuildContext context) {
-     Get.snackbar(
-      "Muvaffaqiyatli", 
-      "Buyurtma tayyor deb belgilandi",
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.TOP,
-    );
-    // In a real scenario, we'd update status to "Ready" and notify waiter via socket
+  void _markOrderReady(BuildContext context) async {
+    try {
+      final success = await pos.updateOrderStatus(order['id'], "Ready");
+      if (success) {
+        Get.snackbar(
+          "tayyor".tr, 
+          "buyurtma_tayyor_deb_belgilandi".tr,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+          margin: const EdgeInsets.all(15),
+          borderRadius: 15,
+          icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white),
+        );
+      }
+    } catch (e) {
+      Get.snackbar("error".tr, "holatni_yangilashda_xatolik".tr);
+    }
   }
 }
+

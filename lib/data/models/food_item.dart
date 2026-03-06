@@ -16,10 +16,17 @@ class FoodVariant {
     this.lastPreparedAt,
   });
 
+  static double _parsePrice(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    String s = value.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(s) ?? 0.0;
+  }
+
   factory FoodVariant.fromJson(Map<String, dynamic> json) => FoodVariant(
     id: json['id']?.toString() ?? '',
     name: json['name'] ?? '',
-    price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+    price: _parsePrice(json['price']),
     isAvailable: json['is_available'] ?? true,
     stockRemaining: json['stock_remaining'],
     lastPreparedAt: json['last_prepared_at'] != null ? DateTime.tryParse(json['last_prepared_at']) : null,
@@ -58,16 +65,16 @@ class FoodItem {
     required this.description,
     required this.price,
     required this.imageUrl,
-    this.category = "General",
-    this.rating = 4.5,
-    this.timeEstimate = 20,
-    this.preparationArea = "Kitchen",
+    required this.category,
+    required this.rating,
+    required this.timeEstimate,
+    required this.preparationArea,
     this.preparationAreaId,
-    this.hasVariants = false,
+    required this.hasVariants,
     this.isAvailable = true,
     this.stockRemaining,
     this.lastPreparedAt,
-    this.variants = const [],
+    required this.variants,
   });
 
   Map<String, dynamic> toJson() => {
@@ -75,7 +82,7 @@ class FoodItem {
     'name': name,
     'description': description,
     'price': price,
-    'imageUrl': imageUrl,
+    'image': imageUrl,
     'category': category,
     'rating': rating,
     'timeEstimate': timeEstimate,
@@ -87,6 +94,13 @@ class FoodItem {
     'last_prepared_at': lastPreparedAt?.toIso8601String(),
     'variants': variants.map((v) => v.toJson()).toList(),
   };
+
+  static double _parsePrice(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    String s = value.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+    return double.tryParse(s) ?? 0.0;
+  }
 
   factory FoodItem.fromJson(Map<String, dynamic> json) {
     try {
@@ -111,10 +125,10 @@ class FoodItem {
         id: json['id']?.toString() ?? '',
         name: json['name'] ?? '',
         description: json['description'] ?? '',
-        price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+        price: _parsePrice(json['price']),
         imageUrl: json['image'] ?? json['imageUrl'] ?? '',
         category: categoryName,
-        rating: double.tryParse(json['rating']?.toString() ?? '4.5') ?? 4.5,
+        rating: _parsePrice(json['rating'] == null ? '4.5' : json['rating']),
         timeEstimate: int.tryParse(json['timeEstimate']?.toString() ?? '20') ?? 20,
         preparationArea: json['preparation_area'] ?? json['preparationArea'] ?? 'Kitchen',
         preparationAreaId: json['preparation_area_id']?.toString(),

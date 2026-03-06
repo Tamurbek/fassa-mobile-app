@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
@@ -52,12 +53,14 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
   }
 
   void _updateData(Map<String, dynamic> data) {
-    setState(() {
-      items = data['items'] ?? [];
-      total = (data['total'] ?? 0.0).toDouble();
-      restaurantName = data['restaurantName'] ?? "Fassa";
-      currency = data['currency'] ?? "so'm";
-    });
+    if (mounted) {
+      setState(() {
+        items = data['items'] ?? [];
+        total = (data['total'] ?? 0.0).toDouble();
+        restaurantName = data['restaurantName'] ?? "Fassa";
+        currency = data['currency'] ?? "so'm";
+      });
+    }
   }
 
   String _formatPrice(dynamic amount) {
@@ -68,220 +71,28 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF121212) : AppColors.background;
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final accentColor = AppColors.primary;
-    final textColor = isDark ? Colors.white : AppColors.textPrimary;
-    final secondaryTextColor = isDark ? Colors.white60 : AppColors.textSecondary;
-
     return Scaffold(
-      backgroundColor: bgColor,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 600),
-        transitionBuilder: (child, animation) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-        child: items.isEmpty 
-          ? _buildEmptyState(textColor, secondaryTextColor, accentColor, cardColor) 
-          : _buildOrderState(isDark, textColor, secondaryTextColor, accentColor, cardColor),
-      ),
-    );
-  }
-
-  Widget _buildOrderState(bool isDark, Color textColor, Color secondaryTextColor, Color accentColor, Color cardColor) {
-    return Row(
-      key: const ValueKey("order_state"),
-      children: [
-        // Left Side: Order List
-        Expanded(
-          flex: 3,
-          child: _buildOrderList(textColor, secondaryTextColor, accentColor, cardColor),
-        ),
-        
-        // Right Side: Summary & Total (Only visible when items exist)
-        Expanded(
-          flex: 2,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF9FAFB),
-              border: Border(left: BorderSide(color: textColor.withOpacity(0.05))),
-            ),
-            child: Column(
-              children: [
-                _buildRestaurantHeader(accentColor, textColor),
-                const Spacer(),
-                _buildTotalCard(accentColor, total),
-                const SizedBox(height: 60),
-                _buildFooter(secondaryTextColor),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState(Color textColor, Color secondaryTextColor, Color accentColor, Color cardColor) {
-    String timeStr = DateFormat('HH:mm').format(_now);
-    String secondsStr = DateFormat(':ss').format(_now);
-    String dateStr = DateFormat('EEEE, d MMMM', 'uz_UZ').format(_now);
-
-    return Container(
-      key: const ValueKey("empty_state"),
-      width: double.infinity,
-      height: double.infinity,
-      padding: const EdgeInsets.all(40),
-      color: cardColor,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Elegant large clock
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    timeStr,
-                    style: TextStyle(
-                      color: accentColor, 
-                      fontSize: 220, 
-                      fontWeight: FontWeight.w900, 
-                      height: 1.0, 
-                      letterSpacing: -10
-                    ),
-                  ),
-                  Text(
-                    secondsStr,
-                    style: TextStyle(
-                      color: accentColor.withOpacity(0.4), 
-                      fontSize: 220, 
-                      fontWeight: FontWeight.w900, 
-                      height: 1.0,
-                      letterSpacing: -10
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              dateStr.toUpperCase(),
-              style: TextStyle(color: textColor.withOpacity(0.4), fontSize: 36, fontWeight: FontWeight.w800, letterSpacing: 4),
-            ),
-            const SizedBox(height: 100),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 25),
-              decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(50),
-                border: Border.all(color: accentColor.withOpacity(0.1)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.stars_rounded, color: accentColor, size: 36),
-                  const SizedBox(width: 20),
-                  Text(
-                    "Xush kelibsiz! Buyurtmangizni kutamiz",
-                    style: TextStyle(color: accentColor, fontSize: 26, fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOrderList(Color textColor, Color secondaryTextColor, Color accentColor, Color cardColor) {
-    return Container(
-      padding: const EdgeInsets.all(40),
-      color: cardColor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.black,
+      body: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 65,
-                height: 65,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [accentColor, accentColor.withOpacity(0.8)]),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: accentColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))],
-                ),
-                child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 32),
-              ),
-              const SizedBox(width: 25),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Sizning Savatingiz",
-                    style: TextStyle(color: textColor, fontSize: 34, fontWeight: FontWeight.w900),
+          // Background Aesthetic
+          _buildBackground(),
+
+          SafeArea(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 800),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: animation.drive(Tween(begin: const Offset(0.05, 0), end: Offset.zero).chain(CurveTween(curve: Curves.easeOutCubic))),
+                    child: child,
                   ),
-                  Text(
-                    "${items.length} ta mahsulot",
-                    style: TextStyle(color: secondaryTextColor, fontSize: 18, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 40),
-          Expanded(
-            child: ListView.separated(
-              physics: const BouncingScrollPhysics(),
-              itemCount: items.length,
-              separatorBuilder: (_, __) => Divider(color: textColor.withOpacity(0.06), height: 40, thickness: 1),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return Row(
-                  children: [
-                    Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(color: accentColor, shape: BoxShape.circle),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item['name'] ?? "",
-                            style: TextStyle(color: textColor, fontSize: 26, fontWeight: FontWeight.bold),
-                          ),
-                          if (item['variant'] != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                item['variant'],
-                                style: TextStyle(color: secondaryTextColor, fontSize: 18, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      "${item['quantity']} ×",
-                      style: TextStyle(color: secondaryTextColor, fontSize: 24, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(width: 40),
-                    Text(
-                      _formatPrice((item['price'] ?? 0) * (item['quantity'] ?? 1)),
-                      style: TextStyle(color: textColor, fontSize: 26, fontWeight: FontWeight.w900),
-                    ),
-                  ],
                 );
               },
+              child: items.isEmpty 
+                ? _buildIdleState() 
+                : _buildOrderState(),
             ),
           ),
         ],
@@ -289,24 +100,217 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
     );
   }
 
-  Widget _buildRestaurantHeader(Color accentColor, Color textColor) {
-    return Column(
-      children: [
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: accentColor.withOpacity(0.1),
-            shape: BoxShape.circle,
-            border: Border.all(color: accentColor.withOpacity(0.2), width: 2),
+  Widget _buildBackground() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F0F0F),
+        gradient: RadialGradient(
+          center: Alignment.topRight,
+          radius: 1.5,
+          colors: [
+            Color(0xFF2D1E0E),
+            Color(0xFF0F0F0F),
+          ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -100,
+            bottom: -100,
+            child: Container(
+              width: 500,
+              height: 500,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFF9500).withOpacity(0.03),
+              ),
+            ),
           ),
-          child: Center(
-            child: Text(
-              restaurantName.isNotEmpty ? restaurantName[0].toUpperCase() : "F",
-              style: TextStyle(color: accentColor, fontSize: 45, fontWeight: FontWeight.w900),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIdleState() {
+    String timeStr = DateFormat('HH:mm').format(_now);
+    String secondsStr = DateFormat(':ss').format(_now);
+    String dateStr = DateFormat('EEEE, d MMMM', 'uz_UZ').format(_now).toUpperCase();
+
+    return Center(
+      key: const ValueKey("idle_state"),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.restaurant_rounded, size: 80, color: Color(0xFFFF9500)),
+          const SizedBox(height: 30),
+          Text(
+            restaurantName.isNotEmpty ? restaurantName.toUpperCase() : "FAST FOOD PRO",
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white24),
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: const Text(
+              "HUŞ KELIB SIZ! / ДОБРО ПОЖАЛОВАТЬ!",
+              style: TextStyle(color: Colors.white60, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 2),
+            ),
+          ),
+          const SizedBox(height: 60),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                timeStr,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 160,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                  letterSpacing: -5,
+                ),
+              ),
+              Text(
+                secondsStr,
+                style: const TextStyle(
+                  color: Color(0xFFFF9500),
+                  fontSize: 60,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+          Text(
+            dateStr,
+            style: const TextStyle(
+              color: Colors.white54,
+              fontSize: 24,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderState() {
+    return Row(
+      key: const ValueKey("order_state"),
+      children: [
+        // Order Items List
+        Expanded(
+          flex: 5,
+          child: Padding(
+            padding: const EdgeInsets.all(40.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF9500),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: const Color(0xFFFF9500).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))
+                        ]
+                      ),
+                      child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 30),
+                    ),
+                    const SizedBox(width: 20),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("SIZNING SAVATINGIZ", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1)),
+                        Text("SIZ TANLAGAN MAHSULOTLAR RO'YXATI", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 40),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: items.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 15),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final double itemTotal = (item['price'] ?? 0) * (item['quantity'] ?? 1);
+                      
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 25),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.04),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white.withOpacity(0.05)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF9500).withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                "${item['quantity']}x",
+                                style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w900, fontSize: 18),
+                              ),
+                            ),
+                            const SizedBox(width: 25),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['name'] ?? "",
+                                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                                  ),
+                                  if (item['variant'] != null)
+                                    Text(
+                                      item['variant'],
+                                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              _formatPrice(itemTotal),
+                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ),
+
+        // Side Summary Board
+        Container(
+          width: 480,
+          padding: const EdgeInsets.all(50),
+          decoration: BoxDecoration(
         const SizedBox(height: 20),
         Text(
           restaurantName.toUpperCase(),
