@@ -207,9 +207,10 @@ class PrinterService {
       case 'ITEMS_TABLE':
         bytes += generator.hr(ch: '-');
         bytes += generator.row([
-          PosColumn(text: _normalizeString('NOMI'), width: 7, styles: styles.copyWith(bold: true)),
-          PosColumn(text: _normalizeString('SONI'), width: 2, styles: styles.copyWith(bold: true, align: PosAlign.center)),
+          PosColumn(text: _normalizeString('NOMI'), width: 4, styles: styles.copyWith(bold: true)),
           PosColumn(text: _normalizeString('NARXI'), width: 3, styles: styles.copyWith(bold: true, align: PosAlign.right)),
+          PosColumn(text: _normalizeString('SONI'), width: 2, styles: styles.copyWith(bold: true, align: PosAlign.center)),
+          PosColumn(text: _normalizeString('SUMMA'), width: 3, styles: styles.copyWith(bold: true, align: PosAlign.right)),
         ]);
         bytes += generator.hr(ch: '-');
         final items = order['details'] as List;
@@ -217,7 +218,8 @@ class PrinterService {
           int qty = int.tryParse(item['qty'].toString()) ?? 0;
           double price = double.tryParse(item['price'].toString()) ?? 0.0;
           bytes += generator.row([
-            PosColumn(text: _normalizeString(item['name']), width: 7, styles: styles),
+            PosColumn(text: _normalizeString(item['name']), width: 4, styles: styles),
+            PosColumn(text: _normalizeString(_formatPrice(price)), width: 3, styles: styles.copyWith(align: PosAlign.right)),
             PosColumn(text: _normalizeString(qty.toString()), width: 2, styles: styles.copyWith(align: PosAlign.center)),
             PosColumn(text: _normalizeString(_formatPrice(qty * price)), width: 3, styles: styles.copyWith(align: PosAlign.right)),
           ]);
