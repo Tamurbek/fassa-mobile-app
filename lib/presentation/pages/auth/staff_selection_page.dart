@@ -196,18 +196,22 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(40),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildStaffAvatar(_selectedStaff, size: 100),
-          const SizedBox(height: 20),
-          Text(_selectedStaff['name'], style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-          Text(_selectedStaff['role'], style: const TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 40),
-          _buildPinIndicators(),
-          const SizedBox(height: 40),
-          _buildKeypad(),
-        ],
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildStaffAvatar(_selectedStaff, size: 100),
+              const SizedBox(height: 20),
+              Text(_selectedStaff['name'], style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              Text(_selectedStaff['role'], style: const TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 40),
+              _buildPinIndicators(),
+              const SizedBox(height: 40),
+              _buildKeypad(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -220,30 +224,32 @@ class _StaffSelectionPageState extends State<StaffSelectionPage> {
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              _buildStaffAvatar(_selectedStaff, size: 50),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_selectedStaff['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text(_selectedStaff['role'], style: const TextStyle(color: Colors.grey)),
-                  ],
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                _buildStaffAvatar(_selectedStaff, size: 50),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_selectedStaff['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text(_selectedStaff['role'], style: const TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(onPressed: () => setState(() => _selectedStaff = null), icon: const Icon(Icons.close)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _buildPinIndicators(),
-          const SizedBox(height: 20),
-          _buildKeypad(small: true),
-        ],
+                IconButton(onPressed: () => setState(() => _selectedStaff = null), icon: const Icon(Icons.close)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildPinIndicators(),
+            const SizedBox(height: 20),
+            _buildKeypad(small: true),
+          ],
+        ),
       ),
     );
   }

@@ -156,7 +156,7 @@ class POSController extends POSControllerState with
   @override
   void onClose() {
     if (customerWindowId.value != null && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
-      DesktopMultiWindow.close(customerWindowId.value!);
+      WindowController.fromWindowId(customerWindowId.value!).close();
     }
     searchController.dispose();
     searchFocusNode.dispose();
@@ -757,7 +757,7 @@ class POSController extends POSControllerState with
     bool isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
       if (customerWindowId.value != null && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
-         DesktopMultiWindow.close(customerWindowId.value!);
+         WindowController.fromWindowId(customerWindowId.value!).close();
          customerWindowId.value = null;
       }
       Get.snackbar(
@@ -826,7 +826,7 @@ class POSController extends POSControllerState with
 
   void quitApp() async {
     if (customerWindowId.value != null && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
-      await DesktopMultiWindow.close(customerWindowId.value!);
+      await WindowController.fromWindowId(customerWindowId.value!).close();
     }
     exit(0);
   }
