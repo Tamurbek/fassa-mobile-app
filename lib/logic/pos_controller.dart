@@ -61,10 +61,10 @@ class POSController extends POSControllerState with
       }
     }
 
-    // Customer Display Listeners
-    ever(currentOrder, (_) => updateCustomerDisplay());
-    ever(discountValue, (_) => updateCustomerDisplay());
-    ever(discountType, (_) => updateCustomerDisplay());
+    // Customer Display Listeners (Debounced to prevent lag)
+    debounce(currentOrder, (_) => updateCustomerDisplay(), time: const Duration(milliseconds: 300));
+    debounce(discountValue, (_) => updateCustomerDisplay(), time: const Duration(milliseconds: 300));
+    debounce(discountType, (_) => updateCustomerDisplay(), time: const Duration(milliseconds: 300));
   }
 
   Future<void> openCustomerDisplay() async {
