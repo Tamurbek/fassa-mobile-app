@@ -495,6 +495,12 @@ class POSController extends POSControllerState with
   }
 
   Future<void> _playAlertSound() async {
+    try {
+      await audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview-mp3'));
+    } catch (e) {
+      print("Error playing alert sound: $e");
+    }
+  }
 
   Future<bool> submitOrder({bool isPaid = false, String? paymentMethod}) async {
     if (currentOrder.isEmpty) return false;
