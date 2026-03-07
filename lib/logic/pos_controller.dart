@@ -52,8 +52,8 @@ class POSController extends POSControllerState with
     startSubscriptionCheck();
     initLocationTracking();
     
-    // Re-enable for macOS now that native fix is applied in MainFlutterWindow.swift
-    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    // Disable for macOS to avoid native crash (nil window unwrap)
+    if (Platform.isWindows || Platform.isLinux) {
       windowManager.addListener(this);
       trayManager.addListener(this);
       
@@ -891,7 +891,7 @@ class POSController extends POSControllerState with
   }
 
   void _applyFullScreen(bool value) async {
-    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    if (Platform.isWindows || Platform.isLinux) {
       await windowManager.setFullScreen(value);
     } else {
       if (value) {

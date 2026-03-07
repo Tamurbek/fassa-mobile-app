@@ -71,8 +71,8 @@ void main(List<String> args) async {
   // Run app before window manager stuff to ensure native window exists
   runApp(const FassaApp());
 
-  // Re-enable for macOS now that native fix is applied
-  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+  // Disable for macOS to avoid native crash (nil window unwrap)
+  if (Platform.isWindows || Platform.isLinux) {
     // Small delay to ensure native objects are ready
     await Future.delayed(const Duration(milliseconds: 500));
     
