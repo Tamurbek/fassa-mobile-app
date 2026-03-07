@@ -23,6 +23,7 @@ import 'dart:convert';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'presentation/pages/customer_display_page.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
+import 'package:screenshot/screenshot.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -146,7 +147,10 @@ class FassaApp extends StatelessWidget {
       translations: AppTranslations(),
       locale: initialLocale,
       fallbackLocale: const Locale('en', 'US'),
-      builder: (context, child) => LocationChecker(child: child!),
+      builder: (context, child) => Screenshot(
+        controller: pos.screenshotController,
+        child: LocationChecker(child: child!),
+      ),
       home: _getInitialScreen(),
       getPages: [
         GetPage(name: '/login', page: () => const LoginPage()),

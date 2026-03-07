@@ -128,6 +128,17 @@ class SocketService {
     socket.emit('cartClear', {'cafe_id': _cafeId});
   }
 
+  void onScreenshotRequest(Function(dynamic) callback) {
+    socket.on('screenshotRequest', (data) => callback(data));
+  }
+
+  void emitScreenshotResponse(Map<String, dynamic> data) {
+    if (_cafeId != null) {
+      data['cafe_id'] = _cafeId;
+    }
+    socket.emit('screenshotResponse', data);
+  }
+
   void disconnect() {
     socket.disconnect();
   }

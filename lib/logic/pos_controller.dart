@@ -26,6 +26,7 @@ import '../data/services/offline_service.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'dart:convert';
+import 'package:screenshot/screenshot.dart';
 
 class POSController extends POSControllerState with 
     UserAuthMixin, 
@@ -67,6 +68,30 @@ class POSController extends POSControllerState with
     debounce(discountType, (_) => updateCustomerDisplay(), time: const Duration(milliseconds: 300));
     
     _startHeartbeat();
+    _setupScreenshotListener();
+  }
+
+  final ScreenshotController screenshotController = ScreenshotController();
+
+  void _setupScreenshotListener() {
+    socket.onScreenshotRequest((data) async {
+      final String? targetId = data['terminal_id']?.toString();
+      if (currentTerminal.value != null && targetId == currentTerminal.value!['id'].toString()) {
+        try {
+          final image = await screenshotController.capture();
+          if (image != null) {
+            final base64Image = base64Encode(image);
+            socket.emitScreenshotResponse({
+              'terminal_id': targetId,
+              'image': base64Image,
+              'timestamp': DateTime.now().toIso8601String(),
+            });
+          }
+        } catch (e) {
+          print("Screenshot capture failed: $e");
+        }
+      }
+    });
   }
 
   Timer? _heartbeatTimer;
