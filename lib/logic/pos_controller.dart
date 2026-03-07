@@ -52,7 +52,8 @@ class POSController extends POSControllerState with
     startSubscriptionCheck();
     initLocationTracking();
     
-    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    // Re-enable for macOS now that native fix is applied in MainFlutterWindow.swift
+    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       windowManager.addListener(this);
       trayManager.addListener(this);
       
@@ -164,7 +165,8 @@ class POSController extends POSControllerState with
     syncCartToDisplay();
 
     // 2. Local Multi-window sync (for desktop second monitor)
-    if (customerWindowId.value == null || !Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) return;
+    // Only for Windows/Linux for now to avoid macOS native crash
+    if (customerWindowId.value == null || Platform.isMacOS || (!Platform.isWindows && !Platform.isLinux)) return;
     
     try {
       // Extra check: verify if the window is still active
@@ -202,14 +204,14 @@ class POSController extends POSControllerState with
 
   @override
   void onClose() {
-    if (customerWindowId.value != null && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+    if (customerWindowId.value != null && (Platform.isWindows || Platform.isLinux)) {
       WindowController.fromWindowId(customerWindowId.value!).close();
     }
     searchController.dispose();
     searchFocusNode.dispose();
     subscriptionTimer?.cancel();
     locationTimer?.cancel();
-    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    if (Platform.isWindows || Platform.isLinux) {
       windowManager.removeListener(this);
       trayManager.removeListener(this);
     }

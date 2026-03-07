@@ -71,9 +71,10 @@ void main(List<String> args) async {
   // Run app before window manager stuff to ensure native window exists
   runApp(const FassaApp());
 
+  // Re-enable for macOS now that native fix is applied
   if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
     // Small delay to ensure native objects are ready
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 500));
     
     try {
       await windowManager.ensureInitialized();
@@ -81,7 +82,6 @@ void main(List<String> args) async {
         size: Size(1200, 800),
         minimumSize: Size(1000, 700),
         center: true,
-        // Remove transparent background as it can cause issues on macOS native layer
         backgroundColor: Colors.white, 
         skipTaskbar: false,
         title: "Fassa POS Terminal",
@@ -90,14 +90,11 @@ void main(List<String> args) async {
       windowManager.waitUntilReadyToShow(windowOptions, () async {
         await windowManager.show();
         await windowManager.focus();
-        await windowManager.setPreventClose(true); // Close button will hide instead of exit
+        await windowManager.setPreventClose(true);
       });
 
       // Tray management
-      String trayIconPath = Platform.isWindows 
-          ? 'assets/images/app_icon.ico' 
-          : 'assets/images/app_icon.png';
-          
+      String trayIconPath = 'assets/images/app_icon.ico';
       await trayManager.setIcon(trayIconPath);
       Menu menu = Menu(
         items: [
