@@ -68,40 +68,49 @@ void main(List<String> args) async {
   // Initialize Controller
   Get.put(POSController());
   
-  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-    await windowManager.ensureInitialized();
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(1200, 800),
-      minimumSize: Size(1000, 700),
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      title: "Fassa POS Terminal",
-    );
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-      await windowManager.setPreventClose(true); // Close button will hide instead of exit
-    });
-
-    // Tray management
-    // For Windows, ensure we use the .ico file from assets
-    String trayIconPath = Platform.isWindows 
-        ? 'assets/images/app_icon.ico' 
-        : 'assets/images/app_icon.png';
-        
-    await trayManager.setIcon(trayIconPath);
-    Menu menu = Menu(
-      items: [
-        MenuItem(label: 'Terminalni ochish', onClick: (_) => windowManager.show()),
-        MenuItem.separator(),
-        MenuItem(label: 'Tizimdan chiqish', onClick: (_) => Get.find<POSController>().quitApp()),
-      ],
-    );
-    await trayManager.setContextMenu(menu);
-  }
-  
+  // Run app before window manager stuff to ensure native window exists
   runApp(const FassaApp());
+
+  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    // Small delay to ensure native objects are ready
+    await Future.delayed(const Duration(milliseconds: 200));
+    
+    try {
+      await windowManager.ensureInitialized();
+      WindowOptions windowOptions = const WindowOptions(
+        size: Size(1200, 800),
+        minimumSize: Size(1000, 700),
+        center: true,
+        // Remove transparent background as it can cause issues on macOS native layer
+        backgroundColor: Colors.white, 
+        skipTaskbar: false,
+        title: "Fassa POS Terminal",
+      );
+      
+      windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+        await windowManager.setPreventClose(true); // Close button will hide instead of exit
+      });
+
+      // Tray management
+      String trayIconPath = Platform.isWindows 
+          ? 'assets/images/app_icon.ico' 
+          : 'assets/images/app_icon.png';
+          
+      await trayManager.setIcon(trayIconPath);
+      Menu menu = Menu(
+        items: [
+          MenuItem(label: 'Terminalni ochish', onClick: (_) => windowManager.show()),
+          MenuItem.separator(),
+          MenuItem(label: 'Tizimdan chiqish', onClick: (_) => Get.find<POSController>().quitApp()),
+        ],
+      );
+      await trayManager.setContextMenu(menu);
+    } catch (e) {
+      print("WindowManager init error: $e");
+    }
+  }
 }
 
 class CustomerDisplayApp extends StatelessWidget {
