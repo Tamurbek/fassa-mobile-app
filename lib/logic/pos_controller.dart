@@ -309,6 +309,38 @@ class POSController extends POSControllerState with
   void _setupSocketListenersDetailed() {
     setupSocketListeners();
     
+    socket.onOrderStatusUpdated((data) {
+      final orderId = data['orderId']?.toString();
+      final status = data['status']?.toString().toUpperCase();
+      
+      int index = allOrders.indexWhere((o) => o['id']?.toString() == orderId);
+      if (index != -1) {
+        final order = allOrders[index];
+        final String oldStatus = order['status']?.toString() ?? "";
+        final String newStatusFormatted = status!.replaceAll("_", " ").split(" ").map((s) => s.toLowerCase().capitalizeFirst).join(" ");
+        
+        allOrders[index]['status'] = newStatusFormatted;
+        allOrders.refresh();
+        saveAllOrders();
+
+        if (status == "READY" && !oldStatus.toLowerCase().contains("ready")) {
+           _playReadySound();
+           
+           Get.snackbar(
+             "Buyurtma tayyor!",
+             "Stol: ${order['table']} (${order['waiter_name'] ?? '-'})",
+             snackPosition: SnackPosition.TOP,
+             backgroundColor: Colors.blue.withOpacity(0.8),
+             colorText: Colors.white,
+             duration: const Duration(seconds: 4),
+             margin: const EdgeInsets.all(10),
+             borderRadius: 15,
+             icon: const Icon(Icons.check_circle, color: Colors.white),
+           );
+        }
+      }
+    });
+
     socket.onNewOrder((data) {
       int index = allOrders.indexWhere((o) => o['id'].toString() == data['id'].toString());
       if (index == -1) {
@@ -453,13 +485,16 @@ class POSController extends POSControllerState with
     });
   }
 
-  Future<void> _playAlertSound() async {
+  Future<void> _playReadySound() async {
     try {
-      await audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
+      // Subtle "ding" for ready status
+      await audioPlayer.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
     } catch (e) {
-      print("Error playing alert sound: $e");
+      print("Error playing ready sound: $e");
     }
   }
+
+  Future<void> _playAlertSound() async {
 
   Future<bool> submitOrder({bool isPaid = false, String? paymentMethod}) async {
     if (currentOrder.isEmpty) return false;
