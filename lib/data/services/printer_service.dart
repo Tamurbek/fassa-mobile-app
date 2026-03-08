@@ -73,10 +73,9 @@ class PrinterService {
       List<int> bytes = [];
       final posController = Get.find<POSController>();
 
-      // Use either receiptLayout or kitchenReceiptLayout based on the flag
-      final layout = isKitchenOnly 
-          ? posController.kitchenReceiptLayout.toList() 
-          : posController.receiptLayout.toList();
+      // As per user request, we are using the hardcoded professional layout for now
+      // until the admin panel builder is ready.
+      final layout = []; 
 
       if (layout.isEmpty) {
         // Simple fallback if no layout is defined
@@ -135,6 +134,11 @@ class PrinterService {
 
           final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
           if (discountAmt > 0) bytes += _row(generator, 'CHEGIRMA:', '-${_formatPrice(discountAmt)}', styles: const PosStyles(bold: true));
+
+          final String payMethod = (order['payment_method'] ?? "").toString().toUpperCase();
+          if (payMethod.isNotEmpty && !isKitchenOnly) {
+             bytes += generator.text(_normalizeString('TO\'LOV TURI: $payMethod'), styles: const PosStyles(align: PosAlign.center, bold: true));
+          }
 
           double finalTotal = subtotal + feeAmt - discountAmt;
           if (finalTotal < 0) finalTotal = 0;
