@@ -20,7 +20,8 @@ class MainNavigationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final POSController pos = Get.find<POSController>();
-    var currentIndex = 0.obs;
+    final bool isMobile = Responsive.isMobile(context);
+    var currentIndex = (isMobile ? 0 : -1).obs;
 
     final List<Map<String, dynamic>> menuItems = [
       if (!pos.isWaiter) {"icon": Icons.home_rounded, "label": "home_page".tr, "page": const OrdersScreen()},
@@ -73,17 +74,19 @@ class MainNavigationScreen extends StatelessWidget {
             ),
           ),
           desktop: Scaffold(
-            body: Column(
-              children: [
-                _buildDesktopTopNav(context, currentIndex, filteredMenu, pos),
-                Expanded(
-                  child: IndexedStack(
-                    index: currentIndex.value,
-                    children: filteredMenu.map<Widget>((e) => e['page'] as Widget).toList(),
-                  ),
-                ),
-              ],
-            ),
+            body: Obx(() => currentIndex.value == -1
+              ? _buildDashboard(context, currentIndex, filteredMenu, pos)
+              : Column(
+                  children: [
+                    _buildDesktopBackBar(context, currentIndex, filteredMenu, pos),
+                    Expanded(
+                      child: IndexedStack(
+                        index: currentIndex.value,
+                        children: filteredMenu.map<Widget>((e) => e['page'] as Widget).toList(),
+                      ),
+                    ),
+                  ],
+                )),
           ),
         ),
 
@@ -101,6 +104,170 @@ class MainNavigationScreen extends StatelessWidget {
         if (pos.isPrinting.value) const PrintingOverlay(),
       ],
     ));
+  }
+
+  Widget _buildDashboard(BuildContext context, RxInt currentIndex, List<Map<String, dynamic>> items, POSController pos) {
+    final List<Map<String, dynamic>> dashItems = [
+      {"icon": Icons.receipt_long_rounded, "label": "home_page".tr, "color": const Color(0xFFFF9500), "index": items.indexWhere((e) => e['label'] == "home_page".tr)},
+      {"icon": Icons.table_restaurant_rounded, "label": "tables".tr, "color": const Color(0xFF6366F1), "index": items.indexWhere((e) => e['label'] == "tables".tr)},
+      {"icon": Icons.people_rounded, "label": "staff".tr, "color": const Color(0xFF10B981), "index": items.indexWhere((e) => e['label'] == "staff".tr)},
+      {"icon": Icons.restaurant_menu_rounded, "label": "menu".tr, "color": const Color(0xFFF43F5E), "index": items.indexWhere((e) => e['label'] == "menu".tr)},
+      {"icon": Icons.bar_chart_rounded, "label": "reports".tr, "color": const Color(0xFF3B82F6), "index": items.indexWhere((e) => e['label'] == "reports".tr)},
+      {"icon": Icons.block_flipped, "label": "Stop-list", "color": const Color(0xFFEF4444), "index": items.indexWhere((e) => e['label'] == "Stop-list")},
+      {"icon": Icons.settings_rounded, "label": "settings".tr, "color": const Color(0xFF8B5CF6), "index": items.indexWhere((e) => e['label'] == "settings".tr)},
+    ].where((e) => (e['index'] as int) >= 0).toList();
+
+    return Container(
+      color: const Color(0xFFF8F9FB),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: EdgeInsets.fromLTRB(48, MediaQuery.of(context).padding.top + 24, 48, 24),
+            color: Colors.white,
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFFFF9500), borderRadius: BorderRadius.circular(14)),
+                  child: Image.asset('assets/images/app_icon.png', width: 28, height: 28,
+                    errorBuilder: (c, e, s) => const Icon(Icons.fastfood, color: Colors.white, size: 28)),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Obx(() => Text(
+                      pos.restaurantName.value.isEmpty ? "Fassa" : pos.restaurantName.value,
+                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Color(0xFFFF9500)),
+                    )),
+                    Text("admin_panel".tr, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                  ],
+                ),
+                const Spacer(),
+                Obx(() => Text(
+                  pos.currentUser.value?['name'] ?? "",
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF6B7280)),
+                )),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: const Icon(Icons.lock_person_rounded, color: Color(0xFFFF9500)),
+                  tooltip: "Terminalni qulflash",
+                  onPressed: () => pos.lockTerminal(),
+                ),
+                IconButton(
+                  icon: Obx(() => Icon(
+                    pos.isFullScreen.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                    color: const Color(0xFF9CA3AF))),
+                  tooltip: "To'liq ekran",
+                  onPressed: () => pos.toggleFullScreen(),
+                ),
+              ],
+            ),
+          ),
+          // Button Grid
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(48),
+                child: Wrap(
+                  spacing: 24,
+                  runSpacing: 24,
+                  alignment: WrapAlignment.center,
+                  children: dashItems.map((item) {
+                    final color = item['color'] as Color;
+                    final idx = item['index'] as int;
+                    return GestureDetector(
+                      onTap: () => currentIndex.value = idx,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: 180,
+                        height: 160,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(color: color.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, 8)),
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Icon(item['icon'] as IconData, color: color, size: 32),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              item['label'] as String,
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF1A1A1A)),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopBackBar(BuildContext context, RxInt currentIndex, List<Map<String, dynamic>> items, POSController pos) {
+    final label = currentIndex.value >= 0 && currentIndex.value < items.length
+        ? items[currentIndex.value]['label'] as String
+        : "";
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      color: Colors.white,
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => currentIndex.value = -1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF9500),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [BoxShadow(color: const Color(0xFFFF9500).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16),
+                  const SizedBox(width: 6),
+                  Text("back".tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1A1A1A))),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.lock_person_rounded, color: Color(0xFFFF9500)),
+            onPressed: () => pos.lockTerminal(),
+          ),
+          IconButton(
+            icon: Obx(() => Icon(
+              pos.isFullScreen.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+              color: const Color(0xFF9CA3AF))),
+            onPressed: () => pos.toggleFullScreen(),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildDesktopTopNav(BuildContext context, RxInt currentIndex, List<Map<String, dynamic>> items, POSController pos) {
