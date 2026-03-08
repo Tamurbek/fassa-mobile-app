@@ -97,7 +97,7 @@ class PrinterService {
         }
 
         if (order['table'] != null && order['table'] != '-') bytes += generator.text(_normalizeString('STOL: ${order['table']}'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2));
-        bytes += generator.hr();
+        bytes += generator.hr(ch: '-');
         
         final items = (order['details'] as List);
         for (var item in items) {
@@ -118,7 +118,7 @@ class PrinterService {
             ]);
           }
         }
-        bytes += generator.hr();
+        bytes += generator.hr(ch: '-');
         
         if (!isKitchenOnly) {
           // Use the same logic as TOTAL_BLOCK for the fallback
@@ -143,6 +143,7 @@ class PrinterService {
           } else if (feeFixed > 0) {
             bytes += _row(generator, 'XIZMAT:', _formatPrice(feeAmt));
           }
+          bytes += generator.hr(ch: '-');
 
           final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
           final String discType = (order['discount_type'] ?? "").toString().toUpperCase();
