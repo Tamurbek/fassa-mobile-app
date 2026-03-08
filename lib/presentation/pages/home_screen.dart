@@ -32,38 +32,54 @@ class HomeScreen extends StatelessWidget {
           backgroundColor: const Color(0xFFF8F9FB),
           body: Stack(
             children: [
-              Column(
+              Row(
                 children: [
-                  _buildTopBar(pos, context),
-                  _buildCategories(pos, context),
+                  // Compact left order panel (desktop only)
+                  if (!isMobile)
+                    Obx(() => AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      width: pos.currentOrder.isEmpty ? 0 : 260,
+                      child: pos.currentOrder.isEmpty
+                          ? const SizedBox.shrink()
+                          : _buildCompactOrderPanel(pos, context),
+                    )),
+                  // Main Content
                   Expanded(
-                    child: Obx(() {
-                      final cat = pos.selectedCategory.value;
-                      final query = pos.searchQuery.value.toLowerCase();
-                      
-                      final items = pos.products.where((p) {
-                        if (!p.isAvailable) return false;
-                        final bool matchCat = cat == "All" || p.category == cat;
-                        final bool matchQuery = query.isEmpty || 
-                          p.name.toLowerCase().contains(query) ||
-                          p.description.toLowerCase().contains(query);
-                        return matchCat && matchQuery;
-                      }).toList();
-                      
-                      return Column(
-                        children: [
-                          Expanded(child: _buildItemsGrid(items, context)),
-                          if (pos.showKeyboard.value)
-                            VirtualKeyboard(
-                              controller: pos.searchController,
-                              onEnter: () => pos.showKeyboard.value = false,
-                            ),
-                          // Padding to avoid overlap with bottom bar
-                          if (!isMobile && pos.currentOrder.isNotEmpty)
-                            const SizedBox(height: 90),
-                        ],
-                      );
-                    }),
+                    child: Column(
+                      children: [
+                        _buildTopBar(pos, context),
+                        _buildCategories(pos, context),
+                        Expanded(
+                          child: Obx(() {
+                            final cat = pos.selectedCategory.value;
+                            final query = pos.searchQuery.value.toLowerCase();
+                            
+                            final items = pos.products.where((p) {
+                              if (!p.isAvailable) return false;
+                              final bool matchCat = cat == "All" || p.category == cat;
+                              final bool matchQuery = query.isEmpty || 
+                                p.name.toLowerCase().contains(query) ||
+                                p.description.toLowerCase().contains(query);
+                              return matchCat && matchQuery;
+                            }).toList();
+                            
+                            return Column(
+                              children: [
+                                Expanded(child: _buildItemsGrid(items, context)),
+                                if (pos.showKeyboard.value)
+                                  VirtualKeyboard(
+                                    controller: pos.searchController,
+                                    onEnter: () => pos.showKeyboard.value = false,
+                                  ),
+                                if (!isMobile && pos.currentOrder.isNotEmpty)
+                                  const SizedBox(height: 90),
+                              ],
+                            );
+                          }),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -732,6 +748,145 @@ class HomeScreen extends StatelessWidget {
               child: const Icon(Icons.remove, size: 16, color: Color(0xFF1A1A1A)),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactOrderPanel(POSController pos, BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(right: BorderSide(color: Color(0xFFEDF0F5))),
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFEDF0F5))),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.receipt_long_rounded, color: Color(0xFFFF9500), size: 20),
+                const SizedBox(width: 8),
+                Text("order".tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1A1A1A))),
+                const Spacer(),
+                Obx(() => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9500).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    "${pos.totalItems}",
+                    style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w900, fontSize: 13),
+                  ),
+                )),
+              ],
+            ),
+          ),
+          // Order Items
+          Expanded(
+            child: Obx(() => pos.currentOrder.isEmpty
+              ? Center(
+                  child: Text("cart_empty".tr, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  itemCount: pos.currentOrder.length,
+                  itemBuilder: (context, index) {
+                    final item = pos.currentOrder[index];
+                    final name = item['name'] as String;
+                    final qty = item['quantity'] as int;
+                    final price = (item['price'] as num).toDouble();
+                    final variantName = item['variant_name'] as String?;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8F9FB),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFEDF0F5)),
+                      ),
+                      child: Row(
+                        children: [
+                          // Name + variant
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1A1A1A)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (variantName != null && variantName.isNotEmpty)
+                                  Text(
+                                    variantName,
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+                                  ),
+                                Text(
+                                  "${NumberFormat('#,###', 'uz_UZ').format(price * qty)} ${pos.currencySymbol}",
+                                  style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w700, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Quantity controls
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFEDF0F5)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    final foodItem = pos.products.firstWhereOrNull((p) => p.id == item['product_id']);
+                                    if (foodItem != null) {
+                                      final variant = item['variant_id'] != null
+                                          ? foodItem.variants.firstWhereOrNull((v) => v.id == item['variant_id'])
+                                          : null;
+                                      pos.decrementFromCart(foodItem, variant: variant);
+                                    }
+                                  },
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(Icons.remove, size: 14, color: Color(0xFF6B7280)),
+                                  ),
+                                ),
+                                Text("$qty", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF1A1A1A))),
+                                GestureDetector(
+                                  onTap: () {
+                                    final foodItem = pos.products.firstWhereOrNull((p) => p.id == item['product_id']);
+                                    if (foodItem != null) {
+                                      final variant = item['variant_id'] != null
+                                          ? foodItem.variants.firstWhereOrNull((v) => v.id == item['variant_id'])
+                                          : null;
+                                      pos.addToCart(foodItem, variant: variant);
+                                    }
+                                  },
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: Icon(Icons.add, size: 14, color: Color(0xFFFF9500)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                )),
+          ),
+          // Bottom space for the bottom bar
+          const SizedBox(height: 90),
         ],
       ),
     );
