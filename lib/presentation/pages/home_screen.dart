@@ -30,54 +30,53 @@ class HomeScreen extends StatelessWidget {
         children: [
         Scaffold(
           backgroundColor: const Color(0xFFF8F9FB),
-          body: Row(
+          body: Stack(
             children: [
-              // Left Sidebar: Cart (Only on Desktop/Tablet)
-              if (!isMobile)
-                Container(
-                  width: 380,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(right: BorderSide(color: Color(0xFFEDF0F5))),
+              Column(
+                children: [
+                  _buildTopBar(pos, context),
+                  _buildCategories(pos, context),
+                  Expanded(
+                    child: Obx(() {
+                      final cat = pos.selectedCategory.value;
+                      final query = pos.searchQuery.value.toLowerCase();
+                      
+                      final items = pos.products.where((p) {
+                        if (!p.isAvailable) return false;
+                        final bool matchCat = cat == "All" || p.category == cat;
+                        final bool matchQuery = query.isEmpty || 
+                          p.name.toLowerCase().contains(query) ||
+                          p.description.toLowerCase().contains(query);
+                        return matchCat && matchQuery;
+                      }).toList();
+                      
+                      return Column(
+                        children: [
+                          Expanded(child: _buildItemsGrid(items, context)),
+                          if (pos.showKeyboard.value)
+                            VirtualKeyboard(
+                              controller: pos.searchController,
+                              onEnter: () => pos.showKeyboard.value = false,
+                            ),
+                          // Padding to avoid overlap with bottom bar
+                          if (!isMobile && pos.currentOrder.isNotEmpty)
+                            const SizedBox(height: 90),
+                        ],
+                      );
+                    }),
                   ),
-                  child: _buildPOSCartSidebar(pos, context),
-                ),
-              
-              // Main Content
-              Expanded(
-                child: Column(
-                  children: [
-                    _buildTopBar(pos, context),
-                    _buildCategories(pos, context),
-                    Expanded(
-                      child: Obx(() {
-                        final cat = pos.selectedCategory.value;
-                        final query = pos.searchQuery.value.toLowerCase();
-                        
-                        final items = pos.products.where((p) {
-                          if (!p.isAvailable) return false;
-                          final bool matchCat = cat == "All" || p.category == cat;
-                          final bool matchQuery = query.isEmpty || 
-                            p.name.toLowerCase().contains(query) ||
-                            p.description.toLowerCase().contains(query);
-                          return matchCat && matchQuery;
-                        }).toList();
-                        
-                        return Column(
-                          children: [
-                            Expanded(child: _buildItemsGrid(items, context)),
-                            if (pos.showKeyboard.value)
-                              VirtualKeyboard(
-                                controller: pos.searchController,
-                                onEnter: () => pos.showKeyboard.value = false,
-                              ),
-                          ],
-                        );
-                      }),
-                    ),
-                  ],
-                ),
+                ],
               ),
+              // Bottom Order Bar for Desktop/Tablet
+              if (!isMobile)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Obx(() => pos.currentOrder.isEmpty 
+                    ? const SizedBox.shrink()
+                    : _buildDesktopBottomBar(pos, context)),
+                ),
             ],
           ),
           floatingActionButton: isMobile && pos.currentOrder.isNotEmpty 
@@ -206,18 +205,73 @@ class HomeScreen extends StatelessWidget {
               onTap: () => pos.refreshData() // Refresh tries to sync
             ) : const SizedBox.shrink()),
           const SizedBox(width: 12),
+          const SizedBox(width: 8),
           _buildTopIcon(Icons.notifications_outlined),
-          const SizedBox(width: 12),
-          _buildTopIcon(Icons.lock_rounded, onTap: () => pos.lockTerminal()),
-          const SizedBox(width: 12),
-          _buildTopIcon(Icons.refresh_rounded, onTap: () => pos.refreshData()),
-          const SizedBox(width: 12),
-          if (pos.isAdmin || pos.isCashier)
-            _buildTopIcon(Icons.kitchen_rounded, onTap: () => Get.to(() => const KitchenDisplayPage())),
-          const SizedBox(width: 12),
-          _buildTopIcon(Icons.settings_outlined, onTap: () => Get.toNamed('/settings')),
+          const SizedBox(width: 8),
+          _buildMoreActionsMenu(pos, context),
         ],
       ),
+    );
+  }
+
+  Widget _buildMoreActionsMenu(POSController pos, BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(Icons.more_horiz_rounded, color: Color(0xFF1A1A1A), size: 22),
+      ),
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      onSelected: (value) {
+        switch (value) {
+          case 'lock':
+            pos.lockTerminal();
+            break;
+          case 'refresh':
+            pos.refreshData();
+            break;
+          case 'kitchen':
+            Get.to(() => const KitchenDisplayPage());
+            break;
+          case 'settings':
+            Get.toNamed('/settings');
+            break;
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'lock',
+          child: _buildPopupItem(Icons.lock_outline_rounded, "lock_terminal".tr),
+        ),
+        PopupMenuItem(
+          value: 'refresh',
+          child: _buildPopupItem(Icons.refresh_rounded, "refresh_data".tr),
+        ),
+        if (pos.isAdmin || pos.isCashier)
+          PopupMenuItem(
+            value: 'kitchen',
+            child: _buildPopupItem(Icons.kitchen_rounded, "kds_board".tr),
+          ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          value: 'settings',
+          child: _buildPopupItem(Icons.settings_outlined, "settings".tr),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPopupItem(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: const Color(0xFF1A1A1A)),
+        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 
@@ -1388,6 +1442,105 @@ class HomeScreen extends StatelessWidget {
             Text("${NumberFormat("#,###", "uz_UZ").format(pos.total)} ${pos.currencySymbol}", 
               style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w900, fontSize: 16)),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopBottomBar(POSController pos, BuildContext context) {
+    return Container(
+      height: 90,
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Order Summary
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "selected_items".trArgs([pos.currentOrder.length.toString()]),
+                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "${NumberFormat("#,###", "uz_UZ").format(pos.total)} ${pos.currencySymbol}",
+                style: const TextStyle(color: Color(0xFFFF9500), fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+              ),
+            ],
+          ),
+          const Spacer(),
+          // Action Buttons
+          Row(
+            children: [
+              _buildBottomActionBtn(
+                "clear_all".tr, 
+                const Color(0xFFF3F4F6), 
+                const Color(0xFFEF4444), 
+                Icons.delete_sweep_rounded, 
+                () => pos.clearCurrentOrder()
+              ),
+              const SizedBox(width: 16),
+              _buildBottomActionBtn(
+                "review_order".tr, 
+                const Color(0xFFF3F4F6), 
+                const Color(0xFF1A1A1A), 
+                Icons.shopping_bag_outlined, 
+                () => Get.to(() => const CartScreen())
+              ),
+              const SizedBox(width: 16),
+              SizedBox(
+                height: 56,
+                width: 200,
+                child: ElevatedButton(
+                  onPressed: () => Get.to(() => const CartScreen()),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF9500),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle_outline, size: 20),
+                      const SizedBox(width: 10),
+                      Text("checkout".tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBtn(String label, Color bg, Color text, IconData icon, VoidCallback onTap) {
+    return SizedBox(
+      height: 56,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 20),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: text,
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
     );
