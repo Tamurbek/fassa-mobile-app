@@ -30,69 +30,54 @@ class HomeScreen extends StatelessWidget {
         children: [
         Scaffold(
           backgroundColor: const Color(0xFFF8F9FB),
-          body: Stack(
+          body: Row(
             children: [
-              Row(
-                children: [
-                  // Compact left order panel (desktop only)
-                  if (!isMobile)
-                    Obx(() => AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOut,
-                      width: pos.currentOrder.isEmpty ? 0 : 260,
-                      child: pos.currentOrder.isEmpty
-                          ? const SizedBox.shrink()
-                          : _buildCompactOrderPanel(pos, context),
-                    )),
-                  // Main Content
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildTopBar(pos, context),
-                        _buildCategories(pos, context),
-                        Expanded(
-                          child: Obx(() {
-                            final cat = pos.selectedCategory.value;
-                            final query = pos.searchQuery.value.toLowerCase();
-                            
-                            final items = pos.products.where((p) {
-                              if (!p.isAvailable) return false;
-                              final bool matchCat = cat == "All" || p.category == cat;
-                              final bool matchQuery = query.isEmpty || 
-                                p.name.toLowerCase().contains(query) ||
-                                p.description.toLowerCase().contains(query);
-                              return matchCat && matchQuery;
-                            }).toList();
-                            
-                            return Column(
-                              children: [
-                                Expanded(child: _buildItemsGrid(items, context)),
-                                if (pos.showKeyboard.value)
-                                  VirtualKeyboard(
-                                    controller: pos.searchController,
-                                    onEnter: () => pos.showKeyboard.value = false,
-                                  ),
-                                if (!isMobile && pos.currentOrder.isNotEmpty)
-                                  const SizedBox(height: 90),
-                              ],
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              // Bottom Order Bar for Desktop/Tablet
+              // Left Sidebar: Cart (Only on Desktop/Tablet)
               if (!isMobile)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Obx(() => pos.currentOrder.isEmpty 
-                    ? const SizedBox.shrink()
-                    : _buildDesktopBottomBar(pos, context)),
+                Container(
+                  width: 380,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(right: BorderSide(color: Color(0xFFEDF0F5))),
+                  ),
+                  child: _buildPOSCartSidebar(pos, context),
                 ),
+              
+              // Main Content
+              Expanded(
+                child: Column(
+                  children: [
+                    _buildTopBar(pos, context),
+                    _buildCategories(pos, context),
+                    Expanded(
+                      child: Obx(() {
+                        final cat = pos.selectedCategory.value;
+                        final query = pos.searchQuery.value.toLowerCase();
+                        
+                        final items = pos.products.where((p) {
+                          if (!p.isAvailable) return false;
+                          final bool matchCat = cat == "All" || p.category == cat;
+                          final bool matchQuery = query.isEmpty || 
+                            p.name.toLowerCase().contains(query) ||
+                            p.description.toLowerCase().contains(query);
+                          return matchCat && matchQuery;
+                        }).toList();
+                        
+                        return Column(
+                          children: [
+                            Expanded(child: _buildItemsGrid(items, context)),
+                            if (pos.showKeyboard.value)
+                              VirtualKeyboard(
+                                controller: pos.searchController,
+                                onEnter: () => pos.showKeyboard.value = false,
+                              ),
+                          ],
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           floatingActionButton: isMobile && pos.currentOrder.isNotEmpty 
@@ -220,7 +205,6 @@ class HomeScreen extends StatelessWidget {
               pos.isOffline ? Colors.red : Colors.orange,
               onTap: () => pos.refreshData() // Refresh tries to sync
             ) : const SizedBox.shrink()),
-          const SizedBox(width: 12),
           const SizedBox(width: 8),
           _buildTopIcon(Icons.notifications_outlined),
           const SizedBox(width: 8),
@@ -748,145 +732,6 @@ class HomeScreen extends StatelessWidget {
               child: const Icon(Icons.remove, size: 16, color: Color(0xFF1A1A1A)),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCompactOrderPanel(POSController pos, BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(right: BorderSide(color: Color(0xFFEDF0F5))),
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 40, 16, 12),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFEDF0F5))),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.receipt_long_rounded, color: Color(0xFFFF9500), size: 20),
-                const SizedBox(width: 8),
-                Text("order".tr, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1A1A1A))),
-                const Spacer(),
-                Obx(() => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF9500).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    "${pos.totalItems}",
-                    style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w900, fontSize: 13),
-                  ),
-                )),
-              ],
-            ),
-          ),
-          // Order Items
-          Expanded(
-            child: Obx(() => pos.currentOrder.isEmpty
-              ? Center(
-                  child: Text("cart_empty".tr, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  itemCount: pos.currentOrder.length,
-                  itemBuilder: (context, index) {
-                    final item = pos.currentOrder[index];
-                    final name = item['name'] as String;
-                    final qty = item['quantity'] as int;
-                    final price = (item['price'] as num).toDouble();
-                    final variantName = item['variant_name'] as String?;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FB),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFEDF0F5)),
-                      ),
-                      child: Row(
-                        children: [
-                          // Name + variant
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  name,
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1A1A1A)),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (variantName != null && variantName.isNotEmpty)
-                                  Text(
-                                    variantName,
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
-                                  ),
-                                Text(
-                                  "${NumberFormat('#,###', 'uz_UZ').format(price * qty)} ${pos.currencySymbol}",
-                                  style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w700, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Quantity controls
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFEDF0F5)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    final foodItem = pos.products.firstWhereOrNull((p) => p.id == item['product_id']);
-                                    if (foodItem != null) {
-                                      final variant = item['variant_id'] != null
-                                          ? foodItem.variants.firstWhereOrNull((v) => v.id == item['variant_id'])
-                                          : null;
-                                      pos.decrementFromCart(foodItem, variant: variant);
-                                    }
-                                  },
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(6),
-                                    child: Icon(Icons.remove, size: 14, color: Color(0xFF6B7280)),
-                                  ),
-                                ),
-                                Text("$qty", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF1A1A1A))),
-                                GestureDetector(
-                                  onTap: () {
-                                    final foodItem = pos.products.firstWhereOrNull((p) => p.id == item['product_id']);
-                                    if (foodItem != null) {
-                                      final variant = item['variant_id'] != null
-                                          ? foodItem.variants.firstWhereOrNull((v) => v.id == item['variant_id'])
-                                          : null;
-                                      pos.addToCart(foodItem, variant: variant);
-                                    }
-                                  },
-                                  child: const Padding(
-                                    padding: EdgeInsets.all(6),
-                                    child: Icon(Icons.add, size: 14, color: Color(0xFFFF9500)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                )),
-          ),
-          // Bottom space for the bottom bar
-          const SizedBox(height: 90),
         ],
       ),
     );
@@ -1597,105 +1442,6 @@ class HomeScreen extends StatelessWidget {
             Text("${NumberFormat("#,###", "uz_UZ").format(pos.total)} ${pos.currencySymbol}", 
               style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w900, fontSize: 16)),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopBottomBar(POSController pos, BuildContext context) {
-    return Container(
-      height: 90,
-      margin: const EdgeInsets.all(24),
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Order Summary
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "selected_items".trArgs([pos.currentOrder.length.toString()]),
-                style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "${NumberFormat("#,###", "uz_UZ").format(pos.total)} ${pos.currencySymbol}",
-                style: const TextStyle(color: Color(0xFFFF9500), fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
-              ),
-            ],
-          ),
-          const Spacer(),
-          // Action Buttons
-          Row(
-            children: [
-              _buildBottomActionBtn(
-                "clear_all".tr, 
-                const Color(0xFFF3F4F6), 
-                const Color(0xFFEF4444), 
-                Icons.delete_sweep_rounded, 
-                () => pos.clearCurrentOrder()
-              ),
-              const SizedBox(width: 16),
-              _buildBottomActionBtn(
-                "review_order".tr, 
-                const Color(0xFFF3F4F6), 
-                const Color(0xFF1A1A1A), 
-                Icons.shopping_bag_outlined, 
-                () => Get.to(() => const CartScreen())
-              ),
-              const SizedBox(width: 16),
-              SizedBox(
-                height: 56,
-                width: 200,
-                child: ElevatedButton(
-                  onPressed: () => Get.to(() => const CartScreen()),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9500),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.check_circle_outline, size: 20),
-                      const SizedBox(width: 10),
-                      Text("checkout".tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomActionBtn(String label, Color bg, Color text, IconData icon, VoidCallback onTap) {
-    return SizedBox(
-      height: 56,
-      child: OutlinedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 20),
-        label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        style: OutlinedButton.styleFrom(
-          backgroundColor: bg,
-          foregroundColor: text,
-          side: BorderSide.none,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
     );
