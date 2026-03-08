@@ -93,7 +93,13 @@ class PrinterService {
         for (var item in items) {
           int qty = int.tryParse(item['qty'].toString()) ?? 0;
           double price = double.tryParse(item['price'].toString()) ?? 0.0;
-          bytes += _row(generator, item['name'], '$qty x ${_formatPrice(price)}');
+          double lineTotal = qty * price;
+          
+          bytes += generator.text(_normalizeString(item['name']), styles: const PosStyles(bold: true));
+          bytes += generator.row([
+            PosColumn(text: _normalizeString('  $qty x ${_formatPrice(price)}'), width: 7, styles: const PosStyles(fontType: PosFontType.fontB)),
+            PosColumn(text: _normalizeString(_formatPrice(lineTotal)), width: 5, styles: const PosStyles(align: PosAlign.right)),
+          ]);
         }
         bytes += generator.hr();
         
@@ -102,6 +108,8 @@ class PrinterService {
         for (var item in items) {
           subtotal += (double.tryParse(item['price'].toString()) ?? 0.0) * (int.tryParse(item['qty'].toString()) ?? 0);
         }
+
+        bytes += _row(generator, 'SUMMA:', _formatPrice(subtotal));
 
         double feePercent = 0.0;
         double feeFixed = 0.0;
@@ -119,13 +127,16 @@ class PrinterService {
         }
 
         final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
-        if (discountAmt > 0) bytes += _row(generator, 'CHEGIRMA:', '-${_formatPrice(discountAmt)}');
+        if (discountAmt > 0) bytes += _row(generator, 'CHEGIRMA:', '-${_formatPrice(discountAmt)}', styles: const PosStyles(bold: true));
 
         double finalTotal = subtotal + feeAmt - discountAmt;
         if (finalTotal < 0) finalTotal = 0;
         
         bytes += generator.hr(ch: '=');
-        bytes += _row(generator, 'JAMI:', _formatPrice(finalTotal), styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+        bytes += generator.row([
+          PosColumn(text: _normalizeString('JAMI:'), width: 5, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+          PosColumn(text: _normalizeString(_formatPrice(finalTotal)), width: 7, styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+        ]);
         bytes += generator.hr(ch: '=');
       } else {
         for (int i = 0; i < layout.length; i++) {
@@ -242,22 +253,26 @@ class PrinterService {
         break;
       case 'ITEMS_TABLE':
         bytes += generator.hr(ch: '-');
-        bytes += generator.row([
-          PosColumn(text: _normalizeString('NOMI'), width: 4, styles: styles.copyWith(bold: true)),
-          PosColumn(text: _normalizeString('NARXI'), width: 3, styles: styles.copyWith(bold: true, align: PosAlign.right)),
-          PosColumn(text: _normalizeString('SONI'), width: 2, styles: styles.copyWith(bold: true, align: PosAlign.center)),
-          PosColumn(text: _normalizeString('SUMMA'), width: 3, styles: styles.copyWith(bold: true, align: PosAlign.right)),
-        ]);
-        bytes += generator.hr(ch: '-');
         final items = order['details'] as List;
         for (var item in items) {
           int qty = int.tryParse(item['qty'].toString()) ?? 0;
           double price = double.tryParse(item['price'].toString()) ?? 0.0;
+          double lineTotal = qty * price;
+          
+          // Print Name (Full width, bold)
+          bytes += generator.text(_normalizeString(item['name']), 
+              styles: styles.copyWith(bold: true, fontType: PosFontType.fontA));
+          
+          // Print Quantity x Price and Total
           bytes += generator.row([
-            PosColumn(text: _normalizeString(item['name']), width: 4, styles: styles),
-            PosColumn(text: _normalizeString(_formatPrice(price)), width: 3, styles: styles.copyWith(align: PosAlign.right)),
-            PosColumn(text: _normalizeString(qty.toString()), width: 2, styles: styles.copyWith(align: PosAlign.center)),
-            PosColumn(text: _normalizeString(_formatPrice(qty * price)), width: 3, styles: styles.copyWith(align: PosAlign.right)),
+            PosColumn(
+                text: _normalizeString('  $qty x ${_formatPrice(price)}'), 
+                width: 7, 
+                styles: styles.copyWith(fontType: PosFontType.fontB)),
+            PosColumn(
+                text: _normalizeString(_formatPrice(lineTotal)), 
+                width: 5, 
+                styles: styles.copyWith(align: PosAlign.right, fontType: PosFontType.fontA)),
           ]);
         }
         bytes += generator.hr(ch: '-');
