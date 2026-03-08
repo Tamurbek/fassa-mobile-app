@@ -77,101 +77,101 @@ class PrinterService {
       // until the admin panel builder is ready.
       final layout = []; 
 
-      if (layout.isEmpty) {
-        // Simple fallback if no layout is defined
-        bytes += generator.text(_normalizeString(posController.restaurantName.value), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-        if (posController.restaurantAddress.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantAddress.value), styles: const PosStyles(align: PosAlign.center));
-        bytes += generator.hr();
-        bytes += generator.text(_normalizeString(title ?? 'BUYURTMA'), styles: const PosStyles(align: PosAlign.center, bold: true));
-        bytes += generator.text(_normalizeString('ID: ${order['id']}'), styles: const PosStyles(align: PosAlign.center));
-        bytes += generator.text(_normalizeString(DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())), styles: const PosStyles(align: PosAlign.center));
-        
-        final String cashierName = posController.currentUser.value?['name'] ?? "";
-        if (cashierName.isNotEmpty) {
-           bytes += generator.text(_normalizeString('KASSIR: $cashierName'), styles: const PosStyles(align: PosAlign.left));
-        }
-        
-        final String waiterName = order['waiter_name'] ?? "";
-        if (waiterName.isNotEmpty) {
-           bytes += generator.text(_normalizeString('AFITSANT: $waiterName'), styles: const PosStyles(align: PosAlign.left));
-        }
-
-        if (order['table'] != null && order['table'] != '-') bytes += generator.text(_normalizeString('STOL: ${order['table']}'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2));
-        bytes += generator.hr(ch: '-');
-        
-        final items = (order['details'] as List);
-        for (var item in items) {
-          int qty = int.tryParse(item['qty'].toString()) ?? 0;
-          double price = double.tryParse(item['price'].toString()) ?? 0.0;
-          double lineTotal = qty * price;
+        final bool is80mm = printer.paperSize != '58mm';
+        if (layout.isEmpty) {
+          bytes += generator.text(_normalizeString(posController.restaurantName.value), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
+          if (posController.restaurantAddress.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantAddress.value), styles: const PosStyles(align: PosAlign.center));
+          bytes += _hr(generator, is80mm: is80mm);
+          bytes += generator.text(_normalizeString(title ?? 'BUYURTMA'), styles: const PosStyles(align: PosAlign.center, bold: true));
+          final String displayId = order['id'].toString().substring(0, order['id'].toString().length > 8 ? 8 : order['id'].toString().length);
+        bytes += generator.text(_normalizeString('ID: $displayId'), styles: const PosStyles(align: PosAlign.center));
+          bytes += generator.text(_normalizeString(DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())), styles: const PosStyles(align: PosAlign.center));
           
-          if (isKitchenOnly) {
-             bytes += generator.row([
-               PosColumn(text: _normalizeString(item['name']), width: 9, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
-               PosColumn(text: _normalizeString('$qty ta'), width: 3, styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
-             ]);
-             bytes += generator.feed(1); 
-          } else {
-            bytes += generator.row([
-              PosColumn(text: _normalizeString('  $qty x ${_formatPrice(price)}'), width: 7, styles: const PosStyles(fontType: PosFontType.fontB)),
-              PosColumn(text: _normalizeString(_formatPrice(lineTotal)), width: 5, styles: const PosStyles(align: PosAlign.right)),
-            ]);
+          final String cashierName = posController.currentUser.value?['name'] ?? "";
+          if (cashierName.isNotEmpty) {
+             bytes += generator.text(_normalizeString('KASSIR: $cashierName'), styles: const PosStyles(align: PosAlign.left));
           }
-        }
-        bytes += generator.hr(ch: '-');
-        
-        if (!isKitchenOnly) {
-          // Use the same logic as TOTAL_BLOCK for the fallback
-          double subtotal = 0;
+          
+          final String waiterName = order['waiter_name'] ?? "";
+          if (waiterName.isNotEmpty) {
+             bytes += generator.text(_normalizeString('AFITSANT: $waiterName'), styles: const PosStyles(align: PosAlign.left));
+          }
+
+          if (order['table'] != null && order['table'] != '-') bytes += generator.text(_normalizeString('STOL: ${order['table']}'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2));
+          bytes += _hr(generator, ch: '-', is80mm: is80mm);
+          
+          final items = (order['details'] as List);
           for (var item in items) {
-            subtotal += (double.tryParse(item['price'].toString()) ?? 0.0) * (int.tryParse(item['qty'].toString()) ?? 0);
-          }
-
-          bytes += _row(generator, 'SUMMA:', _formatPrice(subtotal));
-
-          double feePercent = 0.0;
-          double feeFixed = 0.0;
-          final String mode = (order['mode'] ?? "Dine-in").toString().toLowerCase();
-          if (mode.contains("dine")) feePercent = (order['service_fee_dine_in'] as num?)?.toDouble() ?? 10.0;
-          else if (mode.contains("takeaway")) feeFixed = (order['service_fee_takeaway'] as num?)?.toDouble() ?? 0.0;
-          else if (mode.contains("delivery")) feeFixed = (order['service_fee_delivery'] as num?)?.toDouble() ?? 0.0;
-
-          double feeAmt = feeFixed;
-          if (feePercent > 0) {
-            feeAmt = subtotal * (feePercent / 100);
-            bytes += _row(generator, 'XIZMAT (${feePercent.toInt()}%):', _formatPrice(feeAmt));
-          } else if (feeFixed > 0) {
-            bytes += _row(generator, 'XIZMAT:', _formatPrice(feeAmt));
-          }
-          bytes += generator.hr(ch: '-');
-
-          final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
-          final String discType = (order['discount_type'] ?? "").toString().toUpperCase();
-          final double discValue = (order['discount_value'] as num?)?.toDouble() ?? 0.0;
-          
-          if (discountAmt > 0) {
-            String discLabel = 'CHEGIRMA:';
-            if (discType == "PERCENT" || discType == "PERCENTAGE") {
-              discLabel = 'CHEGIRMA (${discValue.toInt()}%):';
+            int qty = int.tryParse(item['qty'].toString()) ?? 0;
+            double price = double.tryParse(item['price'].toString()) ?? 0.0;
+            double lineTotal = qty * price;
+            
+            if (isKitchenOnly) {
+               bytes += generator.row([
+                 PosColumn(text: _normalizeString(item['name']), width: 9, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+                 PosColumn(text: _normalizeString('$qty ta'), width: 3, styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+               ]);
+               bytes += generator.feed(1); 
+            } else {
+              bytes += generator.row([
+                PosColumn(text: _normalizeString('  $qty x ${_formatPrice(price)}'), width: 7, styles: const PosStyles(fontType: PosFontType.fontB)),
+                PosColumn(text: _normalizeString(_formatPrice(lineTotal)), width: 5, styles: const PosStyles(align: PosAlign.right)),
+              ]);
             }
-            bytes += _row(generator, discLabel, '-${_formatPrice(discountAmt)}', styles: const PosStyles(bold: true));
           }
-
-          final String payMethod = (order['payment_method'] ?? "").toString().toUpperCase();
-          if (payMethod.isNotEmpty && !isKitchenOnly) {
-             bytes += generator.text(_normalizeString('TO\'LOV TURI: $payMethod'), styles: const PosStyles(align: PosAlign.center, bold: true));
-          }
-
-          double finalTotal = subtotal + feeAmt - discountAmt;
-          if (finalTotal < 0) finalTotal = 0;
+          bytes += _hr(generator, ch: '-', is80mm: is80mm);
           
-          bytes += generator.hr(ch: '=');
-          bytes += generator.row([
-            PosColumn(text: _normalizeString('JAMI:'), width: 5, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
-            PosColumn(text: _normalizeString(_formatPrice(finalTotal)), width: 7, styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
-          ]);
-          bytes += generator.hr(ch: '=');
-        }
+          if (!isKitchenOnly) {
+            double subtotal = 0;
+            for (var item in items) {
+              subtotal += (double.tryParse(item['price'].toString()) ?? 0.0) * (int.tryParse(item['qty'].toString()) ?? 0);
+            }
+
+            bytes += _row(generator, 'SUMMA:', _formatPrice(subtotal));
+
+            double feePercent = 0.0;
+            double feeFixed = 0.0;
+            final String mode = (order['mode'] ?? "Dine-in").toString().toLowerCase();
+            if (mode.contains("dine")) feePercent = (order['service_fee_dine_in'] as num?)?.toDouble() ?? 10.0;
+            else if (mode.contains("takeaway")) feeFixed = (order['service_fee_takeaway'] as num?)?.toDouble() ?? 0.0;
+            else if (mode.contains("delivery")) feeFixed = (order['service_fee_delivery'] as num?)?.toDouble() ?? 0.0;
+
+            double feeAmt = feeFixed;
+            if (feePercent > 0) {
+              feeAmt = subtotal * (feePercent / 100);
+              bytes += _row(generator, 'XIZMAT (${feePercent.toInt()}%):', _formatPrice(feeAmt));
+            } else if (feeFixed > 0) {
+              bytes += _row(generator, 'XIZMAT:', _formatPrice(feeAmt));
+            }
+            bytes += _hr(generator, ch: '-', is80mm: is80mm);
+
+            final double discountAmt = (order['discount_amount'] as num?)?.toDouble() ?? 0.0;
+            final String discType = (order['discount_type'] ?? "").toString().toUpperCase();
+            final double discValue = (order['discount_value'] as num?)?.toDouble() ?? 0.0;
+            
+            if (discountAmt > 0) {
+              String discLabel = 'CHEGIRMA:';
+              if (discType == "PERCENT" || discType == "PERCENTAGE") {
+                discLabel = 'CHEGIRMA (${discValue.toInt()}%):';
+              }
+              bytes += _row(generator, discLabel, '-${_formatPrice(discountAmt)}', styles: const PosStyles(bold: true));
+            }
+
+            final String payMethod = (order['payment_method'] ?? "").toString().toUpperCase();
+            if (payMethod.isNotEmpty && !isKitchenOnly) {
+               bytes += generator.text(_normalizeString('TO\'LOV TURI: $payMethod'), styles: const PosStyles(align: PosAlign.center, bold: true));
+            }
+
+            double finalTotal = subtotal + feeAmt - discountAmt;
+            if (finalTotal < 0) finalTotal = 0;
+            
+            bytes += _hr(generator, ch: '=', is80mm: is80mm);
+            bytes += generator.row([
+              PosColumn(text: _normalizeString('JAMI:'), width: 5, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+              PosColumn(text: _normalizeString(_formatPrice(finalTotal)), width: 7, styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+            ]);
+            bytes += _hr(generator, ch: '=', is80mm: is80mm);
+          }
       } else {
         for (int i = 0; i < layout.length; i++) {
           var element = layout[i];
@@ -243,6 +243,7 @@ class PrinterService {
     List<int> bytes = [];
     final type = element['type'];
     final styles = _getStyles(element);
+    final bool is80mm = printer.paperSize != '58mm';
 
     switch (type) {
       case 'HEADER':
@@ -292,7 +293,7 @@ class PrinterService {
         }
         break;
       case 'ITEMS_TABLE':
-        bytes += generator.hr(ch: '-');
+        bytes += _hr(generator, ch: '-', is80mm: is80mm);
         final items = order['details'] as List;
         for (var item in items) {
           int qty = int.tryParse(item['qty'].toString()) ?? 0;
@@ -320,7 +321,7 @@ class PrinterService {
             ]);
           }
         }
-        bytes += generator.hr(ch: '-');
+        bytes += _hr(generator, ch: '-', is80mm: is80mm);
         break;
       case 'TOTAL_BLOCK':
         if (isKitchenOnly) break; // Don't show totals in kitchen
@@ -368,15 +369,15 @@ class PrinterService {
         double finalTotal = subtotal + feeAmt - discountAmt;
         if (finalTotal < 0) finalTotal = 0;
  
-        bytes += generator.hr(ch: '=');
+        bytes += _hr(generator, ch: '=', is80mm: is80mm);
         bytes += generator.row([
           PosColumn(text: _normalizeString('JAMI:'), width: 5, styles: styles.copyWith(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
           PosColumn(text: _normalizeString('${_formatPrice(finalTotal)}'), width: 7, styles: styles.copyWith(bold: true, align: PosAlign.right, height: PosTextSize.size2, width: PosTextSize.size2)),
         ]);
-        bytes += generator.hr(ch: '=');
+        bytes += _hr(generator, ch: '=', is80mm: is80mm);
         break;
       case 'DIVIDER':
-        bytes += generator.hr(ch: '-');
+        bytes += _hr(generator, ch: '-', is80mm: is80mm);
         break;
       case 'SPACER':
         bytes += generator.feed(1);
@@ -433,6 +434,13 @@ class PrinterService {
     ]);
   }
 
+  List<int> _hr(Generator g, {String ch = '-', bool is80mm = true}) {
+    // Standard 80mm is 42 or 48 chars. 58mm is 32 chars.
+    // Repeating enough to cover up to 48 columns safely.
+    int count = is80mm ? 48 : 32;
+    return g.text(ch * count, styles: const PosStyles(align: PosAlign.center, height: PosTextSize.size1, width: PosTextSize.size1));
+  }
+
   List<int> _printSideBySide(Generator generator, Map<String, dynamic> elL, Map<String, dynamic> elR, Map<String, dynamic> order, POSController posController) {
     String getLabel(Map<String, dynamic> el) {
       if (el['type'] == 'INSTAGRAM_QR') return 'INSTAGRAM';
@@ -478,12 +486,13 @@ class PrinterService {
             width: PosTextSize.size2,
             bold: true,
           ));
-      bytes += generator.hr(ch: '*');
+      bytes += _hr(generator, ch: '*', is80mm: printer.paperSize != '58mm');
 
       // Order & Table Info
       bytes += generator.text(_normalizeString('STOL: ${order['table']}'), 
           styles: const PosStyles(height: PosTextSize.size2, width: PosTextSize.size2, bold: true, align: PosAlign.center));
-      bytes += generator.text(_normalizeString('BUYURTMA: #${order['id']}'), 
+      final String shortId = order['id'].toString().substring(0, order['id'].toString().length > 8 ? 8 : order['id'].toString().length);
+      bytes += generator.text(_normalizeString('BUYURTMA: #$shortId'), 
           styles: const PosStyles(height: PosTextSize.size1, width: PosTextSize.size1, bold: true, align: PosAlign.center));
       
       bytes += generator.feed(1);
@@ -491,13 +500,14 @@ class PrinterService {
       if (order['waiter_name'] != null && order['waiter_name'].toString().isNotEmpty) {
         bytes += generator.text(_normalizeString('AFITSANT: ${order['waiter_name']}'), styles: const PosStyles(align: PosAlign.center, bold: true));
       }
-      bytes += generator.hr(ch: '-');
+      final bool is80mm = printer.paperSize != '58mm';
+      bytes += _hr(generator, ch: '-', is80mm: is80mm);
 
       // Cancelled Items
       for (var item in items) {
         bytes += generator.text(_normalizeString(item['name']), styles: const PosStyles(bold: true, height: PosTextSize.size2));
         bytes += generator.text(_normalizeString('BEKOR: ${item['qty']} ta'), styles: const PosStyles(bold: true, height: PosTextSize.size2));
-        bytes += generator.hr(ch: '-');
+        bytes += _hr(generator, ch: '-', is80mm: is80mm);
       }
 
       bytes += generator.feed(3);
@@ -535,7 +545,7 @@ class PrinterService {
       bytes += generator.text('Printer: ${printer.name}', styles: const PosStyles(align: PosAlign.center));
       bytes += generator.text('IP: ${printer.ipAddress}', styles: const PosStyles(align: PosAlign.center));
       bytes += generator.text('Port: ${printer.port}', styles: const PosStyles(align: PosAlign.center));
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: printer.paperSize != '58mm');
       bytes += generator.text('If you see this, your printer is working correctly.', styles: const PosStyles(align: PosAlign.center));
       bytes += generator.feed(3);
       bytes += generator.cut();
@@ -567,7 +577,7 @@ class PrinterService {
       bytes += generator.text(_normalizeString('*** $title ***'), styles: const PosStyles(align: PosAlign.center, bold: true));
       bytes += generator.text(_normalizeString(DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())), styles: const PosStyles(align: PosAlign.center));
       if (cashierName != null) bytes += generator.text(_normalizeString('KASSIR: $cashierName'), styles: const PosStyles(align: PosAlign.center));
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: printer.paperSize != '58mm');
 
       double totalRevenue = 0;
       double dineInRevenue = 0, takeawayRevenue = 0, deliveryRevenue = 0;
@@ -587,10 +597,9 @@ class PrinterService {
         PosColumn(text: _normalizeString('${orders.length}'), width: 4, styles: const PosStyles(align: PosAlign.right)),
       ]);
       bytes += generator.row([
-        PosColumn(text: _normalizeString('JAMI SAVDO:'), width: 6),
         PosColumn(text: _normalizeString('${_formatPrice(totalRevenue)} $currency'), width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
       ]);
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: printer.paperSize != '58mm');
 
       bytes += generator.text(_normalizeString('SAVDO TURLARI BO\'YICHA'), styles: const PosStyles(bold: true));
       if (dineInCount > 0) bytes += _row(generator, 'ZALDA ($dineInCount)', _formatPrice(dineInRevenue));
@@ -614,7 +623,8 @@ class PrinterService {
 
       bytes += generator.text(_normalizeString('KATEGORIYA HISOBOTI'), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size1, width: PosTextSize.size1));
       bytes += generator.text(_normalizeString(title), styles: const PosStyles(align: PosAlign.center));
-      bytes += generator.hr();
+      final bool is80mm = printer.paperSize != '58mm';
+      bytes += _hr(generator, is80mm: is80mm);
 
       Map<String, double> catRevenue = {};
       Map<String, int> catQty = {};
@@ -637,7 +647,7 @@ class PrinterService {
         bytes += _row(generator, '  Soni: ${catQty[e.key]}', '${_formatPrice(e.value)} $currency');
       }
 
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: is80mm);
       bytes += _row(generator, 'JAMI:', _formatPrice(totalRevenue), styles: const PosStyles(bold: true));
       bytes += generator.feed(3);
       bytes += generator.cut();
@@ -654,7 +664,8 @@ class PrinterService {
       final posController = Get.find<POSController>();
 
       bytes += generator.text(_normalizeString('TO\'LOV TURLARI'), styles: const PosStyles(align: PosAlign.center, bold: true));
-      bytes += generator.hr();
+      final bool is80mm = printer.paperSize != '58mm';
+      bytes += _hr(generator, is80mm: is80mm);
 
       final Map<String, double> methods = {'Cash': 0.0, 'Card': 0.0, 'Click': 0.0, 'Payme': 0.0, 'Other': 0.0};
       double total = 0;
@@ -670,7 +681,7 @@ class PrinterService {
         if (value > 0) bytes += _row(generator, key.toUpperCase(), _formatPrice(value));
       });
 
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: printer.paperSize != '58mm');
       bytes += _row(generator, 'JAMI:', _formatPrice(total), styles: const PosStyles(bold: true));
       bytes += generator.feed(3);
       bytes += generator.cut();
@@ -686,7 +697,7 @@ class PrinterService {
       List<int> bytes = [];
 
       bytes += generator.text(_normalizeString('SOATBAY SAVDO'), styles: const PosStyles(align: PosAlign.center, bold: true));
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: printer.paperSize != '58mm');
 
       final Map<int, double> hourly = {};
       for (var o in orders) {
@@ -715,7 +726,7 @@ class PrinterService {
 
       bytes += generator.text(_normalizeString('SAVDO HISOBOTI'), styles: const PosStyles(align: PosAlign.center, bold: true));
       bytes += generator.text(_normalizeString(title), styles: const PosStyles(align: PosAlign.center));
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: printer.paperSize != '58mm');
 
       Map<String, int> qty = {};
       Map<String, double> revenue = {};
@@ -748,7 +759,7 @@ class PrinterService {
 
       bytes += generator.text(_normalizeString('OFITSIANTLAR UNUMDORLIGI'), styles: const PosStyles(align: PosAlign.center, bold: true));
       bytes += generator.text(_normalizeString('Davr: $period'), styles: const PosStyles(align: PosAlign.center));
-      bytes += generator.hr();
+      bytes += _hr(generator, is80mm: printer.paperSize != '58mm');
 
       final Map<String, Map<String, dynamic>> map = {};
       for (var o in orders) {

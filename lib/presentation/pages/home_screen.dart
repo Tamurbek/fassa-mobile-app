@@ -94,10 +94,10 @@ class HomeScreen extends StatelessWidget {
     final bool isMobile = Responsive.isMobile(context);
     return Container(
       padding: EdgeInsets.fromLTRB(
-        isMobile ? 24 : 40, 
-        MediaQuery.of(context).padding.top + 16, 
-        isMobile ? 24 : 40, 
-        16
+        isMobile ? 24 : 32, 
+        MediaQuery.of(context).padding.top + 12, 
+        isMobile ? 24 : 32, 
+        10
       ),
       child: Row(
         children: [
@@ -275,13 +275,13 @@ class HomeScreen extends StatelessWidget {
     }).toList();
 
     return Container(
-      height: 56,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      height: 52,
+      margin: const EdgeInsets.symmetric(vertical: 2),
       child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: Responsive.isMobile(context) ? 24 : 40),
+        padding: EdgeInsets.symmetric(horizontal: Responsive.isMobile(context) ? 24 : 32),
         scrollDirection: Axis.horizontal,
         itemCount: catItems.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final cat = catItems[index];
           return Obx(() {
@@ -320,12 +320,12 @@ class HomeScreen extends StatelessWidget {
   Widget _buildItemsGrid(List<FoodItem> items, BuildContext context) {
     final bool isMobile = Responsive.isMobile(context);
     return GridView.builder(
-      padding: EdgeInsets.all(isMobile ? 24 : 40),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        maxCrossAxisExtent: 220,
+        childAspectRatio: 0.85,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) => _buildFoodCard(items[index], context),
@@ -338,7 +338,7 @@ class HomeScreen extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        if (item.hasVariants && item.variants.isNotEmpty) {
+        if (item.hasVariants || item.variants.isNotEmpty) {
           _showVariantPicker(context, item, pos);
         } else {
           pos.addToCart(item);
@@ -355,8 +355,8 @@ class HomeScreen extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 4))],
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 2))],
               ),
               child: Opacity(
                 opacity: (!item.isAvailable || (pos.isStockTrackingEnabled.value && item.isSoldOut)) ? 0.6 : 1.0,
@@ -365,7 +365,7 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(6),
                         width: double.infinity,
                         child: Stack(
                           children: [
@@ -408,7 +408,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -416,7 +416,7 @@ class HomeScreen extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1A1A1A)), 
                             maxLines: 1, overflow: TextOverflow.ellipsis
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -622,11 +622,11 @@ class HomeScreen extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
-            onTap: () => pos.decrementFromCart(item, variant: variant),
+            onTap: () => pos.addToCart(item, variant: variant),
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.remove, size: 22, color: Color(0xFF1A1A1A)),
+              decoration: BoxDecoration(color: const Color(0xFFFF9500), borderRadius: BorderRadius.circular(16)),
+              child: const Icon(Icons.add, size: 22, color: Colors.white),
             ),
           ),
           Container(
@@ -635,11 +635,11 @@ class HomeScreen extends StatelessWidget {
             child: Text("$qty", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
           ),
           GestureDetector(
-            onTap: () => pos.addToCart(item, variant: variant),
+            onTap: () => pos.decrementFromCart(item, variant: variant),
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFFF9500), borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.add, size: 22, color: Colors.white),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              child: const Icon(Icons.remove, size: 22, color: Color(0xFF1A1A1A)),
             ),
           ),
         ],
@@ -649,20 +649,20 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildCounterControl(FoodItem item, int qty, POSController pos) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           GestureDetector(
-            onTap: () => pos.decrementFromCart(item),
+            onTap: () => pos.addToCart(item),
             child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.remove, size: 18, color: Color(0xFF1A1A1A)),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: const Color(0xFFFF9500), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.add, size: 16, color: Colors.white),
             ),
           ),
           Container(
@@ -671,11 +671,11 @@ class HomeScreen extends StatelessWidget {
             child: Text("$qty", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
           ),
           GestureDetector(
-            onTap: () => pos.addToCart(item),
+            onTap: () => pos.decrementFromCart(item),
             child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: const Color(0xFFFF9500), borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.add, size: 18, color: Colors.white),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.remove, size: 16, color: Color(0xFF1A1A1A)),
             ),
           ),
         ],
@@ -692,9 +692,9 @@ class HomeScreen extends StatelessWidget {
           child: pos.currentOrder.isEmpty
               ? _buildEmptyCartPlaceholder()
               : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   itemCount: pos.currentOrder.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  separatorBuilder: (context, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final cartItem = pos.currentOrder[index];
                     return _buildPOSCartItem(cartItem, index, pos);
@@ -708,7 +708,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildOperatorHeader(POSController pos) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 60, 24, 20),
+      padding: const EdgeInsets.fromLTRB(24, 40, 24, 10),
       child: Row(
         children: [
           const CircleAvatar(
@@ -761,9 +761,8 @@ class HomeScreen extends StatelessWidget {
       {"id": "Takeaway", "label": "takeaway".tr, "icon": Icons.shopping_bag},
       {"id": "Delivery", "label": "delivery".tr, "icon": Icons.delivery_dining},
     ];
-
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(16)),
       child: Row(
@@ -805,12 +804,12 @@ class HomeScreen extends StatelessWidget {
     return Opacity(
       opacity: isCancelled ? 0.5 : 1.0,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isNew 
-            ? const Color(0xFFEFF6FF) // Light blue for new
+            ? const Color(0xFFEFF6FF) 
             : (isCancelled ? Colors.grey.shade100 : const Color(0xFFF8F9FB)),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: isNew ? Border.all(color: Colors.blue.shade100) : null,
         ),
         child: Row(
@@ -881,8 +880,8 @@ class HomeScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white, 
-        borderRadius: BorderRadius.circular(16), 
-        border: Border.all(color: const Color(0xFFEDF0F5), width: 1.5)
+        borderRadius: BorderRadius.circular(12), 
+        border: Border.all(color: const Color(0xFFEDF0F5), width: 1.2)
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -892,7 +891,7 @@ class HomeScreen extends StatelessWidget {
             onTap: () => pos.showQuantityDialog(index),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text("$qty", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: isCancelled ? Colors.red : const Color(0xFF1A1A1A))),
+              child: Text("$qty", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: isCancelled ? Colors.red : const Color(0xFF1A1A1A))),
             ),
           ),
           _buildCounterBtn(Icons.remove, () => pos.updateQuantity(index, -1)),
@@ -905,15 +904,15 @@ class HomeScreen extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Icon(icon, size: 18, color: const Color(0xFF9CA3AF)),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Icon(icon, size: 16, color: const Color(0xFF9CA3AF)),
       ),
     );
   }
 
   Widget _buildPOSOrderSummary(POSController pos) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Color(0xFFEDF0F5))),
@@ -967,7 +966,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -976,7 +975,7 @@ class HomeScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFFFF9500))),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Row(
               children: [
                 // Chegirma tugmasi
@@ -1290,28 +1289,28 @@ class HomeScreen extends StatelessWidget {
         Tooltip(
           message: tooltip ?? label,
           child: Container(
-            height: 56,
+            height: 50,
             width: double.infinity,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: onTap,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 child: Center(
-                  child: Icon(icon, color: Colors.white, size: 24),
+                  child: Icon(icon, color: Colors.white, size: 22),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Text(
           label, 
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF6B7280)),
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF6B7280)),
           textAlign: TextAlign.center,
         ),
       ],
@@ -1320,7 +1319,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildSumRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

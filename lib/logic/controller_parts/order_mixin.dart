@@ -43,6 +43,11 @@ mixin OrderMixin on POSControllerState {
   }
 
   void addToCart(FoodItem item, {FoodVariant? variant}) {
+    // Prevent adding parent items if they have variants
+    if ((item.hasVariants || item.variants.isNotEmpty) && variant == null) {
+      return;
+    }
+
     int index = currentOrder.indexWhere((e) => 
       e['item'].id == item.id && 
       e['variant']?.id == variant?.id &&
@@ -283,7 +288,12 @@ mixin OrderMixin on POSControllerState {
 
   void syncCartToDisplay() {
     final cartData = {
-      'items': currentOrder.map((item) {
+      'items': currentOrder.where((item) {
+        final foodItem = item['item'] as FoodItem;
+        final variant = item['variant'] as FoodVariant?;
+        // Filter out parent items that have variants but no variant is selected
+        return !((foodItem.hasVariants || foodItem.variants.isNotEmpty) && variant == null);
+      }).map((item) {
         final foodItem = item['item'] as FoodItem;
         final variant = item['variant'] as FoodVariant?;
         final price = variant?.price ?? foodItem.price;
@@ -331,6 +341,11 @@ mixin OrderMixin on POSControllerState {
         FoodVariant? variant;
         if (d['variant_id'] != null && item.hasVariants) {
           variant = item.variants.firstWhereOrNull((v) => v.id.toString() == d['variant_id'].toString());
+        }
+
+        // Skip parent items if they have variants but no variant was found/specified
+        if ((item.hasVariants || item.variants.isNotEmpty) && variant == null) {
+          continue;
         }
         
         currentOrder.add({
