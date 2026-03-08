@@ -788,7 +788,7 @@ class PrinterService {
 
   Future<bool> _sendToPrinter(PrinterModel printer, List<int> bytes) async {
     try {
-      final socket = await Socket.connect(printer.ipAddress, printer.port, timeout: const Duration(seconds: 5));
+      final socket = await Socket.connect(printer.ipAddress, printer.port, timeout: const Duration(seconds: 2));
       socket.add(bytes);
       await socket.flush();
       await socket.close();

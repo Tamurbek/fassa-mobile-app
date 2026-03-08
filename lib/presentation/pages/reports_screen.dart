@@ -341,11 +341,10 @@ class ReportsScreen extends StatelessWidget {
         final POSController pos = Get.find<POSController>();
         Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
         try {
-          // Try to find Receipt Printer for Direct ESC/POS printing
           final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
-          
+
+          bool printedViaEscPos = false;
           if (receiptPrinters.isNotEmpty) {
-            bool anySuccess = false;
             final String? cashierName = pos.currentUser.value?['name']?.toString();
             List<Future<bool>> printTasks = [];
             for (var p in receiptPrinters) {
@@ -365,24 +364,28 @@ class ReportsScreen extends StatelessWidget {
               }
               printTasks.add(task);
             }
-            
-            final results = await Future.wait(printTasks);
-            anySuccess = results.any((r) => r);
-            
-            if (anySuccess) {
-              if (Get.isDialogOpen ?? false) Get.back();
-              return;
-            }
+
+            // Max 3 seconds wait for printer; if it times out — fall through to PDF
+            final results = await Future.wait(printTasks)
+                .timeout(const Duration(seconds: 3), onTimeout: () => List.filled(printTasks.length, false));
+            printedViaEscPos = results.any((r) => r);
           }
 
           if (Get.isDialogOpen ?? false) Get.back();
 
-          // Fallback to PDF if no printers or ESC/POS failed
+          if (printedViaEscPos) {
+            Get.snackbar("Muvaffaqiyat", "Hisobot printerga yuborildi ✓",
+              backgroundColor: const Color(0xFF10B981), colorText: Colors.white,
+              duration: const Duration(seconds: 2), snackPosition: SnackPosition.BOTTOM);
+            return;
+          }
+
+          // Fallback to PDF
           final pdfDoc = await _generateReport(orders, title, pos);
           await ReportGenerator.printPdf(pdfDoc);
         } catch (e) {
           if (Get.isDialogOpen ?? false) Get.back();
-          Get.snackbar("Xatolik", "Hisobotni chop etib bo'lmadi: $e", 
+          Get.snackbar("Xatolik", "Hisobotni chop etib bo'lmadi: $e",
             backgroundColor: Colors.red, colorText: Colors.white);
         }
       },
