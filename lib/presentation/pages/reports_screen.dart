@@ -341,13 +341,16 @@ class ReportsScreen extends StatelessWidget {
         final POSController pos = Get.find<POSController>();
         Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
         try {
+          // Receipt/payment printers preferred; fall back to any active printer
           final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
+          final allActivePrinters = pos.printers.where((p) => p.isActive).toList();
+          final printersToUse = receiptPrinters.isNotEmpty ? receiptPrinters : allActivePrinters;
 
           bool printedViaEscPos = false;
-          if (receiptPrinters.isNotEmpty) {
+          if (printersToUse.isNotEmpty) {
             final String? cashierName = pos.currentUser.value?['name']?.toString();
             List<Future<bool>> printTasks = [];
-            for (var p in receiptPrinters) {
+            for (var p in printersToUse) {
               Future<bool> task;
               if (title.contains("X-Report")) {
                 task = pos.printerService.printXorZReport(p, orders, title: "X-REPORT", cashierName: cashierName);
@@ -365,9 +368,9 @@ class ReportsScreen extends StatelessWidget {
               printTasks.add(task);
             }
 
-            // Max 3 seconds wait for printer; if it times out — fall through to PDF
+            // Max 4 seconds wait for printer
             final results = await Future.wait(printTasks)
-                .timeout(const Duration(seconds: 3), onTimeout: () => List.filled(printTasks.length, false));
+                .timeout(const Duration(seconds: 4), onTimeout: () => List.filled(printTasks.length, false));
             printedViaEscPos = results.any((r) => r);
           }
 
