@@ -144,78 +144,55 @@ class _AreaCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
       ),
-      child: Column(children: [
-        // ─── Ma'lumotlar ──────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(children: [
-            Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(
-                color: const Color(0xFF30D158).withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.soup_kitchen_rounded, color: Color(0xFF30D158), size: 22),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+        child: Row(children: [
+          Container(
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFF30D158).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 14),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(area.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-              const SizedBox(height: 4),
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: productCount > 0 ? const Color(0xFF0A84FF).withOpacity(0.08) : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    "$productCount ${"items_assigned".tr}",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: productCount > 0 ? const Color(0xFF0A84FF) : Colors.grey.shade500,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ]),
-            ])),
-          ]),
-        ),
-
-        // ─── Divider ───────────────────────────────────────────
-        Divider(height: 1, color: Colors.grey.shade100),
-
-        // ─── Edit / Delete tugmalari ───────────────────────────
-        Row(children: [
-          Expanded(
-            child: TextButton.icon(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded, size: 16),
-              label: Text("edit".tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF0A84FF),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16))),
-              ),
-            ),
+            child: const Icon(Icons.soup_kitchen_rounded, color: Color(0xFF30D158), size: 22),
           ),
-          Container(width: 1, height: 36, color: Colors.grey.shade100),
-          Expanded(
-            child: TextButton.icon(
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_rounded, size: 16),
-              label: Text("delete".tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF3B30),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(bottomRight: Radius.circular(16))),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(area.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: productCount > 0 ? const Color(0xFF0A84FF).withOpacity(0.08) : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                "$productCount ${"items_assigned".tr}",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: productCount > 0 ? const Color(0xFF0A84FF) : Colors.grey.shade500,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
+          ])),
+          // ─── Edit + Delete ikonlar ───────────────
+          IconButton(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_rounded, size: 20),
+            color: const Color(0xFF0A84FF),
+            tooltip: 'edit'.tr,
+            style: IconButton.styleFrom(backgroundColor: const Color(0xFF0A84FF).withOpacity(0.08)),
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            onPressed: onDelete,
+            icon: const Icon(Icons.delete_rounded, size: 20),
+            color: const Color(0xFFFF3B30),
+            tooltip: 'delete'.tr,
+            style: IconButton.styleFrom(backgroundColor: const Color(0xFFFF3B30).withOpacity(0.08)),
           ),
         ]),
-      ]),
+      ),
     );
   }
 }

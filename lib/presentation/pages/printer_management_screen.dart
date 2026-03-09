@@ -108,10 +108,8 @@ class _PrinterCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
       ),
-      child: Column(children: [
-        // ─── Ma'lumotlar qatori ────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
           child: Row(children: [
             Container(
               width: 44, height: 44,
@@ -137,7 +135,7 @@ class _PrinterCard extends StatelessWidget {
                 child: Text(name, style: const TextStyle(fontSize: 11, color: Color(0xFF0A84FF), fontWeight: FontWeight.w600)),
               )).toList()),
             ])),
-            // Aktiv holat switch
+            // ─── Toggle + Edit + Delete ─────────────────────────
             Transform.scale(
               scale: 0.8,
               child: Switch.adaptive(
@@ -146,41 +144,23 @@ class _PrinterCard extends StatelessWidget {
                 activeTrackColor: const Color(0xFF34C759),
               ),
             ),
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_rounded, size: 20),
+              color: const Color(0xFF0A84FF),
+              tooltip: 'edit'.tr,
+              style: IconButton.styleFrom(backgroundColor: const Color(0xFF0A84FF).withOpacity(0.08)),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_rounded, size: 20),
+              color: const Color(0xFFFF3B30),
+              tooltip: 'delete'.tr,
+              style: IconButton.styleFrom(backgroundColor: const Color(0xFFFF3B30).withOpacity(0.08)),
+            ),
           ]),
         ),
-
-        // ─── Divider ───────────────────────────────────────────
-        Divider(height: 1, color: Colors.grey.shade100),
-
-        // ─── Edit / Delete tugmalari ───────────────────────────
-        Row(children: [
-          Expanded(
-            child: TextButton.icon(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_rounded, size: 16),
-              label: Text("edit".tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF0A84FF),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(bottomLeft: Radius.circular(16))),
-              ),
-            ),
-          ),
-          Container(width: 1, height: 36, color: Colors.grey.shade100),
-          Expanded(
-            child: TextButton.icon(
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_rounded, size: 16),
-              label: Text("delete".tr, style: const TextStyle(fontWeight: FontWeight.w600)),
-              style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFFF3B30),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(bottomRight: Radius.circular(16))),
-              ),
-            ),
-          ),
-        ]),
-      ]),
     );
   }
 }
