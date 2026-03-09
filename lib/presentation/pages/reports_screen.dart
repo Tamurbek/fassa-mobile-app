@@ -350,16 +350,15 @@ class ReportsScreen extends StatelessWidget {
         final POSController pos = Get.find<POSController>();
         Get.dialog(const Center(child: CircularProgressIndicator()), barrierDismissible: false);
         try {
-          // Receipt/payment printers preferred; fall back to any active printer
-          final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
+          // Hisobot uchun BARCHA aktiv printerlardan foydalanish
+          // (receipt/payment uchun belgilanmagan printerlar ham ishlashi kerak)
           final allActivePrinters = pos.printers.where((p) => p.isActive).toList();
-          final printersToUse = receiptPrinters.isNotEmpty ? receiptPrinters : allActivePrinters;
 
           bool printedViaEscPos = false;
-          if (printersToUse.isNotEmpty) {
+          if (allActivePrinters.isNotEmpty) {
             final String? cashierName = pos.currentUser.value?['name']?.toString();
             List<Future<bool>> printTasks = [];
-            for (var p in printersToUse) {
+            for (var p in allActivePrinters) {
               Future<bool> task;
               if (title.contains("X-Report")) {
                 task = pos.printerService.printXorZReport(p, orders, title: "X-REPORT", cashierName: cashierName);
@@ -377,9 +376,9 @@ class ReportsScreen extends StatelessWidget {
               printTasks.add(task);
             }
 
-            // Max 4 seconds wait for printer
+            // 8 soniya kutish (tarmoq printerlari uchun yetarli)
             final results = await Future.wait(printTasks)
-                .timeout(const Duration(seconds: 4), onTimeout: () => List.filled(printTasks.length, false));
+                .timeout(const Duration(seconds: 8), onTimeout: () => List.filled(printTasks.length, false));
             printedViaEscPos = results.any((r) => r);
           }
 
@@ -392,7 +391,18 @@ class ReportsScreen extends StatelessWidget {
             return;
           }
 
-          // Fallback to PDF
+          // Printer topilmadi yoki ulanib bo'lmadi — PDF ga o'tish
+          if (allActivePrinters.isEmpty) {
+            Get.snackbar(
+              "Printer yo'q", 
+              "Hech qanday aktiv printer topilmadi. Printer sozlamalarini tekshiring.",
+              backgroundColor: Colors.orange, 
+              colorText: Colors.white,
+              duration: const Duration(seconds: 4),
+              snackPosition: SnackPosition.BOTTOM,
+            );
+          }
+          // Fallback: PDF chop etish
           final pdfDoc = await _generateReport(orders, title, pos);
           await ReportGenerator.printPdf(pdfDoc);
         } catch (e) {
@@ -511,13 +521,13 @@ class ReportsScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Get.back();
-              // 1. Generate and print Z-Report directly via ESC/POS
+              // 1. Z-Hisobotni barcha aktiv printerlarga yuborish
               final cashierName = pos.currentUser.value?['name']?.toString();
-              final receiptPrinters = pos.printers.where((p) => p.isActive && (p.printReceipts || p.printPayments)).toList();
+              final allActivePrinters = pos.printers.where((p) => p.isActive).toList();
               
               bool printedViaEscPos = false;
-              if (receiptPrinters.isNotEmpty) {
-                for (var p in receiptPrinters) {
+              if (allActivePrinters.isNotEmpty) {
+                for (var p in allActivePrinters) {
                   final ok = await pos.printerService.printXorZReport(p, orders, title: "Z-REPORT", cashierName: cashierName);
                   if (ok) printedViaEscPos = true;
                 }

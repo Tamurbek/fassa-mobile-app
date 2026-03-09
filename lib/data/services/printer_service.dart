@@ -514,7 +514,7 @@ class PrinterService {
       bytes += generator.cut();
 
       final socket = await Socket.connect(printer.ipAddress, printer.port,
-          timeout: const Duration(seconds: 2));
+          timeout: const Duration(seconds: 5));
       socket.add(bytes);
       await socket.flush();
       await socket.close();
@@ -551,7 +551,7 @@ class PrinterService {
       bytes += generator.cut();
 
       final socket = await Socket.connect(printer.ipAddress, printer.port,
-          timeout: const Duration(seconds: 2));
+          timeout: const Duration(seconds: 5));
       socket.add(bytes);
       await socket.flush();
       await socket.close();
@@ -788,12 +788,15 @@ class PrinterService {
 
   Future<bool> _sendToPrinter(PrinterModel printer, List<int> bytes) async {
     try {
-      final socket = await Socket.connect(printer.ipAddress, printer.port, timeout: const Duration(seconds: 2));
+      final socket = await Socket.connect(printer.ipAddress, printer.port, timeout: const Duration(seconds: 5));
       socket.add(bytes);
       await socket.flush();
       await socket.close();
       return true;
-    } catch (e) { return false; }
+    } catch (e) { 
+      print('Printer ulanish xatosi (${printer.ipAddress}:${printer.port}): $e');
+      return false; 
+    }
   }
 
   Future<bool> printPdfAsImage(PrinterModel printer, Uint8List pdfBytes) async {
