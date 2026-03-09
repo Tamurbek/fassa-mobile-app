@@ -318,6 +318,23 @@ mixin DataSyncMixin on POSControllerState {
           storage.write('ingredients', ingredients.toList());
         } catch (e) { print("Error fetching ingredients: $e"); }
       }(),
+
+      // 11. Fetch current Terminal Details (Self-sync)
+      () async {
+        if (currentTerminal.value != null && currentTerminal.value!['id'] != null) {
+          try {
+            final tId = currentTerminal.value!['id'].toString();
+            final updatedTerminal = await api.getTerminal(tId);
+            currentTerminal.value = updatedTerminal;
+            storage.write('terminal', updatedTerminal);
+            
+            // Re-apply main printer setting if changed
+            if (updatedTerminal.containsKey('is_main_printer') && updatedTerminal['is_main_printer'] != null) {
+              setIsMainPrinterTerminal(updatedTerminal['is_main_printer'] as bool);
+            }
+          } catch (e) { print("Error self-syncing terminal details: $e"); }
+        }
+      }(),
     ]);
   }
 

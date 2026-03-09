@@ -55,50 +55,89 @@ mixin PrinterMixin on POSControllerState {
       return;
     }
 
+    final terminal = currentTerminal.value;
+    final String? tReceiptId = terminal?['receipt_printer_id']?.toString();
+    final String? tPaymentId = terminal?['payment_printer_id']?.toString();
+    final String? tBillId = terminal?['bill_printer_id']?.toString();
+
     List<Future<void>> tasks = [];
 
+    // 1. Receipt/Payment/Bill Printing (Professional Routing)
+    if (!isKitchenOnly || receiptTitle != null) {
+      // Determine target printer ID based on receipt type
+      String? targetPrinterId;
+      if (receiptTitle == "HISOB CHEKI" || receiptTitle == "HISOB") {
+        targetPrinterId = tBillId;
+      } else if (receiptTitle == null || receiptTitle == "TO'LOV CHEKI") {
+        targetPrinterId = tPaymentId;
+      } else {
+        targetPrinterId = tReceiptId;
+      }
+
+      // Find printers that should print this receipt
+      List<PrinterModel> targetPrinters = [];
+      
+      if (targetPrinterId != null && targetPrinterId.isNotEmpty) {
+        // Explicit routing from terminal settings
+        final p = activePrinters.firstWhereOrNull((p) => p.id == targetPrinterId);
+        if (p != null) targetPrinters.add(p);
+      } 
+      
+      if (targetPrinters.isEmpty) {
+        // Fallback to legacy/broad routing if no specific printer assigned to terminal
+        for (var p in activePrinters) {
+          bool match = false;
+          if (receiptTitle == "HISOB CHEKI" || receiptTitle == "HISOB") {
+             match = p.printBill || p.printReceipts;
+          } else if (receiptTitle == null || receiptTitle == "TO'LOV CHEKI") {
+             match = p.printPayments;
+          } else {
+             match = p.printReceipts;
+          }
+
+          if (match) {
+            // Check area filter
+            if (p.tableAreaNames.isNotEmpty) {
+              final String orderTableId = (order['table'] ?? "").toString();
+              final String? orderAreaName = order['table_area']?.toString() ?? 
+                                           (orderTableId.contains("-") ? orderTableId.split("-")[0] : null);
+              if (orderAreaName != null && orderAreaName.isNotEmpty) {
+                if (p.tableAreaNames.contains(orderAreaName)) targetPrinters.add(p);
+              } else {
+                targetPrinters.add(p); // No area in order, print anyway?
+              }
+            } else {
+              targetPrinters.add(p);
+            }
+          }
+        }
+      }
+
+      // Execute receipt printing tasks
+      for (var printer in targetPrinters) {
+        tasks.add(() async {
+          if ((receiptTitle == "HISOB CHEKI" && !enableBillPrint.value) || 
+              ((receiptTitle == "TO'LOV CHEKI" || receiptTitle == null) && !enablePaymentPrint.value)) {
+            return;
+          }
+          final orderForPrinting = Map<String, dynamic>.from(order);
+          orderForPrinting['service_fee_dine_in'] = serviceFeeDineIn.value;
+          orderForPrinting['service_fee_takeaway'] = serviceFeeTakeaway.value;
+          orderForPrinting['service_fee_delivery'] = serviceFeeDelivery.value;
+          
+          bool success = await printerService.printReceipt(printer, orderForPrinting, title: receiptTitle);
+          if (success) successPrinters.add(printer.name);
+          else failedPrinters.add(printer.name);
+        }());
+      }
+    }
+
+    // 2. Kitchen Printing (Area-based)
     for (var printer in activePrinters) {
+      if (printer.preparationAreaIds.isEmpty) continue;
+      
       tasks.add(() async {
         try {
-          bool success = false;
-          bool shouldPrintCurrentReceipt = false;
-          
-          if ((receiptTitle == "HISOB CHEKI" || receiptTitle == "HISOB") && (printer.printReceipts || printer.printPayments)) {
-            shouldPrintCurrentReceipt = true;
-          } else if (receiptTitle == null && !isKitchenOnly && printer.printPayments) {
-            shouldPrintCurrentReceipt = true;
-          } else if (receiptTitle != null && receiptTitle != "HISOB CHEKI" && receiptTitle != "HISOB" && printer.printPayments) {
-            shouldPrintCurrentReceipt = true;
-          }
-
-          if (shouldPrintCurrentReceipt && printer.tableAreaNames.isNotEmpty) {
-            final String orderTableId = (order['table'] ?? "").toString();
-            final String? orderAreaName = order['table_area']?.toString() ?? 
-                                         (orderTableId.contains("-") ? orderTableId.split("-")[0] : null);
-            
-            if (orderAreaName != null && orderAreaName.isNotEmpty) {
-              if (!printer.tableAreaNames.contains(orderAreaName)) shouldPrintCurrentReceipt = false;
-            }
-          }
-
-          if (shouldPrintCurrentReceipt && (!isKitchenOnly || receiptTitle != null)) {
-            if ((receiptTitle == "HISOB CHEKI" && !enableBillPrint.value) || 
-                (receiptTitle != "HISOB CHEKI" && receiptTitle != null && !enablePaymentPrint.value)) {
-              // Disabled in settings
-            } else {
-              final orderForPrinting = Map<String, dynamic>.from(order);
-              orderForPrinting['service_fee_dine_in'] = serviceFeeDineIn.value;
-              orderForPrinting['service_fee_takeaway'] = serviceFeeTakeaway.value;
-              orderForPrinting['service_fee_delivery'] = serviceFeeDelivery.value;
-              
-              success = await printerService.printReceipt(printer, orderForPrinting, title: receiptTitle);
-              if (success) successPrinters.add(printer.name);
-              else failedPrinters.add(printer.name);
-            }
-          }
-
-          if (printer.preparationAreaIds.isNotEmpty && (isKitchenOnly || receiptTitle == null)) {
-            if (enableKitchenPrint.value) {
               final orderIdStr = order['id']?.toString() ?? "0";
               final previouslyPrintedRaw = printedKitchenQuantities[orderIdStr];
               final Map<String, int> previouslyPrinted = previouslyPrintedRaw != null 

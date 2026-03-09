@@ -538,6 +538,15 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getTerminal(String id) async {
+    try {
+      final response = await _dio.get('/terminals/$id');
+      return response.data;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<dynamic>> getTerminals() async {
     try {
       final response = await _dio.get('/terminals');

@@ -72,12 +72,26 @@ class _KitchenDisplayPageState extends State<KitchenDisplayPage> {
           itemCount: activeOrders.length,
           itemBuilder: (context, index) {
             final order = activeOrders[index];
+            final terminalAreaIds = pos.currentTerminal.value?['preparation_area_ids'] as List?;
+            
             final items = (order['details'] as List? ?? []).where((item) {
-              if (selectedArea == null) return true;
               final product = pos.products.firstWhereOrNull((p) => p.id == item['id']);
               if (product == null) return true;
+              
               final area = pos.preparationAreas.firstWhereOrNull((a) => a.id == product.preparationAreaId);
-              return area?.name == selectedArea;
+              
+              // 1. If user selected a specific area in dropdown
+              if (selectedArea != null) {
+                return area?.name == selectedArea;
+              }
+              
+              // 2. If terminal is restricted to specific areas
+              if (terminalAreaIds != null && terminalAreaIds.isNotEmpty) {
+                return terminalAreaIds.contains(product.preparationAreaId);
+              }
+              
+              // 3. Otherwise show everything
+              return true;
             }).toList();
 
             if (items.isEmpty) return const SizedBox.shrink();
@@ -90,30 +104,37 @@ class _KitchenDisplayPageState extends State<KitchenDisplayPage> {
   }
 
   Widget _buildAreaDropdown(bool isDark, Color textColor, Color appBarColor) {
-    return Obx(() => Container(
-      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          dropdownColor: appBarColor,
-          value: selectedArea,
-          icon: Icon(Icons.keyboard_arrow_down_rounded, color: textColor, size: 20),
-          hint: Text("barcha_bolimlar".tr, style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 13, fontWeight: FontWeight.bold)),
-          items: [
-            DropdownMenuItem(value: null, child: Text("barcha_bolimlar".tr, style: TextStyle(color: textColor, fontWeight: FontWeight.bold))),
-            ...pos.preparationAreas.map((a) => DropdownMenuItem(
-              value: a.name,
-              child: Text(a.name, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
-            )),
-          ],
-          onChanged: (v) => setState(() => selectedArea = v),
+    return Obx(() {
+      final terminalAreas = pos.currentTerminal.value?['preparation_area_ids'] as List?;
+      final List relevantAreas = (terminalAreas != null && terminalAreas.isNotEmpty)
+          ? pos.preparationAreas.where((a) => terminalAreas.contains(a.id)).toList()
+          : pos.preparationAreas.toList();
+
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
         ),
-      ),
-    ));
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            dropdownColor: appBarColor,
+            value: selectedArea,
+            icon: Icon(Icons.keyboard_arrow_down_rounded, color: textColor, size: 20),
+            hint: Text("barcha_bolimlar".tr, style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 13, fontWeight: FontWeight.bold)),
+            items: [
+              DropdownMenuItem(value: null, child: Text("barcha_bolimlar".tr, style: TextStyle(color: textColor, fontWeight: FontWeight.bold))),
+              ...relevantAreas.map((a) => DropdownMenuItem(
+                value: a.name,
+                child: Text(a.name, style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+              )),
+            ],
+            onChanged: (v) => setState(() => selectedArea = v),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildRefreshButton(Color textColor) {
