@@ -390,6 +390,7 @@ mixin DataSyncMixin on POSControllerState {
             "qty": qty,
             "price": price,
             "timestamp": itemTime ?? timestamp,
+            "preparation_area": catalogItem?.preparationArea ?? i['preparation_area'] ?? i['preparationArea'] ?? "Oshxona",
           };
         }
       }

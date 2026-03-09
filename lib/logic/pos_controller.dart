@@ -750,6 +750,7 @@ class POSController extends POSControllerState with
               "qty": qty,
               "quantity": qty,
               "price": variant?.price ?? item.price,
+              "preparation_area": item.preparationArea,
             };
           }
         }

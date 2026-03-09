@@ -183,7 +183,10 @@ class FoodDetailScreen extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildQuantityButton(icon: Icons.add, onTap: () => quantity.value++, isPrimary: true),
+            _buildQuantityButton(
+                icon: Icons.remove, 
+                onTap: () { if (quantity.value > 1) quantity.value--; }
+            ),
             GestureDetector(
               onTap: () {
                 final TextEditingController controller = TextEditingController(text: quantity.value.toString());
@@ -221,7 +224,11 @@ class FoodDetailScreen extends StatelessWidget {
                 )),
               ),
             ),
-            _buildQuantityButton(icon: Icons.remove, onTap: () { if (quantity.value > 1) quantity.value--; }),
+            _buildQuantityButton(
+                icon: Icons.add, 
+                onTap: () => quantity.value++, 
+                isPrimary: true
+            ),
           ],
         ),
       ],

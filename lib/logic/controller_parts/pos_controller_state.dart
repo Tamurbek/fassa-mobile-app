@@ -26,6 +26,8 @@ abstract class POSControllerState extends GetxController {
   
   var isOnline = true.obs;
   var syncQueue = <Map<String, dynamic>>[].obs;
+  var navIndex = (-1).obs; // -1 = Dashboard on Desktop, 0 = Home on Mobile
+
   
   var currentOrder = <Map<String, dynamic>>[].obs;
   var allOrders = <Map<String, dynamic>>[].obs;

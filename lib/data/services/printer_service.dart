@@ -106,13 +106,17 @@ class PrinterService {
             double price = double.tryParse(item['price'].toString()) ?? 0.0;
             double lineTotal = qty * price;
             
+            final String prepArea = (item['preparation_area'] != null && item['preparation_area'].toString().isNotEmpty) 
+                ? " [${item['preparation_area']}]" : "";
+
             if (isKitchenOnly) {
                bytes += generator.row([
-                 PosColumn(text: _normalizeString(item['name']), width: 9, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+                 PosColumn(text: _normalizeString(item['name'] + prepArea), width: 9, styles: const PosStyles(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
                  PosColumn(text: _normalizeString('$qty ta'), width: 3, styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
                ]);
                bytes += generator.feed(1); 
             } else {
+              bytes += generator.text(_normalizeString(item['name'] + prepArea), styles: const PosStyles(bold: true));
               bytes += generator.row([
                 PosColumn(text: _normalizeString('  $qty x ${_formatPrice(price)}'), width: 7, styles: const PosStyles(fontType: PosFontType.fontB)),
                 PosColumn(text: _normalizeString(_formatPrice(lineTotal)), width: 5, styles: const PosStyles(align: PosAlign.right)),
@@ -300,14 +304,18 @@ class PrinterService {
           double price = double.tryParse(item['price'].toString()) ?? 0.0;
           double lineTotal = qty * price;
           
+          final String prepArea = (item['preparation_area'] != null && item['preparation_area'].toString().isNotEmpty) 
+              ? " [${item['preparation_area']}]" : "";
+
           // Print Name
           if (isKitchenOnly) {
             bytes += generator.row([
-              PosColumn(text: _normalizeString(item['name']), width: 9, styles: styles.copyWith(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
+              PosColumn(text: _normalizeString(item['name'] + prepArea), width: 9, styles: styles.copyWith(bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
               PosColumn(text: _normalizeString('$qty ta'), width: 3, styles: styles.copyWith(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
             ]);
             bytes += generator.feed(1); 
           } else {
+            bytes += generator.text(_normalizeString(item['name'] + prepArea), styles: styles.copyWith(bold: true));
             // Bill: Quantity x Price and Total
             bytes += generator.row([
               PosColumn(
@@ -503,9 +511,10 @@ class PrinterService {
       final bool is80mm = printer.paperSize != '58mm';
       bytes += _hr(generator, ch: '-', is80mm: is80mm);
 
-      // Cancelled Items
       for (var item in items) {
-        bytes += generator.text(_normalizeString(item['name']), styles: const PosStyles(bold: true, height: PosTextSize.size2));
+        final String prepArea = (item['preparation_area'] != null && item['preparation_area'].toString().isNotEmpty) 
+            ? " [${item['preparation_area']}]" : "";
+        bytes += generator.text(_normalizeString(item['name'] + prepArea), styles: const PosStyles(bold: true, height: PosTextSize.size2));
         bytes += generator.text(_normalizeString('BEKOR: ${item['qty']} ta'), styles: const PosStyles(bold: true, height: PosTextSize.size2));
         bytes += _hr(generator, ch: '-', is80mm: is80mm);
       }

@@ -21,7 +21,12 @@ class MainNavigationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final POSController pos = Get.find<POSController>();
     final bool isMobile = Responsive.isMobile(context);
-    var currentIndex = (isMobile ? 0 : -1).obs;
+    
+    // Initialize navIndex for mobile if not already set
+    if (isMobile && pos.navIndex.value == -1) {
+      pos.navIndex.value = 0;
+    }
+
 
     final List<Map<String, dynamic>> menuItems = [
       if (!pos.isWaiter) {"icon": Icons.home_rounded, "label": "home_page".tr, "page": const OrdersScreen()},
@@ -46,7 +51,8 @@ class MainNavigationScreen extends StatelessWidget {
         Responsive(
           mobile: Scaffold(
             body: IndexedStack(
-              index: currentIndex.value,
+              index: pos.navIndex.value,
+
               children: filteredMenu.map<Widget>((e) => e['page'] as Widget).toList(),
             ),
             bottomNavigationBar: Container(
@@ -59,7 +65,8 @@ class MainNavigationScreen extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: List.generate(filteredMenu.length, (index) {
-                    return _buildMobileNavItem(index, currentIndex, filteredMenu[index]['icon'] as IconData);
+                    return _buildMobileNavItem(index, pos.navIndex, filteredMenu[index]['icon'] as IconData);
+
                   }),
                 ),
               ),
@@ -74,11 +81,11 @@ class MainNavigationScreen extends StatelessWidget {
             ),
           ),
           desktop: Scaffold(
-            body: Obx(() => currentIndex.value == -1
-              ? _buildDashboard(context, currentIndex, filteredMenu, pos)
+            body: Obx(() => pos.navIndex.value == -1
+              ? _buildDashboard(context, pos.navIndex, filteredMenu, pos)
               : Column(
                   children: [
-                    _buildDesktopBackBar(context, currentIndex, filteredMenu, pos),
+                    _buildDesktopBackBar(context, pos.navIndex, filteredMenu, pos),
                     Expanded(
                       child: Theme(
                         // Hide AppBar on desktop since we have our own back bar
@@ -90,13 +97,14 @@ class MainNavigationScreen extends StatelessWidget {
                           ),
                         ),
                         child: IndexedStack(
-                          index: currentIndex.value,
+                          index: pos.navIndex.value,
                           children: filteredMenu.map<Widget>((e) => e['page'] as Widget).toList(),
                         ),
                       ),
                     ),
                   ],
                 )),
+
           ),
         ),
 

@@ -190,7 +190,8 @@ mixin PrinterMixin on POSControllerState {
               cancelledByArea.putIfAbsent(prodAreaId, () => []).add({
                 'id': productId, 
                 'name': currentItem != null ? currentItem['name'] : product.name, 
-                'qty': prevQty - currentQty
+                'qty': prevQty - currentQty,
+                'preparation_area': product.preparationArea,
               });
             }
           });
