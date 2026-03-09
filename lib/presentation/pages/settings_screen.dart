@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../theme/app_colors.dart';
-import '../../theme/responsive.dart';
 import '../../logic/pos_controller.dart';
 import 'package:fast_food_app/presentation/pages/product_management_screen.dart';
 import 'package:fast_food_app/presentation/pages/printer_management_screen.dart';
@@ -14,229 +13,563 @@ import 'package:fast_food_app/presentation/pages/inventory_management_page.dart'
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
+  // Planshet bo'lsa true
+  static bool _isTablet(BuildContext ctx) => MediaQuery.of(ctx).size.width >= 700;
+
   @override
   Widget build(BuildContext context) {
     final POSController pos = Get.find<POSController>();
     final storage = GetStorage();
+    final bool tablet = _isTablet(context);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text("settings".tr, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: Theme.of(context).textTheme.displayLarge?.color)),
+        title: Text(
+          "settings".tr,
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 24,
+            color: Theme.of(context).textTheme.displayLarge?.color,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
         automaticallyImplyLeading: true,
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 500),
+      body: tablet
+          ? _buildTabletLayout(context, pos, storage)
+          : _buildPhoneLayout(context, pos, storage),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────
+  //  TABLET: Chap panel (profil) + O'ng panel (sozlamalar)
+  // ──────────────────────────────────────────────────────
+  Widget _buildTabletLayout(BuildContext context, POSController pos, GetStorage storage) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Chap sidebar — profil + tizim
+        Container(
+          width: 300,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            border: Border(
+              right: BorderSide(
+                color: Theme.of(context).dividerColor.withOpacity(0.2),
+              ),
+            ),
+          ),
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
               _buildProfileCard(context, pos),
-              const SizedBox(height: 32),
-              
-              if (pos.isAdmin) ...[
-                _buildSectionLabel("printer_settings".tr),
-                _buildSettingsCard(context, [
-                  Obx(() => _buildActionItem(
-                    Icons.receipt_rounded, 
-                    "printer_paper_size".tr, 
-                    trailingText: pos.printerPaperSize.value, 
-                    onTap: () => _showPaperSizeDialog(context, pos)
-                  )),
+              const SizedBox(height: 28),
+              _buildSectionLabel("Appearance & System"),
+              _buildSettingsCard(context, [
+                Obx(() => _buildToggleItem(
+                  Icons.dark_mode_rounded,
+                  "Tungi rejim",
+                  pos.isDarkMode.value,
+                  (val) => pos.toggleTheme(),
+                )),
+                Obx(() => _buildToggleItem(
+                  Icons.fullscreen_rounded,
+                  "To'liq ekran",
+                  pos.isFullScreen.value,
+                  (val) => pos.toggleFullScreen(),
+                )),
+                Obx(() => _buildToggleItem(
+                  Icons.power_settings_new_rounded,
+                  "Avto-yuklash (boot)",
+                  pos.isAutoStart.value,
+                  (val) => pos.toggleAutoStart(),
+                )),
+                if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) ...[
+                  _buildActionItem(
+                    Icons.monitor_rounded,
+                    "Mijoz ekranini ochish",
+                    onTap: () => pos.openCustomerDisplay(),
+                  ),
                   Obx(() => _buildToggleItem(
-                    Icons.print_rounded, 
-                    "auto_print_receipt".tr, 
-                    pos.autoPrintReceipt.value, 
+                    Icons.auto_awesome_rounded,
+                    "Mijoz ekranini avto-ochish",
+                    pos.autoOpenCustomerDisplay.value,
                     (val) {
-                      pos.autoPrintReceipt.value = val;
-                      storage.write('auto_print_receipt', val);
-                    }
+                      pos.autoOpenCustomerDisplay.value = val;
+                      GetStorage().write('auto_open_customer_display', val);
+                    },
                   )),
-                  _buildActionItem(Icons.tune_rounded, "printer_management".tr, onTap: () => Get.to(() => const PrinterManagementScreen())),
-                  _buildActionItem(Icons.restaurant_rounded, "preparation_area_management".tr, onTap: () => Get.to(() => const PreparationAreaManagementScreen())),
-                  Obx(() => _buildToggleItem(
-                    Icons.handshake_rounded, 
-                    "enable_kitchen_print".tr, 
-                    pos.enableKitchenPrint.value, 
-                    (val) => pos.setEnableKitchenPrint(val)
-                  )),
-                  Obx(() => _buildToggleItem(
-                    Icons.description_rounded, 
-                    "enable_bill_print".tr, 
-                    pos.enableBillPrint.value, 
-                    (val) => pos.setEnableBillPrint(val)
-                  )),
-                  Obx(() => _buildToggleItem(
-                    Icons.payments_rounded, 
-                    "enable_payment_print".tr, 
-                    pos.enablePaymentPrint.value, 
-                    (val) => pos.setEnablePaymentPrint(val)
-                  )),
-                  Obx(() => _buildToggleItem(
-                    Icons.stars_rounded, 
-                    "Asosiy printer terminali", 
-                    pos.isMainPrinterTerminal.value, 
-                    (val) => pos.setIsMainPrinterTerminal(val)
-                  )),
-                ]),
-              ],
+                ],
+              ]),
+              const SizedBox(height: 24),
+              _buildSectionLabel("system".tr),
+              _buildSettingsCard(context, [
+                _buildActionItem(
+                  Icons.language_rounded,
+                  "language".tr,
+                  trailingText: Get.locale?.languageCode == 'uz'
+                      ? "O'zbekcha"
+                      : (Get.locale?.languageCode == 'ru' ? "Русский" : "English"),
+                  onTap: () => _showLanguageSwitcher(context),
+                ),
+                if (pos.isAdmin)
+                  _buildActionItem(
+                    Icons.delete_forever_rounded,
+                    "clear_data".tr,
+                    isDestructive: true,
+                    onTap: () => _confirmClearData(context, pos, storage),
+                  ),
+                _buildActionItem(
+                  Icons.info_rounded,
+                  "app_version".tr,
+                  trailingText: "v1.0.5",
+                  onTap: () {},
+                ),
+              ]),
+              const SizedBox(height: 32),
+              _buildLogoutButton(pos),
+              const SizedBox(height: 16),
+              _buildFooter(),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
 
-              if (pos.isAdmin) ...[
-                const SizedBox(height: 24),
-                _buildSectionLabel("staff".tr),
-                _buildSettingsCard(context, [
-                  _buildActionItem(Icons.badge_rounded, "waiter_management".tr, onTap: () => Get.to(() => const StaffManagementScreen())),
+        // O'ng tomon — asosiy sozlamalar (2 ustunli grid)
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              // 2 ustunli grid
+              if (pos.isAdmin)
+                _buildTabletGrid(context, [
+                  _buildTabletSection(
+                    context,
+                    label: "printer_settings".tr,
+                    children: [
+                      Obx(() => _buildActionItem(
+                        Icons.receipt_rounded,
+                        "printer_paper_size".tr,
+                        trailingText: pos.printerPaperSize.value,
+                        onTap: () => _showPaperSizeDialog(context, pos),
+                      )),
+                      Obx(() => _buildToggleItem(
+                        Icons.print_rounded,
+                        "auto_print_receipt".tr,
+                        pos.autoPrintReceipt.value,
+                        (val) {
+                          pos.autoPrintReceipt.value = val;
+                          storage.write('auto_print_receipt', val);
+                        },
+                      )),
+                      _buildActionItem(
+                        Icons.tune_rounded,
+                        "printer_management".tr,
+                        onTap: () => Get.to(() => const PrinterManagementScreen()),
+                      ),
+                      _buildActionItem(
+                        Icons.restaurant_rounded,
+                        "preparation_area_management".tr,
+                        onTap: () => Get.to(() => const PreparationAreaManagementScreen()),
+                      ),
+                      Obx(() => _buildToggleItem(
+                        Icons.handshake_rounded,
+                        "enable_kitchen_print".tr,
+                        pos.enableKitchenPrint.value,
+                        (val) => pos.setEnableKitchenPrint(val),
+                      )),
+                      Obx(() => _buildToggleItem(
+                        Icons.description_rounded,
+                        "enable_bill_print".tr,
+                        pos.enableBillPrint.value,
+                        (val) => pos.setEnableBillPrint(val),
+                      )),
+                      Obx(() => _buildToggleItem(
+                        Icons.payments_rounded,
+                        "enable_payment_print".tr,
+                        pos.enablePaymentPrint.value,
+                        (val) => pos.setEnablePaymentPrint(val),
+                      )),
+                      Obx(() => _buildToggleItem(
+                        Icons.stars_rounded,
+                        "Asosiy printer terminali",
+                        pos.isMainPrinterTerminal.value,
+                        (val) => pos.setIsMainPrinterTerminal(val),
+                      )),
+                    ],
+                  ),
+                  _buildTabletSection(
+                    context,
+                    label: "staff".tr,
+                    children: [
+                      _buildActionItem(
+                        Icons.badge_rounded,
+                        "waiter_management".tr,
+                        onTap: () => Get.to(() => const StaffManagementScreen()),
+                      ),
+                    ],
+                    extraChildren: [
+                      const SizedBox(height: 24),
+                      _buildSectionLabel("menu_management".tr),
+                      _buildSettingsCard(context, [
+                        _buildActionItem(
+                          Icons.restaurant_menu_rounded,
+                          "menu_management".tr,
+                          trailingText: "products".tr,
+                          onTap: () => Get.to(() => ProductManagementScreen()),
+                        ),
+                      ]),
+                      const SizedBox(height: 24),
+                      _buildSectionLabel("inventory".tr),
+                      _buildSettingsCard(context, [
+                        _buildActionItem(
+                          Icons.inventory_2_rounded,
+                          "inventory_management".tr,
+                          onTap: () => Get.to(() => const InventoryManagementPage()),
+                        ),
+                      ]),
+                    ],
+                  ),
                 ]),
-              ],
-
-              if (pos.isAdmin) ...[
-                const SizedBox(height: 24),
-                _buildSectionLabel("menu_management".tr),
-                _buildSettingsCard(context, [
-                  _buildActionItem(Icons.restaurant_menu_rounded, "menu_management".tr, trailingText: "products".tr, onTap: () => Get.to(() => ProductManagementScreen())),
-                ]),
-              ],
-
-              if (pos.isAdmin) ...[
-                const SizedBox(height: 24),
-                _buildSectionLabel("inventory".tr),
-                _buildSettingsCard(context, [
-                  _buildActionItem(Icons.inventory_2_rounded, "inventory_management".tr, onTap: () => Get.to(() => const InventoryManagementPage())),
-                ]),
-              ],
 
               if (pos.isAdmin) ...[
                 const SizedBox(height: 24),
                 _buildSectionLabel("restaurant_info".tr),
                 _buildSettingsCard(context, [
                   Obx(() => _buildActionItem(
-                    Icons.store_rounded, 
-                    "restaurant_name".tr, 
-                    trailingText: pos.restaurantName.value, 
-                    onTap: () => _showEditDialog(context, "restaurant_name".tr, pos.restaurantName, 'restaurant_name', onSave: (val) => pos.updateCafeInfo(name: val))
+                    Icons.store_rounded,
+                    "restaurant_name".tr,
+                    trailingText: pos.restaurantName.value,
+                    onTap: () => _showEditDialog(
+                      context, "restaurant_name".tr, pos.restaurantName, 'restaurant_name',
+                      onSave: (val) => pos.updateCafeInfo(name: val),
+                    ),
                   )),
                   Obx(() => _buildActionItem(
-                    Icons.location_on_rounded, 
-                    "restaurant_address".tr, 
-                    trailingText: pos.restaurantAddress.value, 
-                    onTap: () => _showEditDialog(context, "restaurant_address".tr, pos.restaurantAddress, 'restaurant_address', onSave: (val) => pos.updateCafeInfo(address: val))
+                    Icons.location_on_rounded,
+                    "restaurant_address".tr,
+                    trailingText: pos.restaurantAddress.value,
+                    onTap: () => _showEditDialog(
+                      context, "restaurant_address".tr, pos.restaurantAddress, 'restaurant_address',
+                      onSave: (val) => pos.updateCafeInfo(address: val),
+                    ),
                   )),
                   Obx(() => _buildActionItem(
-                    Icons.call_rounded, 
-                    "restaurant_phone".tr, 
-                    trailingText: pos.restaurantPhone.value, 
-                    onTap: () => _showEditDialog(context, "restaurant_phone".tr, pos.restaurantPhone, 'restaurant_phone', onSave: (val) => pos.updateCafeInfo(phone: val))
+                    Icons.call_rounded,
+                    "restaurant_phone".tr,
+                    trailingText: pos.restaurantPhone.value,
+                    onTap: () => _showEditDialog(
+                      context, "restaurant_phone".tr, pos.restaurantPhone, 'restaurant_phone',
+                      onSave: (val) => pos.updateCafeInfo(phone: val),
+                    ),
                   )),
                 ]),
               ],
-
-              _buildSectionLabel("Appearance & System"),
-              _buildSettingsCard(context, [
-                Obx(() => _buildToggleItem(
-                  Icons.dark_mode_rounded, 
-                  "Tungi rejim", 
-                  pos.isDarkMode.value, 
-                  (val) => pos.toggleTheme()
-                )),
-                Obx(() => _buildToggleItem(
-                  Icons.fullscreen_rounded, 
-                  "To'liq ekran", 
-                  pos.isFullScreen.value, 
-                  (val) => pos.toggleFullScreen()
-                )),
-                Obx(() => _buildToggleItem(
-                  Icons.power_settings_new_rounded, 
-                  "Avto-yuklash (boot)", 
-                  pos.isAutoStart.value, 
-                  (val) => pos.toggleAutoStart()
-                )),
-                if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) ...[
-                  _buildActionItem(
-                    Icons.monitor_rounded, 
-                    "Mijoz ekranini ochish", 
-                    onTap: () => pos.openCustomerDisplay()
-                  ),
-                  Obx(() => _buildToggleItem(
-                    Icons.auto_awesome_rounded, 
-                    "Mijoz ekranini avto-ochish", 
-                    pos.autoOpenCustomerDisplay.value, 
-                    (val) {
-                      pos.autoOpenCustomerDisplay.value = val;
-                      GetStorage().write('auto_open_customer_display', val);
-                    }
-                  )),
-                ],
-              ]),
-
-              const SizedBox(height: 24),
-
-              const SizedBox(height: 24),
-              _buildSectionLabel("system".tr),
-              _buildSettingsCard(context, [
-                _buildActionItem(
-                  Icons.language_rounded, 
-                  "language".tr, 
-                  trailingText: Get.locale?.languageCode == 'uz' ? "O'zbekcha" : (Get.locale?.languageCode == 'ru' ? "Русский" : "English"), 
-                  onTap: () => _showLanguageSwitcher(context)
-                ),
-                if (pos.isAdmin)
-                  _buildActionItem(Icons.delete_forever_rounded, "clear_data".tr, isDestructive: true, onTap: () => _confirmClearData(context, pos, storage)),
-                _buildActionItem(Icons.info_rounded, "app_version".tr, trailingText: "v1.0.5", onTap: () {}),
-              ]),
-              
-              const SizedBox(height: 48),
-              _buildLogoutButton(pos),
-              const SizedBox(height: 24),
-              _buildFooter(),
-              const SizedBox(height: 24),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  // Planshet uchun 2 ustunli wrapper
+  Widget _buildTabletGrid(BuildContext context, List<Widget> children) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children.map((c) => Expanded(
+        child: Padding(
+          padding: EdgeInsets.only(
+            right: children.indexOf(c) == 0 ? 12 : 0,
+            left: children.indexOf(c) == 1 ? 12 : 0,
+          ),
+          child: c,
+        ),
+      )).toList(),
+    );
+  }
+
+  // Planshet uchun bir ustunli section
+  Widget _buildTabletSection(
+    BuildContext context, {
+    required String label,
+    required List<Widget> children,
+    List<Widget>? extraChildren,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionLabel(label),
+        _buildSettingsCard(context, children),
+        if (extraChildren != null) ...extraChildren,
+      ],
+    );
+  }
+
+  // ──────────────────────────────────────────────────────
+  //  PHONE: Bir ustunli, maxWidth 500
+  // ──────────────────────────────────────────────────────
+  Widget _buildPhoneLayout(BuildContext context, POSController pos, GetStorage storage) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500),
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            _buildProfileCard(context, pos),
+            const SizedBox(height: 32),
+
+            if (pos.isAdmin) ...[
+              _buildSectionLabel("printer_settings".tr),
+              _buildSettingsCard(context, [
+                Obx(() => _buildActionItem(
+                  Icons.receipt_rounded,
+                  "printer_paper_size".tr,
+                  trailingText: pos.printerPaperSize.value,
+                  onTap: () => _showPaperSizeDialog(context, pos),
+                )),
+                Obx(() => _buildToggleItem(
+                  Icons.print_rounded,
+                  "auto_print_receipt".tr,
+                  pos.autoPrintReceipt.value,
+                  (val) {
+                    pos.autoPrintReceipt.value = val;
+                    storage.write('auto_print_receipt', val);
+                  },
+                )),
+                _buildActionItem(
+                  Icons.tune_rounded,
+                  "printer_management".tr,
+                  onTap: () => Get.to(() => const PrinterManagementScreen()),
+                ),
+                _buildActionItem(
+                  Icons.restaurant_rounded,
+                  "preparation_area_management".tr,
+                  onTap: () => Get.to(() => const PreparationAreaManagementScreen()),
+                ),
+                Obx(() => _buildToggleItem(
+                  Icons.handshake_rounded,
+                  "enable_kitchen_print".tr,
+                  pos.enableKitchenPrint.value,
+                  (val) => pos.setEnableKitchenPrint(val),
+                )),
+                Obx(() => _buildToggleItem(
+                  Icons.description_rounded,
+                  "enable_bill_print".tr,
+                  pos.enableBillPrint.value,
+                  (val) => pos.setEnableBillPrint(val),
+                )),
+                Obx(() => _buildToggleItem(
+                  Icons.payments_rounded,
+                  "enable_payment_print".tr,
+                  pos.enablePaymentPrint.value,
+                  (val) => pos.setEnablePaymentPrint(val),
+                )),
+                Obx(() => _buildToggleItem(
+                  Icons.stars_rounded,
+                  "Asosiy printer terminali",
+                  pos.isMainPrinterTerminal.value,
+                  (val) => pos.setIsMainPrinterTerminal(val),
+                )),
+              ]),
+            ],
+
+            if (pos.isAdmin) ...[
+              const SizedBox(height: 24),
+              _buildSectionLabel("staff".tr),
+              _buildSettingsCard(context, [
+                _buildActionItem(
+                  Icons.badge_rounded,
+                  "waiter_management".tr,
+                  onTap: () => Get.to(() => const StaffManagementScreen()),
+                ),
+              ]),
+            ],
+
+            if (pos.isAdmin) ...[
+              const SizedBox(height: 24),
+              _buildSectionLabel("menu_management".tr),
+              _buildSettingsCard(context, [
+                _buildActionItem(
+                  Icons.restaurant_menu_rounded,
+                  "menu_management".tr,
+                  trailingText: "products".tr,
+                  onTap: () => Get.to(() => ProductManagementScreen()),
+                ),
+              ]),
+            ],
+
+            if (pos.isAdmin) ...[
+              const SizedBox(height: 24),
+              _buildSectionLabel("inventory".tr),
+              _buildSettingsCard(context, [
+                _buildActionItem(
+                  Icons.inventory_2_rounded,
+                  "inventory_management".tr,
+                  onTap: () => Get.to(() => const InventoryManagementPage()),
+                ),
+              ]),
+            ],
+
+            if (pos.isAdmin) ...[
+              const SizedBox(height: 24),
+              _buildSectionLabel("restaurant_info".tr),
+              _buildSettingsCard(context, [
+                Obx(() => _buildActionItem(
+                  Icons.store_rounded,
+                  "restaurant_name".tr,
+                  trailingText: pos.restaurantName.value,
+                  onTap: () => _showEditDialog(
+                    context, "restaurant_name".tr, pos.restaurantName, 'restaurant_name',
+                    onSave: (val) => pos.updateCafeInfo(name: val),
+                  ),
+                )),
+                Obx(() => _buildActionItem(
+                  Icons.location_on_rounded,
+                  "restaurant_address".tr,
+                  trailingText: pos.restaurantAddress.value,
+                  onTap: () => _showEditDialog(
+                    context, "restaurant_address".tr, pos.restaurantAddress, 'restaurant_address',
+                    onSave: (val) => pos.updateCafeInfo(address: val),
+                  ),
+                )),
+                Obx(() => _buildActionItem(
+                  Icons.call_rounded,
+                  "restaurant_phone".tr,
+                  trailingText: pos.restaurantPhone.value,
+                  onTap: () => _showEditDialog(
+                    context, "restaurant_phone".tr, pos.restaurantPhone, 'restaurant_phone',
+                    onSave: (val) => pos.updateCafeInfo(phone: val),
+                  ),
+                )),
+              ]),
+            ],
+
+            _buildSectionLabel("Appearance & System"),
+            _buildSettingsCard(context, [
+              Obx(() => _buildToggleItem(
+                Icons.dark_mode_rounded,
+                "Tungi rejim",
+                pos.isDarkMode.value,
+                (val) => pos.toggleTheme(),
+              )),
+              Obx(() => _buildToggleItem(
+                Icons.fullscreen_rounded,
+                "To'liq ekran",
+                pos.isFullScreen.value,
+                (val) => pos.toggleFullScreen(),
+              )),
+              Obx(() => _buildToggleItem(
+                Icons.power_settings_new_rounded,
+                "Avto-yuklash (boot)",
+                pos.isAutoStart.value,
+                (val) => pos.toggleAutoStart(),
+              )),
+              if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) ...[
+                _buildActionItem(
+                  Icons.monitor_rounded,
+                  "Mijoz ekranini ochish",
+                  onTap: () => pos.openCustomerDisplay(),
+                ),
+                Obx(() => _buildToggleItem(
+                  Icons.auto_awesome_rounded,
+                  "Mijoz ekranini avto-ochish",
+                  pos.autoOpenCustomerDisplay.value,
+                  (val) {
+                    pos.autoOpenCustomerDisplay.value = val;
+                    GetStorage().write('auto_open_customer_display', val);
+                  },
+                )),
+              ],
+            ]),
+
+            const SizedBox(height: 24),
+            _buildSectionLabel("system".tr),
+            _buildSettingsCard(context, [
+              _buildActionItem(
+                Icons.language_rounded,
+                "language".tr,
+                trailingText: Get.locale?.languageCode == 'uz'
+                    ? "O'zbekcha"
+                    : (Get.locale?.languageCode == 'ru' ? "Русский" : "English"),
+                onTap: () => _showLanguageSwitcher(context),
+              ),
+              if (pos.isAdmin)
+                _buildActionItem(
+                  Icons.delete_forever_rounded,
+                  "clear_data".tr,
+                  isDestructive: true,
+                  onTap: () => _confirmClearData(context, pos, storage),
+                ),
+              _buildActionItem(
+                Icons.info_rounded,
+                "app_version".tr,
+                trailingText: "v1.0.5",
+                onTap: () {},
+              ),
+            ]),
+
+            const SizedBox(height: 48),
+            _buildLogoutButton(pos),
+            const SizedBox(height: 24),
+            _buildFooter(),
+            const SizedBox(height: 24),
+          ],
         ),
       ),
     );
   }
 
+  // ──────────────────────────────────────────────────────
+  //  SHARED WIDGETS
+  // ──────────────────────────────────────────────────────
   Widget _buildProfileCard(BuildContext context, POSController pos) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20)],
       ),
       child: Row(
         children: [
           Container(
-            width: 80,
-            height: 80,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFF9500),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: ClipOval(
-                child: Image.asset('assets/logo.png', width: 60, height: 60),
-              ),
-            ),
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(color: Color(0xFFFF9500), shape: BoxShape.circle),
+            child: Center(child: ClipOval(child: Image.asset('assets/logo.png', width: 48, height: 48))),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Obx(() => Text(pos.restaurantName.value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Theme.of(context).textTheme.displayLarge?.color))),
-                const SizedBox(height: 4),
+                Obx(() => Text(
+                  pos.restaurantName.value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Theme.of(context).textTheme.displayLarge?.color,
+                  ),
+                )),
+                const SizedBox(height: 2),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, size: 14, color: Color(0xFF9CA3AF)),
+                    const Icon(Icons.location_on, size: 12, color: Color(0xFF9CA3AF)),
                     const SizedBox(width: 4),
-                    Obx(() => Text(pos.restaurantAddress.value, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13, fontWeight: FontWeight.w500))),
+                    Obx(() => Flexible(
+                      child: Text(
+                        pos.restaurantAddress.value,
+                        style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Obx(() {
                   final isVip = pos.isVip.value;
                   return Container(
@@ -248,11 +581,16 @@ class SettingsScreen extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.stars_rounded, size: 14, color: Color(0xFFFF9500)),
-                        const SizedBox(width: 6),
+                        const Icon(Icons.stars_rounded, size: 12, color: Color(0xFFFF9500)),
+                        const SizedBox(width: 4),
                         Text(
                           isVip ? "VIP — CHEKSIZ OBUNA" : "STANDART PLAN",
-                          style: const TextStyle(color: Color(0xFFFF9500), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                          style: const TextStyle(
+                            color: Color(0xFFFF9500),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ],
                     ),
@@ -268,10 +606,15 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildSectionLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF9CA3AF), letterSpacing: 1.2),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF9CA3AF),
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
@@ -280,76 +623,98 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
       ),
       child: Column(
         children: List.generate(children.length, (index) {
           if (index == children.length - 1) return children[index];
-          return Column(
-            children: [
-              children[index],
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Divider(height: 1, color: Color(0xFFF3F4F6)),
-              ),
-            ],
-          );
+          return Column(children: [
+            children[index],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.15)),
+            ),
+          ]);
         }),
       ),
     );
   }
 
   Widget _buildActionItem(IconData icon, String title, {String? trailingText, bool isDestructive = false, required VoidCallback onTap}) {
-    return Builder(
-      builder: (context) {
-        return ListTile(
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Theme.of(context).cardColor.withOpacity(0.5), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: Theme.of(context).iconTheme.color?.withOpacity(0.7) ?? const Color(0xFF4B5563), size: 18),
+    return Builder(builder: (context) {
+      return ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDestructive
+                ? Colors.red.withOpacity(0.08)
+                : Theme.of(context).scaffoldBackgroundColor.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(10),
           ),
-          title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color)),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (trailingText != null) 
-                Text(trailingText, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13, fontWeight: FontWeight.w500)),
-              const SizedBox(width: 8),
-              if (isDestructive) 
-                const Icon(Icons.warning_amber_rounded, size: 20, color: Colors.redAccent)
-              else 
-                const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFFD1D5DB)),
-            ],
+          child: Icon(
+            icon,
+            color: isDestructive
+                ? Colors.redAccent
+                : (Theme.of(context).iconTheme.color?.withOpacity(0.65) ?? const Color(0xFF4B5563)),
+            size: 18,
           ),
-        );
-      }
-    );
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isDestructive ? Colors.redAccent : Theme.of(context).textTheme.bodyLarge?.color,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (trailingText != null)
+              Text(trailingText, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13, fontWeight: FontWeight.w500)),
+            const SizedBox(width: 4),
+            if (isDestructive)
+              const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.redAccent)
+            else
+              const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFFD1D5DB)),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildToggleItem(IconData icon, String title, bool value, ValueChanged<bool> onChanged) {
-    return Builder(
-      builder: (context) {
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: Theme.of(context).cardColor.withOpacity(0.5), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, color: Theme.of(context).iconTheme.color?.withOpacity(0.7) ?? const Color(0xFF4B5563), size: 18),
+    return Builder(builder: (context) {
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.6),
+            borderRadius: BorderRadius.circular(10),
           ),
-          title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color)),
-          trailing: Switch(
-            value: value,
-            onChanged: onChanged,
-            activeColor: const Color(0xFFFF9500),
-            activeTrackColor: const Color(0xFFFF9500).withOpacity(0.2),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          child: Icon(
+            icon,
+            color: Theme.of(context).iconTheme.color?.withOpacity(0.65) ?? const Color(0xFF4B5563),
+            size: 18,
           ),
-        );
-      }
-    );
+        ),
+        title: Text(
+          title,
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).textTheme.bodyLarge?.color),
+        ),
+        trailing: Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: const Color(0xFFFF9500),
+          activeTrackColor: const Color(0xFFFF9500).withOpacity(0.2),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      );
+    });
   }
 
   Widget _buildLogoutButton(POSController pos) {
@@ -377,6 +742,9 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  // ──────────────────────────────────────────────────────
+  //  DIALOGS
+  // ──────────────────────────────────────────────────────
   void _showLanguageSwitcher(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -388,7 +756,8 @@ class SettingsScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Sizning tilingiz / Ваш язык / Your Language", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            const Text("Sizning tilingiz / Ваш язык / Your Language",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
             const SizedBox(height: 24),
             _buildLangItem("O'zbekcha", 'uz', 'UZ'),
             _buildLangItem("English", 'en', 'US'),
@@ -402,7 +771,11 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildLangItem(String label, String langCode, String countryCode) {
     final bool isSelected = Get.locale?.languageCode == langCode;
     return ListTile(
-      title: Text(label, style: TextStyle(fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500, color: isSelected ? const Color(0xFFFF9500) : const Color(0xFF1A1A1A))),
+      title: Text(label,
+          style: TextStyle(
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+            color: isSelected ? const Color(0xFFFF9500) : const Color(0xFF1A1A1A),
+          )),
       onTap: () {
         final locale = Locale(langCode, countryCode);
         Get.updateLocale(locale);
@@ -436,7 +809,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showEditDialog(BuildContext context, String title, RxString observable, String storageKey, {bool isNumeric = false, Function(String)? onSave}) {
+  void _showEditDialog(BuildContext context, String title, RxString observable, String storageKey,
+      {bool isNumeric = false, Function(String)? onSave}) {
     final controller = TextEditingController(text: observable.value);
     Get.defaultDialog(
       title: title,
@@ -462,13 +836,15 @@ class SettingsScreen extends StatelessWidget {
             onSave(controller.text);
           } else {
             observable.value = controller.text;
-            if (storageKey.isNotEmpty) {
-              GetStorage().write(storageKey, controller.text);
-            }
+            if (storageKey.isNotEmpty) GetStorage().write(storageKey, controller.text);
           }
           Get.back();
         },
-        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF9500), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF9500),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
         child: Text("save".tr, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
@@ -489,7 +865,8 @@ class SettingsScreen extends StatelessWidget {
         pos.currentOrder.clear();
         storage.remove('all_orders');
         Get.back();
-        Get.snackbar("Reset", "Application data cleared.", backgroundColor: Colors.redAccent, colorText: Colors.white);
+        Get.snackbar("Reset", "Application data cleared.",
+            backgroundColor: Colors.redAccent, colorText: Colors.white);
       },
     );
   }
