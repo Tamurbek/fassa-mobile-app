@@ -39,7 +39,8 @@ class POSController extends POSControllerState with
     WindowListener,
     TrayListener {
 
-  final Map<String, DateTime> _processedPrintIds = {};
+
+  // processedPrintIds is now in POSControllerState
 
   @override
   void onInit() {
@@ -402,19 +403,27 @@ class POSController extends POSControllerState with
         saveAllOrders();
 
         if (isMainPrinterTerminal.value) {
-            final printKey = "${serverId ?? clientId}_kitchen_auto";
             final now = DateTime.now();
-            if (_processedPrintIds.containsKey(printKey) && 
-                now.difference(_processedPrintIds[printKey]!).inSeconds < 15) {
-              return;
+            final printKeyKitchen = "${serverId ?? clientId}_kitchen";
+            
+            // Check BOTH server id and client uuid for deduplication
+            bool isAlreadyDone = processedPrintIds.containsKey(printKeyKitchen) && 
+                                now.difference(processedPrintIds[printKeyKitchen]!).inSeconds < 15;
+            
+            if (!isAlreadyDone && clientId != null) {
+              final uuidKey = "${clientId}_kitchen";
+              if (processedPrintIds.containsKey(uuidKey) && 
+                  now.difference(processedPrintIds[uuidKey]!).inSeconds < 15) {
+                isAlreadyDone = true;
+              }
             }
-            // Also check if we just printed the UUID version
-            if (clientId != null && _processedPrintIds.containsKey("${clientId}_null") && 
-                now.difference(_processedPrintIds["${clientId}_null"]!).inSeconds < 15) {
-               return;
-            }
-
-            _processedPrintIds[printKey] = now;
+            
+            if (isAlreadyDone) return;
+            
+            // Mark as processed
+            if (serverId != null) processedPrintIds["${serverId}_kitchen"] = now;
+            if (clientId != null) processedPrintIds["${clientId}_kitchen"] = now;
+            
             printLocally(normalized, isKitchenOnly: true);
         }
       } else {
@@ -437,16 +446,35 @@ class POSController extends POSControllerState with
       }
 
       final orderId = data['order']?['id']?.toString();
-      final String receiptTitle = data['receiptTitle']?.toString() ?? (data['isKitchenOnly'] == true ? "KITCHEN" : "ALL");
+      final clientId = data['order']?['client_id']?.toString();
+      final String receiptTitle = data['receiptTitle']?.toString() ?? (data['isKitchenOnly'] == true ? "kitchen" : "all");
+      final String lowerTitle = receiptTitle.toLowerCase();
       
-      if (orderId != null) {
+      if (orderId != null || clientId != null) {
         final now = DateTime.now();
-        final printKey = "${orderId}_$receiptTitle";
-        if (_processedPrintIds.containsKey(printKey) && 
-            now.difference(_processedPrintIds[printKey]!).inSeconds < 10) {
-          return;
+        bool isAlreadyDone = false;
+        
+        if (orderId != null) {
+          final printKey = "${orderId}_$lowerTitle";
+          if (processedPrintIds.containsKey(printKey) && 
+              now.difference(processedPrintIds[printKey]!).inSeconds < 10) {
+            isAlreadyDone = true;
+          }
         }
-        _processedPrintIds[printKey] = now;
+        
+        if (!isAlreadyDone && clientId != null) {
+          final printKey = "${clientId}_$lowerTitle";
+          if (processedPrintIds.containsKey(printKey) && 
+              now.difference(processedPrintIds[printKey]!).inSeconds < 10) {
+            isAlreadyDone = true;
+          }
+        }
+
+        if (isAlreadyDone) return;
+        
+        // Mark as processed
+        if (orderId != null) processedPrintIds["${orderId}_$lowerTitle"] = now;
+        if (clientId != null) processedPrintIds["${clientId}_$lowerTitle"] = now;
       }
 
       final Map<String, dynamic> order = Map<String, dynamic>.from(data['order']);
@@ -673,6 +701,10 @@ class POSController extends POSControllerState with
 
     // If NOT paid (just saving), we only want KITCHEN tickets.
     // If paid, we want TO'LOV CHEKI (which includes kitchen items in our logic).
+    final String title = isPaid ? "to'lov cheki" : "kitchen";
+    final printKey = "${normalized['id']}_$title";
+    processedPrintIds[printKey] = DateTime.now();
+
     await printOrder(normalized, 
         isKitchenOnly: !isPaid, 
         receiptTitle: isPaid ? "TO'LOV CHEKI" : null);
@@ -793,7 +825,8 @@ class POSController extends POSControllerState with
 
       final orderId = editingOrderId.value?.toString();
       if (orderId != null) {
-        _processedPrintIds[orderId] = DateTime.now();
+        final String title = isPaid ? "to'lov cheki" : "kitchen";
+        processedPrintIds["${orderId}_$title"] = DateTime.now();
       }
 
       // If NOT paid (just saving), we only want KITCHEN tickets.
@@ -861,6 +894,9 @@ class POSController extends POSControllerState with
         };
       }
 
+      if (editingOrderId.value != null) {
+        processedPrintIds["${editingOrderId.value}_hisob cheki"] = DateTime.now();
+      }
       await printOrder(orderToPrint, receiptTitle: "HISOB CHEKI");
 
       if (isWaiter) {
