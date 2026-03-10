@@ -435,6 +435,7 @@ mixin DataSyncMixin on POSControllerState {
         "items": details.fold(0, (sum, item) => sum + (item['qty'] as int)),
         "total": double.tryParse(totalAmt.toString()) ?? 0.0,
         "status": statusStr.toString().replaceAll("_", " ").split(" ").map((s) => s.toLowerCase().capitalizeFirst).join(" "),
+        "waiter_id": o['waiter_id']?.toString(),
         "waiter_name": o['waiter_name'],
         "timestamp": timestamp,
         "details": details,

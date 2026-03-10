@@ -21,6 +21,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
   late TextEditingController _ipController;
   late TextEditingController _portController;
   final RxList<String> _selectedAreaIds = <String>[].obs;
+  final RxList<String> _selectedTableAreaIds = <String>[].obs;
   final RxList<String> _selectedTableAreaNames = <String>[].obs;
   final RxBool _printReceipts = false.obs;
   final RxBool _printPayments = false.obs;
@@ -33,6 +34,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
     _ipController = TextEditingController(text: widget.printer?.ipAddress ?? "192.168.1.100");
     _portController = TextEditingController(text: widget.printer?.port.toString() ?? "9100");
     _selectedAreaIds.assignAll(widget.printer?.preparationAreaIds ?? []);
+    _selectedTableAreaIds.assignAll(widget.printer?.tableAreaIds ?? []);
     _selectedTableAreaNames.assignAll(widget.printer?.tableAreaNames ?? []);
     _printReceipts.value = widget.printer?.printReceipts ?? false;
     _printPayments.value = widget.printer?.printPayments ?? false;
@@ -62,6 +64,7 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
       isActive: widget.printer?.isActive ?? true,
       cafeId: pos.currentUser.value?['cafe_id'] ?? '',
       preparationAreaIds: _selectedAreaIds.toList(),
+      tableAreaIds: _selectedTableAreaIds.toList(),
       tableAreaNames: _selectedTableAreaNames.toList(),
       printReceipts: _printReceipts.value,
       printPayments: _printPayments.value,
@@ -176,7 +179,8 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
               spacing: 8,
               runSpacing: 4,
               children: pos.tableAreaDetails.keys.map((areaName) {
-                final isSelected = _selectedTableAreaNames.contains(areaName);
+                final areaId = pos.tableAreaBackendIds[areaName] ?? areaName; // Use mapped ID, fallback to name
+                final isSelected = _selectedTableAreaIds.contains(areaId);
                 return FilterChip(
                   label: Text(areaName),
                   selected: isSelected,
@@ -184,8 +188,10 @@ class _SavePrinterScreenState extends State<SavePrinterScreen> {
                   checkmarkColor: Colors.blue,
                   onSelected: (selected) {
                     if (selected) {
+                      _selectedTableAreaIds.add(areaId);
                       _selectedTableAreaNames.add(areaName);
                     } else {
+                      _selectedTableAreaIds.remove(areaId);
                       _selectedTableAreaNames.remove(areaName);
                     }
                   },

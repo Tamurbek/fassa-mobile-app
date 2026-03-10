@@ -618,6 +618,7 @@ class POSController extends POSControllerState with
       "table_number": currentMode.value == "Dine-in" ? selectedTable.value : null,
       "type": currentMode.value.toUpperCase().replaceAll("-", "_"),
       "is_paid": isPaid,
+      "waiter_id": selectedWaiterId.value ?? currentUser.value?['id']?.toString(),
       "waiter_name": selectedWaiter.value ?? currentUser.value?['name'],
       "payment_method": paymentMethod,
       "cafe_id": cafeId,
