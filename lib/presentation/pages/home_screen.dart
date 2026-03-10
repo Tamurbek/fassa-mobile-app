@@ -1207,8 +1207,10 @@ class HomeScreen extends StatelessWidget {
     );
     String localType = pos.discountType.value;
 
-    Get.dialog(
-      StatefulBuilder(
+    showDialog(
+      context: Get.context!,
+      barrierDismissible: true,
+      builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Text("Chegirma qo'shish", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -1309,7 +1311,7 @@ class HomeScreen extends StatelessWidget {
             TextButton(
               onPressed: () {
                 pos.resetDiscount();
-                Get.back();
+                Navigator.of(context).pop();
               },
               child: const Text("Bekor qilish", style: TextStyle(color: Colors.red)),
             ),
@@ -1325,7 +1327,7 @@ class HomeScreen extends StatelessWidget {
                   pos.discountType.value = localType;
                   pos.discountValue.value = localType == "percent" ? val.clamp(0.0, 100.0) : val;
                 }
-                Get.back();
+                Navigator.of(context).pop();
               },
               child: const Text("Qo'llash"),
             ),
