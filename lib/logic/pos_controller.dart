@@ -614,6 +614,7 @@ class POSController extends POSControllerState with
     final String orderId = uuid.v4();
     final orderData = {
       "id": orderId, // Client-side ID for offline sync
+      "table_id": currentMode.value == "Dine-in" ? tableBackendIds[selectedTable.value] : null,
       "table_number": currentMode.value == "Dine-in" ? selectedTable.value : null,
       "type": currentMode.value.toUpperCase().replaceAll("-", "_"),
       "is_paid": isPaid,

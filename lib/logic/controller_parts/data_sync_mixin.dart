@@ -399,24 +399,28 @@ mixin DataSyncMixin on POSControllerState {
 
       final details = groupedDetails.values.toList();
 
-      // tableNum comes from REST API as "Zal-1" (full tableId format) OR
-      // from socket events as just "1" (raw number). We need to always store as "Area-Num".
+      // ─── Professional ID-based table resolution ───────────────────────────
+      // Priority 1: Use table_id (UUID) → instant O(1) reverse-lookup in tableBackendIds
+      // Priority 2: table_number already in "Area-Num" format → use directly
+      // Priority 3: raw number fallback → search tableBackendIds by number part
       String tableKey = "-";
-      if (tableNum != null) {
+      final String? tableUuid = o['table_id']?.toString();
+      if (tableUuid != null && tableUuid.isNotEmpty) {
+        // Reverse lookup: find the "Area-Num" key whose UUID matches table_id
+        final matchingEntry = tableBackendIds.entries.firstWhereOrNull(
+          (e) => e.value == tableUuid,
+        );
+        tableKey = matchingEntry?.key ?? tableKey;
+      } else if (tableNum != null) {
         final String rawNum = tableNum.toString();
-        // Check if it already is a full tableId (contains "-" and exists in tableBackendIds)
         if (tableBackendIds.containsKey(rawNum)) {
-          // Already in "Zal-1" format - use directly
+          // Already "Area-Num" format
           tableKey = rawNum;
         } else {
-          // Raw number — search tableBackendIds for matching "Area-Num" key
+          // Raw number fallback
           final matchingEntry = tableBackendIds.entries.firstWhereOrNull((e) {
             final parts = e.key.split("-");
-            if (parts.length >= 2) {
-              final tableNumPart = parts.sublist(1).join("-");
-              return tableNumPart == rawNum;
-            }
-            return false;
+            return parts.length >= 2 && parts.sublist(1).join("-") == rawNum;
           });
           tableKey = matchingEntry?.key ?? rawNum;
         }
@@ -426,6 +430,7 @@ mixin DataSyncMixin on POSControllerState {
         "id": o['id']?.toString(),
         "table": tableKey,
         "table_area": tableArea,
+
         "mode": typeStr.toString().toLowerCase().replaceAll("_", "-").capitalizeFirst,
         "items": details.fold(0, (sum, item) => sum + (item['qty'] as int)),
         "total": double.tryParse(totalAmt.toString()) ?? 0.0,
