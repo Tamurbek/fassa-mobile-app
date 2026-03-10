@@ -130,6 +130,8 @@ mixin DataSyncMixin on POSControllerState {
           telegram.value = cafe['telegram'] ?? "";
           instagramLink.value = cafe['instagram_link'] ?? "";
           telegramLink.value = cafe['telegram_link'] ?? "";
+          showInstagramQr.value = cafe['show_instagram_qr'] ?? false;
+          showPhoneOnReceipt.value = cafe['show_phone_on_receipt'] ?? true;
           allowWaiterMobileOrders.value = cafe['allow_waiter_mobile_orders'] ?? true;
 
           final rl = cafe['receipt_layout'];
@@ -434,12 +436,16 @@ mixin DataSyncMixin on POSControllerState {
   void savePreparationAreas() => storage.write('preparation_areas', preparationAreas.map((v) => v.toJson()).toList());
   void savePrinters() => storage.write('printers', printers.map((v) => v.toJson()).toList());
 
-  Future<void> updateCafeInfo({String? name, String? address, String? phone}) async {
+  Future<void> updateCafeInfo({String? name, String? address, String? phone, String? instagram, String? instagramLink, String? telegram, String? telegramLink, Map<String, dynamic>? extraData}) async {
     try {
-      Map<String, dynamic> data = {};
+      Map<String, dynamic> data = extraData ?? {};
       if (name != null) data['name'] = name;
       if (address != null) data['address'] = address;
       if (phone != null) data['phone'] = phone;
+      if (instagram != null) data['instagram'] = instagram;
+      if (instagramLink != null) data['instagram_link'] = instagramLink;
+      if (telegram != null) data['telegram'] = telegram;
+      if (telegramLink != null) data['telegram_link'] = telegramLink;
       
       await api.updateCafe(cafeId, data);
       await fetchBackendData();

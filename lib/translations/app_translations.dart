@@ -248,7 +248,11 @@ class AppTranslations extends Translations {
           'opened_at': 'Opened at',
           'closed_at': 'Closed at',
           'waiter': 'Waiter',
+          'instagram_link': 'Instagram Link',
+          'show_instagram_qr': 'Show Instagram QR',
+          'show_phone_on_receipt': 'Show Phone on Receipt',
         },
+
 
         'uz_UZ': {
           'order_management': 'Buyurtmalar boshqaruvi',
@@ -505,7 +509,11 @@ class AppTranslations extends Translations {
           'opened_at': 'Ochilgan vaqt',
           'closed_at': 'Yopilgan vaqt',
           'waiter': 'Afitsant',
+          'instagram_link': 'Instagram havolasi',
+          'show_instagram_qr': 'Instagram QR kodini chiqarish',
+          'show_phone_on_receipt': 'Chekda telefon ko\'rsatish',
         },
+
 
         'ru_RU': {
           'order_management': 'Управление заказами',

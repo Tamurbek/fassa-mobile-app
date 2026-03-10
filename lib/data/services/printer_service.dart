@@ -97,7 +97,10 @@ class PrinterService {
           } else {
             // Standard Professional Header for Customers
             bytes += generator.text(_normalizeString(posController.restaurantName.value), styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size2, width: PosTextSize.size2));
-            if (posController.restaurantAddress.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantAddress.value), styles: const PosStyles(align: PosAlign.center));
+            if (posController.restaurantAddress.value.isNotEmpty) bytes += generator.text(_normalizeString(posController.restaurantAddress.value), styles: const PosStyles(align: PosAlign.center, fontType: PosFontType.fontB));
+            if (posController.showPhoneOnReceipt.value && posController.restaurantPhone.value.isNotEmpty) {
+               bytes += generator.text(_normalizeString('TEL: ${posController.restaurantPhone.value}'), styles: const PosStyles(align: PosAlign.center, bold: true));
+            }
             bytes += _hr(generator, is80mm: is80mm);
             bytes += generator.text(_normalizeString(title ?? 'BUYURTMA'), styles: const PosStyles(align: PosAlign.center, bold: true));
             final String displayId = order['id'].toString().substring(0, order['id'].toString().length > 8 ? 8 : order['id'].toString().length);
@@ -206,6 +209,17 @@ class PrinterService {
               PosColumn(text: _normalizeString(_formatPrice(finalTotal)), width: 7, styles: const PosStyles(align: PosAlign.right, bold: true, height: PosTextSize.size2, width: PosTextSize.size2)),
             ]);
             bytes += _hr(generator, ch: '=', is80mm: is80mm);
+            
+            // Footer with Instagram QR
+            if (posController.showInstagramQr.value && posController.instagramLink.value.isNotEmpty) {
+               bytes += generator.text(_normalizeString('INSTAGRAM QR'), styles: const PosStyles(align: PosAlign.center, bold: true));
+               bytes += generator.qrcode(posController.instagramLink.value, size: QRSize.size4);
+               bytes += generator.feed(1);
+            }
+            
+            if (posController.receiptFooter.value.isNotEmpty) {
+               bytes += generator.text(_normalizeString(posController.receiptFooter.value), styles: const PosStyles(align: PosAlign.center));
+            }
           }
       } else {
         for (int i = 0; i < layout.length; i++) {
