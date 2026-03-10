@@ -45,7 +45,7 @@ class OrdersScreen extends StatelessWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh),
-              onPressed: () => pos.allOrders.refresh(),
+              onPressed: () => pos.refreshData(),
             ),
             IconButton(
               icon: const Icon(Icons.lock_rounded, color: Colors.orange),
