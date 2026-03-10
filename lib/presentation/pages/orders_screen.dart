@@ -897,55 +897,343 @@ class OrdersScreen extends StatelessWidget {
 
   void _showChangeTableDialog(BuildContext context, Map<String, dynamic> order, POSController pos) {
     if (order['status'] == "Bill Printed" && !(pos.isAdmin || pos.isCashier)) {
-      Get.snackbar("Xatolik", "Cheki chiqarilgan buyurtmani stoli o'zgartirilmaydi", 
+      Get.snackbar("Xatolik", "Cheki chiqarilgan buyurtmani stoli o'zgartirilmaydi",
           backgroundColor: Colors.red, colorText: Colors.white);
       return;
     }
 
-    final tableIdController = TextEditingController();
+    // Build set of occupied tables from active orders (excluding current order)
+    final occupiedTables = <String>{};
+    for (final o in pos.allOrders) {
+      if (o['id'] != order['id'] && o['status'] != 'Completed') {
+        final t = o['table']?.toString();
+        if (t != null && t != '-' && t.isNotEmpty) {
+          occupiedTables.add(t);
+        }
+      }
+    }
 
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Stolni o'zgartirish", style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Joriy stol: ${order['table'] ?? '-'}"),
-            const SizedBox(height: 16),
-            TextField(
-              controller: tableIdController,
-              decoration: InputDecoration(
-                labelText: "Yangi stol raqami",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+    final currentTable = order['table']?.toString() ?? '';
+    String? selectedNewTable;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.75,
+            maxChildSize: 0.92,
+            minChildSize: 0.4,
+            builder: (_, scrollController) => Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              keyboardType: TextInputType.text,
+              child: Column(
+                children: [
+                  // Handle bar
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.sync_alt_rounded, color: Colors.purple, size: 22),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Stolni o'zgartirish",
+                                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                              Text(
+                                "Joriy: $currentTable",
+                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Legend
+                        Row(
+                          children: [
+                            _tableLegendDot(Colors.green.shade400, "Bo'sh"),
+                            const SizedBox(width: 12),
+                            _tableLegendDot(Colors.red.shade300, "Band"),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  // Table list by areas
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                      children: pos.tablesByArea.isEmpty
+                          ? [
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.only(top: 60),
+                                  child: Text("Stollar topilmadi",
+                                      style: TextStyle(color: Colors.grey, fontSize: 15)),
+                                ),
+                              )
+                            ]
+                          : pos.tablesByArea.entries.map((entry) {
+                              final area = entry.key;
+                              final tables = entry.value;
+                              final freeCount = tables.where((t) => !occupiedTables.contains(t)).length;
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Area header
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 12, top: 4),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 4,
+                                          height: 20,
+                                          decoration: BoxDecoration(
+                                            color: Colors.purple,
+                                            borderRadius: BorderRadius.circular(2),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(area,
+                                            style: const TextStyle(
+                                                fontSize: 16, fontWeight: FontWeight.bold)),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            "$freeCount bo'sh",
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.green,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Tables grid
+                                  GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 4,
+                                      crossAxisSpacing: 10,
+                                      mainAxisSpacing: 10,
+                                      childAspectRatio: 1.1,
+                                    ),
+                                    itemCount: tables.length,
+                                    itemBuilder: (_, i) {
+                                      final tableKey = tables[i]; // e.g. "Zal-1"
+                                      final tableNum =
+                                          tableKey.contains('-') ? tableKey.split('-').last : tableKey;
+                                      final isOccupied = occupiedTables.contains(tableKey);
+                                      final isCurrent = tableKey == currentTable;
+                                      final isSelected = selectedNewTable == tableKey;
+
+                                      Color bgColor;
+                                      Color borderColor;
+                                      Color textColor;
+                                      IconData? statusIcon;
+
+                                      if (isCurrent) {
+                                        bgColor = Colors.orange.withOpacity(0.15);
+                                        borderColor = Colors.orange;
+                                        textColor = Colors.orange.shade800;
+                                        statusIcon = Icons.location_on_rounded;
+                                      } else if (isSelected) {
+                                        bgColor = Colors.purple.withOpacity(0.15);
+                                        borderColor = Colors.purple;
+                                        textColor = Colors.purple.shade800;
+                                        statusIcon = Icons.check_circle_outline_rounded;
+                                      } else if (isOccupied) {
+                                        bgColor = Colors.red.withOpacity(0.07);
+                                        borderColor = Colors.red.shade200;
+                                        textColor = Colors.red.shade400;
+                                        statusIcon = Icons.person_rounded;
+                                      } else {
+                                        bgColor = Colors.green.withOpacity(0.07);
+                                        borderColor = Colors.green.shade200;
+                                        textColor = Colors.green.shade700;
+                                      }
+
+                                      return GestureDetector(
+                                        onTap: (isOccupied && !isCurrent)
+                                            ? null
+                                            : () {
+                                                if (!isCurrent) {
+                                                  setState(() => selectedNewTable = tableKey);
+                                                }
+                                              },
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          decoration: BoxDecoration(
+                                            color: bgColor,
+                                            borderRadius: BorderRadius.circular(14),
+                                            border: Border.all(
+                                                color: borderColor, width: isSelected ? 2 : 1.2),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              if (statusIcon != null)
+                                                Icon(statusIcon, size: 14, color: textColor),
+                                              Text(
+                                                tableNum,
+                                                style: TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: textColor,
+                                                ),
+                                              ),
+                                              if (isCurrent)
+                                                Text("Joriy",
+                                                    style: TextStyle(
+                                                        fontSize: 9,
+                                                        color: Colors.orange.shade700,
+                                                        fontWeight: FontWeight.bold))
+                                              else if (isOccupied)
+                                                Text("Band",
+                                                    style: TextStyle(
+                                                        fontSize: 9,
+                                                        color: Colors.red.shade400,
+                                                        fontWeight: FontWeight.bold))
+                                              else
+                                                Text("Bo'sh",
+                                                    style: TextStyle(
+                                                        fontSize: 9,
+                                                        color: Colors.green.shade600,
+                                                        fontWeight: FontWeight.bold)),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 20),
+                                ],
+                              );
+                            }).toList(),
+                    ),
+                  ),
+                  // Bottom action bar
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, -4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
+                              side: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            child: const Text("Bekor qilish",
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton.icon(
+                            onPressed: selectedNewTable == null
+                                ? null
+                                : () {
+                                    pos.changeOrderTable(order['id'], selectedNewTable!);
+                                    Navigator.of(ctx).pop();
+                                    Get.snackbar(
+                                      "Muvaffaqiyatli",
+                                      "Stol $currentTable → $selectedNewTable ga o'zgartirildi",
+                                      backgroundColor: Colors.purple,
+                                      colorText: Colors.white,
+                                      snackPosition: SnackPosition.BOTTOM,
+                                      duration: const Duration(seconds: 3),
+                                    );
+                                  },
+                            icon: const Icon(Icons.sync_alt_rounded, size: 18),
+                            label: Text(
+                              selectedNewTable != null
+                                  ? "→ $selectedNewTable ga o'zgartirish"
+                                  : "Stol tanlang",
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade200,
+                              disabledForegroundColor: Colors.grey,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text("cancel".tr)),
-          ElevatedButton(
-            onPressed: () {
-              final newTable = tableIdController.text.trim();
-              if (newTable.isEmpty) {
-                Get.snackbar("Xato", "Yangi stol raqamini kiriting", backgroundColor: Colors.orange, colorText: Colors.white);
-                return;
-              }
-              pos.changeOrderTable(order['id'], newTable);
-              Get.back();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text("O'zgartirish", style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
-}
 
+  Widget _tableLegendDot(Color color, String label) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+      ],
+    );
+  }
+}
