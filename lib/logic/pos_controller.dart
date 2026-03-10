@@ -707,9 +707,14 @@ class POSController extends POSControllerState with
     final printKey = "${normalized['id']}_$title";
     processedPrintIds[printKey] = DateTime.now();
 
-    await printOrder(normalized, 
-        isKitchenOnly: !isPaid, 
-        receiptTitle: isPaid ? "TO'LOV CHEKI" : null);
+    if (autoPrintReceipt.value) {
+      await printOrder(normalized, 
+          isKitchenOnly: !isPaid, 
+          receiptTitle: isPaid ? "TO'LOV CHEKI" : null);
+    } else if (!isPaid && enableKitchenPrint.value) {
+      // If auto-receipt is off, but kitchen print is on, print kitchen ticket for new order
+      await printOrder(normalized, isKitchenOnly: true);
+    }
 
     clearCurrentOrder();
     return true;
@@ -833,10 +838,17 @@ class POSController extends POSControllerState with
       }
 
       // If NOT paid (just saving), we only want KITCHEN tickets.
-      await printOrder(orderToPrint, 
-          isKitchenOnly: !isPaid, 
-          skipCancellation: wasBillPrinted && !isPaid,
-          receiptTitle: isPaid ? "TO'LOV CHEKI" : null);
+      if (autoPrintReceipt.value) {
+        await printOrder(orderToPrint, 
+            isKitchenOnly: !isPaid, 
+            skipCancellation: wasBillPrinted && !isPaid,
+            receiptTitle: isPaid ? "TO'LOV CHEKI" : null);
+      } else if (!isPaid && enableKitchenPrint.value) {
+        // If auto-receipt is off, but kitchen print is on, print kitchen ticket for update
+        await printOrder(orderToPrint, 
+            isKitchenOnly: true, 
+            skipCancellation: wasBillPrinted);
+      }
 
         allOrders.refresh();
         clearCurrentOrder();
