@@ -245,7 +245,11 @@ class AppTranslations extends Translations {
           'barcha_bolimlar': 'All Sections',
           'buyurtma_tayyor_deb_belgilandi': 'Order marked as ready',
           'holatni_yangilashda_xatolik': 'Error updating status',
+          'opened_at': 'Opened at',
+          'closed_at': 'Closed at',
+          'waiter': 'Waiter',
         },
+
         'uz_UZ': {
           'order_management': 'Buyurtmalar boshqaruvi',
           'active': 'Faol',
@@ -498,7 +502,11 @@ class AppTranslations extends Translations {
           'barcha_bolimlar': 'Barcha bo\'limlar',
           'buyurtma_tayyor_deb_belgilandi': 'Buyurtma tayyor deb belgilandi',
           'holatni_yangilashda_xatolik': 'Holatni yangilashda xatolik yuz berdi',
+          'opened_at': 'Ochilgan vaqt',
+          'closed_at': 'Yopilgan vaqt',
+          'waiter': 'Afitsant',
         },
+
         'ru_RU': {
           'order_management': 'Управление заказами',
           'active': 'Активные',
