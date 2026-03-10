@@ -399,9 +399,32 @@ mixin DataSyncMixin on POSControllerState {
 
       final details = groupedDetails.values.toList();
 
+      // tableNum comes from REST API as "Zal-1" (full tableId format) OR
+      // from socket events as just "1" (raw number). We need to always store as "Area-Num".
+      String tableKey = "-";
+      if (tableNum != null) {
+        final String rawNum = tableNum.toString();
+        // Check if it already is a full tableId (contains "-" and exists in tableBackendIds)
+        if (tableBackendIds.containsKey(rawNum)) {
+          // Already in "Zal-1" format - use directly
+          tableKey = rawNum;
+        } else {
+          // Raw number — search tableBackendIds for matching "Area-Num" key
+          final matchingEntry = tableBackendIds.entries.firstWhereOrNull((e) {
+            final parts = e.key.split("-");
+            if (parts.length >= 2) {
+              final tableNumPart = parts.sublist(1).join("-");
+              return tableNumPart == rawNum;
+            }
+            return false;
+          });
+          tableKey = matchingEntry?.key ?? rawNum;
+        }
+      }
+
       return {
         "id": o['id']?.toString(),
-        "table": tableNum != null ? tableNum.toString() : "-",
+        "table": tableKey,
         "table_area": tableArea,
         "mode": typeStr.toString().toLowerCase().replaceAll("_", "-").capitalizeFirst,
         "items": details.fold(0, (sum, item) => sum + (item['qty'] as int)),
