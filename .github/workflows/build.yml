@@ -2,7 +2,8 @@ name: Build Mobile App (Android & Windows)
 
 on:
   push:
-    branches: [ "main" ]
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 concurrency:
