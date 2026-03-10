@@ -78,7 +78,9 @@ class PrinterService {
       final layout = []; 
 
         final bool is80mm = printer.paperSize != '58mm';
-        if (layout.isEmpty) {
+        // Force default layout as requested
+        const bool useDefaultLayout = true;
+        if (useDefaultLayout || layout.isEmpty) {
           if (isKitchenOnly) {
             // Simplified Kitchen Header
             if (title != null) {
