@@ -22,13 +22,13 @@ class SettingsScreen extends StatelessWidget {
     final double pad = tablet ? 32.0 : 20.0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           "settings".tr,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: Theme.of(context).textTheme.displayLarge?.color),
         ),
-        backgroundColor: const Color(0xFFF2F2F7),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -250,8 +250,8 @@ class SettingsScreen extends StatelessWidget {
   static void _paperSizeDialog(BuildContext ctx, POSController pos) {
     Get.defaultDialog(
       title: "printer_paper_size".tr,
-      titleStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-      backgroundColor: const Color(0xFFF2F2F7),
+      titleStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Theme.of(ctx).textTheme.displaySmall?.color),
+      backgroundColor: Theme.of(ctx).cardColor,
       radius: 20,
       contentPadding: const EdgeInsets.symmetric(vertical: 12),
       content: Obx(() => Column(
@@ -270,8 +270,8 @@ class SettingsScreen extends StatelessWidget {
     final ctrl = TextEditingController(text: obs.value);
     Get.defaultDialog(
       title: title,
-      titleStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
-      backgroundColor: const Color(0xFFF2F2F7),
+      titleStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Theme.of(ctx).textTheme.displaySmall?.color),
+      backgroundColor: Theme.of(ctx).cardColor,
       radius: 20,
       content: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -279,7 +279,7 @@ class SettingsScreen extends StatelessWidget {
           controller: ctrl,
           autofocus: true,
           decoration: InputDecoration(
-            filled: true, fillColor: Colors.white,
+            filled: true, fillColor: Theme.of(ctx).scaffoldBackgroundColor,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             hintText: title,
@@ -439,7 +439,7 @@ class _NavCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(18),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -454,7 +454,7 @@ class _NavCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(item.label, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF1C1C1E))),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.8))),
           ]),
         ),
       ),
@@ -490,8 +490,9 @@ class _SettingsGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
       ),
       child: Column(children: children),
     );
@@ -526,7 +527,7 @@ class _NavRow extends StatelessWidget {
           child: Row(children: [
             _IconBox(icon: icon, color: isDestructive ? const Color(0xFFFF3B30) : iconColor),
             const SizedBox(width: 14),
-            Expanded(child: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDestructive ? const Color(0xFFFF3B30) : const Color(0xFF1C1C1E)))),
+            Expanded(child: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: isDestructive ? const Color(0xFFFF3B30) : Theme.of(context).textTheme.bodyLarge?.color))),
             if (trailing != null) ...[
               Text(trailing!, style: const TextStyle(fontSize: 14, color: Color(0xFF8E8E93))),
               const SizedBox(width: 4),
@@ -535,7 +536,7 @@ class _NavRow extends StatelessWidget {
           ]),
         ),
       ),
-      if (!isLast) const Padding(padding: EdgeInsets.only(left: 58), child: Divider(height: 1, color: Color(0xFFF2F2F7))),
+      if (!isLast) Padding(padding: const EdgeInsets.only(left: 58), child: Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.1))),
     ]);
   }
 }
@@ -564,7 +565,7 @@ class _SwitchRow extends StatelessWidget {
         child: Row(children: [
           _IconBox(icon: icon, color: iconColor),
           const SizedBox(width: 14),
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1C1C1E)))),
+          Expanded(child: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Theme.of(context).textTheme.bodyLarge?.color))),
           Switch.adaptive(
             value: value, onChanged: onChanged,
             activeColor: Colors.white,
@@ -574,7 +575,7 @@ class _SwitchRow extends StatelessWidget {
           ),
         ]),
       ),
-      if (!isLast) const Padding(padding: EdgeInsets.only(left: 58), child: Divider(height: 1, color: Color(0xFFF2F2F7))),
+      if (!isLast) Padding(padding: const EdgeInsets.only(left: 58), child: Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.1))),
     ]);
   }
 }
@@ -607,7 +608,7 @@ class _LogoutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05))),
       child: ListTile(
         onTap: () => pos.logout(),
         leading: _IconBox(icon: Icons.logout_rounded, color: const Color(0xFFFF3B30)),

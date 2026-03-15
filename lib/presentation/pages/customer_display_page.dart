@@ -114,26 +114,40 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
       height: double.infinity,
       decoration: const BoxDecoration(
         color: Color(0xFF0F0F0F),
-        gradient: RadialGradient(
-          center: Alignment.topRight,
-          radius: 1.5,
-          colors: [
-            Color(0xFF2D1E0E),
-            Color(0xFF0F0F0F),
-          ],
-        ),
       ),
       child: Stack(
         children: [
           Positioned(
+            top: -100,
             right: -100,
-            bottom: -100,
             child: Container(
-              width: 500,
-              height: 500,
+              width: 400,
+              height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFFF9500).withOpacity(0.03),
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFFF9500).withOpacity(0.08),
+                    const Color(0xFFFF9500).withOpacity(0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.blue.withOpacity(0.05),
+                    Colors.blue.withOpacity(0),
+                  ],
+                ),
               ),
             ),
           ),
@@ -236,95 +250,81 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
         Expanded(
           flex: 5,
           child: Padding(
-            padding: const EdgeInsets.all(40.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF9500),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(color: const Color(0xFFFF9500).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))
-                        ]
-                      ),
-                      child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 30),
-                    ),
-                    const SizedBox(width: 20),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("SIZNING SAVATINGIZ", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1)),
-                        Text("SIZ TANLAGAN MAHSULOTLAR RO'YXATI", style: TextStyle(color: Colors.white54, fontSize: 13, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-                Expanded(
-                  child: ListView.separated(
-                    itemCount: items.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 15),
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final double itemTotal = (item['price'] ?? 0) * (item['quantity'] ?? 1);
-                      
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 25),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.04),
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.white.withOpacity(0.05)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 60,
-                              height: 60,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF9500).withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                "${item['quantity']}x",
-                                style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w900, fontSize: 18),
-                              ),
-                            ),
-                            const SizedBox(width: 25),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item['name'] ?? "",
-                                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-                                  ),
-                                  if (item['variant'] != null)
-                                    Text(
-                                      item['variant'],
-                                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              _formatPrice(itemTotal),
-                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9500),
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  child: const Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 20),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("BUYURTMA TAFSILOTLARI", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                    Text("Hush kelibsiz, $restaurantName".toUpperCase(), style: const TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  ],
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 40),
+            Expanded(
+              child: ListView.separated(
+                itemCount: items.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  final double itemTotal = (item['price'] ?? 0).toDouble() * (item['quantity'] ?? 1).toDouble();
+                  
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.03),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9500).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            "${item['quantity']}x",
+                            style: const TextStyle(color: Color(0xFFFF9500), fontWeight: FontWeight.w900, fontSize: 16),
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item['name'] ?? "", style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
+                              if (item['variant'] != null)
+                                Text(item['variant'], style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                        Text(_formatPrice(itemTotal), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
+      ),
+    ),
 
         Container(
           width: 480,

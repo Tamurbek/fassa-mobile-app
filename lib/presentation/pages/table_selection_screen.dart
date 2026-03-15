@@ -25,7 +25,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
       return DefaultTabController(
         length: locations.length,
         child: Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             title: Text("select_table".tr),
             centerTitle: true,
@@ -423,9 +423,9 @@ class _FloorPlanView extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -727,7 +727,7 @@ class _TableWidget extends StatelessWidget {
                         ? Colors.blueGrey.withOpacity(0.2) 
                         : (isOccupied 
                             ? Colors.red.withOpacity(0.1) 
-                            : (isReserved ? Colors.teal.withOpacity(0.1) : AppColors.white))))),
+                            : (isReserved ? Colors.teal.withOpacity(0.1) : Theme.of(context).cardColor))))),
         shape: shape == 'circle' ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: shape == 'circle' ? null : BorderRadius.circular(20),
         border: Border.all(
@@ -788,7 +788,7 @@ class _TableWidget extends StatelessWidget {
                       ? Colors.orange 
                       : (isBilled 
                           ? Colors.indigo.shade400
-                          : (isServedByOther ? Colors.blueGrey : (isOccupied ? Colors.red : (isReserved ? Colors.teal : AppColors.textPrimary))))),
+                          : (isServedByOther ? Colors.blueGrey : (isOccupied ? Colors.red : (isReserved ? Colors.teal : Theme.of(context).textTheme.bodyLarge?.color))))),
             ),
           ),
           if (isReserved && !isOccupied)

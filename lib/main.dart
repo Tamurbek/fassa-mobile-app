@@ -119,9 +119,7 @@ class CustomerDisplayApp extends StatelessWidget {
     return MaterialApp(
       title: 'Customer Display',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-      ),
+      theme: AppTheme.darkTheme,
       home: CustomerDisplayPage(initialData: initialData),
     );
   }
@@ -151,7 +149,7 @@ class FassaApp extends StatelessWidget {
       }
     }
 
-    return GetMaterialApp(
+    return Obx(() => GetMaterialApp(
       title: 'FassaPos',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
@@ -174,7 +172,7 @@ class FassaApp extends StatelessWidget {
         GetPage(name: '/staff-selection', page: () => const StaffSelectionPage()),
         GetPage(name: '/terminal-login', page: () => const TerminalLoginPage()),
       ],
-    );
+    ));
   }
 
   Widget _getInitialScreen() {

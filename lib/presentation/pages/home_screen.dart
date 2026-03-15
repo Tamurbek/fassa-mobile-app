@@ -29,16 +29,16 @@ class HomeScreen extends StatelessWidget {
       child: Obx(() => Stack(
         children: [
         Scaffold(
-          backgroundColor: const Color(0xFFF8F9FB),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Row(
             children: [
               // Left Sidebar: Cart (Only on Desktop/Tablet)
               if (!isMobile)
                 Container(
                   width: 380,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(right: BorderSide(color: Color(0xFFEDF0F5))),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    border: Border(right: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
                   ),
                   child: _buildPOSCartSidebar(pos, context),
                 ),
@@ -149,7 +149,7 @@ class HomeScreen extends StatelessWidget {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Obx(() => TextField(
@@ -219,10 +219,10 @@ class HomeScreen extends StatelessWidget {
       icon: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
+          color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.more_horiz_rounded, color: Color(0xFF1A1A1A), size: 22),
+        child: Icon(Icons.more_horiz_rounded, color: Theme.of(context).iconTheme.color, size: 22),
       ),
       offset: const Offset(0, 50),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -300,7 +300,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildTopIcon(IconData icon, {VoidCallback? onTap}) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(
@@ -346,17 +346,17 @@ class HomeScreen extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFFF9500) : const Color(0xFFF3F4F6),
+                  color: isSelected ? AppColors.primary : (Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F4F6)),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    Icon(cat['icon'] as IconData, size: 18, color: isSelected ? Colors.white : const Color(0xFF1A1A1A)),
+                    Icon(cat['icon'] as IconData, size: 18, color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7)),
                     const SizedBox(width: 8),
                     Text(
                       cat['label'] as String,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
+                        color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.8),
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -408,9 +408,10 @@ class HomeScreen extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 2))],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.02), blurRadius: 10, offset: const Offset(0, 2))],
+                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
               ),
               child: Opacity(
                 opacity: (!item.isAvailable || (pos.isStockTrackingEnabled.value && item.isSoldOut)) ? 0.6 : 1.0,
@@ -467,7 +468,7 @@ class HomeScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(item.name, 
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1A1A1A)), 
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).textTheme.bodyLarge?.color), 
                             maxLines: 1, overflow: TextOverflow.ellipsis
                           ),
                           const SizedBox(height: 4),
@@ -571,9 +572,9 @@ class HomeScreen extends StatelessWidget {
       isScrollControlled: true,
       builder: (ctx) => Container(
         padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(ctx).padding.bottom + 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: Theme.of(ctx).cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -604,10 +605,10 @@ class HomeScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: qty > 0 ? const Color(0xFFFFF7ED) : Colors.white,
+                        color: qty > 0 ? AppColors.primary.withOpacity(0.1) : Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: qty > 0 ? const Color(0xFFFF9500).withOpacity(0.5) : const Color(0xFFEDF0F5),
+                          color: qty > 0 ? AppColors.primary : Theme.of(context).dividerColor.withOpacity(0.1),
                           width: 1.5,
                         ),
                       ),
@@ -669,7 +670,7 @@ class HomeScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
+        color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F4F6),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -679,20 +680,20 @@ class HomeScreen extends StatelessWidget {
             onTap: () => pos.decrementFromCart(item, variant: variant),
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              child: const Icon(Icons.remove, size: 22, color: Color(0xFF1A1A1A)),
+              decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(16)),
+              child: Icon(Icons.remove, size: 22, color: Theme.of(context).iconTheme.color),
             ),
           ),
           Container(
             constraints: const BoxConstraints(minWidth: 44),
             alignment: Alignment.center,
-            child: Text("$qty", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
+            child: Text("$qty", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color)),
           ),
           GestureDetector(
             onTap: () => pos.addToCart(item, variant: variant),
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFFF9500), borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(16)),
               child: const Icon(Icons.add, size: 22, color: Colors.white),
             ),
           ),
@@ -774,9 +775,9 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("operator".tr, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.bold)),
+                const Text("operator", style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 12, fontWeight: FontWeight.bold)),
                 Text((pos.currentUser.value?['name'] as String?) ?? "Unknown", 
-                  style: const TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w800, fontSize: 16)),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.w800, fontSize: 16)),
               ],
             ),
           ),
@@ -1046,11 +1047,11 @@ class HomeScreen extends StatelessWidget {
                 ],
                 // Kitchen Print
                 Expanded(
-                  child: _buildActionBtn(
-                    Icons.soup_kitchen_rounded,
-                    pos.isOrderModified.value ? "Saqlash" : "Oshxona",
-                    const Color(0xFF3B82F6),
-                    () async {
+                  child: Obx(() => _buildActionBtn(
+                    pos.isSubmitting.value ? Icons.sync_rounded : Icons.soup_kitchen_rounded,
+                    pos.isSubmitting.value ? "Yuklanmoqda..." : (pos.isOrderModified.value ? "Saqlash" : "Oshxona"),
+                    pos.isSubmitting.value ? Colors.grey : const Color(0xFF3B82F6),
+                    pos.isSubmitting.value ? null : () async {
                       if (!pos.isOrderModified.value) {
                         Get.snackbar("Eslatma", "O'zgarishlar yo'q",
                           backgroundColor: Colors.orange, colorText: Colors.white);
@@ -1062,7 +1063,7 @@ class HomeScreen extends StatelessWidget {
                       }
                     },
                     tooltip: "kitchen_print_sidebar".tr,
-                  ),
+                  )),
                 ),
                 const SizedBox(width: 8),
                 // Receipt Print

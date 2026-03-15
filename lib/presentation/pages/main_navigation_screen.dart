@@ -136,13 +136,13 @@ class MainNavigationScreen extends StatelessWidget {
     ].where((e) => (e['index'] as int) >= 0).toList();
 
     return Container(
-      color: const Color(0xFFF8F9FB),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           // Header
           Container(
             padding: EdgeInsets.fromLTRB(48, MediaQuery.of(context).padding.top + 24, 48, 24),
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             child: Row(
               children: [
                 Container(
@@ -202,11 +202,11 @@ class MainNavigationScreen extends StatelessWidget {
                         width: 180,
                         height: 160,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(color: color.withOpacity(0.12), blurRadius: 20, offset: const Offset(0, 8)),
-                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8),
+                            BoxShadow(color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04), blurRadius: 8),
                           ],
                         ),
                         child: Column(
@@ -224,7 +224,7 @@ class MainNavigationScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             Text(
                               item['label'] as String,
-                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF1A1A1A)),
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Theme.of(context).textTheme.bodyLarge?.color),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -248,7 +248,7 @@ class MainNavigationScreen extends StatelessWidget {
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      color: Colors.white,
+      color: Theme.of(context).cardColor,
       child: Row(
         children: [
           GestureDetector(
@@ -271,7 +271,7 @@ class MainNavigationScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 20),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF1A1A1A))),
+          Text(label, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Theme.of(context).textTheme.displaySmall?.color)),
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.lock_person_rounded, color: Color(0xFFFF9500)),

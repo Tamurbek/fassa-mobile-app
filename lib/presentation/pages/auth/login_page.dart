@@ -185,7 +185,7 @@ class _LoginPageState extends State<LoginPage> {
     final bool isDesktop = size.width > 900;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           Expanded(
@@ -264,12 +264,12 @@ class _LoginPageState extends State<LoginPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'Login',
                               style: TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF1A1A1A),
+                                color: Theme.of(context).textTheme.displayLarge?.color,
                               ),
                             ),
                             IconButton(
@@ -503,10 +503,10 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF4B5563),
+        color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.7),
       ),
     );
   }
@@ -523,9 +523,9 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : const Color(0xFFF9FAFB),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
       ),
       child: TextField(
         controller: controller,

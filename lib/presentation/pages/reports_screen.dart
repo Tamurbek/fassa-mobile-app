@@ -17,10 +17,10 @@ class ReportsScreen extends StatelessWidget {
     final POSController pos = Get.find<POSController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text("reports".tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Color(0xFF1A1A1A))),
-        backgroundColor: Colors.transparent,
+        title: Text("reports".tr, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24, color: Theme.of(context).textTheme.displayLarge?.color)),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: false,
         actions: [
@@ -28,9 +28,9 @@ class ReportsScreen extends StatelessWidget {
             margin: const EdgeInsets.only(right: 16),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE0E5ED)),
+              border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
             ),
             child: Row(
               children: [
@@ -38,7 +38,7 @@ class ReportsScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   "${"today".tr}, ${DateFormat('d-MMMM', Get.locale?.toString()).format(DateTime.now())}",
-                  style: const TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600),
+                  style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -47,9 +47,9 @@ class ReportsScreen extends StatelessWidget {
             margin: const EdgeInsets.only(right: 24),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE0E5ED)),
+              border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
             ),
             child: const Icon(Icons.file_download_outlined, color: Color(0xFF6B7280)),
           ),
@@ -125,18 +125,18 @@ class ReportsScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("sales_analytics".tr, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                        Text("sales_analytics".tr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.displaySmall?.color)),
                         Text("${"last_update".tr}: ${DateFormat('HH:mm').format(DateTime.now())}", style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 13)),
                       ],
                     ),
                     const SizedBox(height: 24),
                     _buildStatsRow(todayRevenue, orderCount, avgBill, totalRevenue, context),
                     const SizedBox(height: 40),
-                    Text("reports".tr, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                    Text("reports".tr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.displaySmall?.color)),
                     const SizedBox(height: 16),
                     _buildReportsMenu(context, todayOrders),
                     const SizedBox(height: 40),
-                    Text("top_selling".tr, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                    Text("top_selling".tr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.displaySmall?.color)),
                     const SizedBox(height: 16),
                     _buildTopSellingTable(topSelling),
                   ],
@@ -174,9 +174,9 @@ class ReportsScreen extends StatelessWidget {
       width: width < 220 ? double.infinity : width,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,9 +202,9 @@ class ReportsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             isInteger ? value.toInt().toString() : formatter.format(value),
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1A1A1A)),
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
-          Text(unit, style: const TextStyle(fontSize: 18, color: Color(0xFF1A1A1A), fontWeight: FontWeight.w600)),
+          Text(unit, style: TextStyle(fontSize: 18, color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.8), fontWeight: FontWeight.w600)),
           const SizedBox(height: 20),
           SizedBox(
             height: 40,
@@ -238,9 +238,9 @@ class ReportsScreen extends StatelessWidget {
   Widget _buildTopSellingTable(List<Map<String, dynamic>> items) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE0E5ED)),
+        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
       ),
       child: Column(
         children: [
@@ -256,12 +256,12 @@ class ReportsScreen extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE0E5ED)),
+          Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.1)),
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: items.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, color: Color(0xFFEDF0F5)),
+            separatorBuilder: (context, index) => Divider(height: 1, color: Theme.of(context).dividerColor.withOpacity(0.05)),
             itemBuilder: (context, index) {
               final item = items[index];
               return Padding(
@@ -276,13 +276,13 @@ class ReportsScreen extends StatelessWidget {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF3F4F6),
+                              color: Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.fastfood_outlined, color: Color(0xFF9CA3AF)),
                           ),
                           const SizedBox(width: 16),
-                          Text(item['name'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          Text(item['name'] as String, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).textTheme.bodyLarge?.color)),
                         ],
                       ),
                     ),
@@ -325,16 +325,16 @@ class ReportsScreen extends StatelessWidget {
               height: 120,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE0E5ED)),
+                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.leaderboard_rounded, color: Color(0xFF2D3748), size: 28),
+                  Icon(Icons.leaderboard_rounded, color: Theme.of(context).textTheme.bodyLarge?.color?.withOpacity(0.5), size: 28),
                   const SizedBox(height: 8),
-                  Text("waiter_performance".tr, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, height: 1.1)),
+                  Text("waiter_performance".tr, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, height: 1.1, color: Theme.of(context).textTheme.bodyLarge?.color)),
                 ],
               ),
             ),
@@ -417,16 +417,16 @@ class ReportsScreen extends StatelessWidget {
         height: 120,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE0E5ED)),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.05)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 10),
-            Text(name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(name, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).textTheme.bodyLarge?.color)),
           ],
         ),
       ),
@@ -456,8 +456,8 @@ class ReportsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.1))),
+        color: Theme.of(context).cardColor,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1))),
       ),
       child: Row(
         children: [
@@ -471,7 +471,7 @@ class ReportsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text("active_session_header".tr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF), letterSpacing: 0.5)),
-              Text("${"last_update".tr}: ${DateFormat('HH:mm').format(DateTime.now())}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text("${"last_update".tr}: ${DateFormat('HH:mm').format(DateTime.now())}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).textTheme.bodyLarge?.color)),
             ],
           ),
           const Spacer(),
@@ -480,7 +480,7 @@ class ReportsScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text("cash_status_header".tr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9CA3AF), letterSpacing: 0.5)),
-              Text("${NumberFormat("#,###", "uz_UZ").format(todayRevenue)} ${Get.find<POSController>().currencySymbol} ${"cash_label".tr}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text("${NumberFormat("#,###", "uz_UZ").format(todayRevenue)} ${Get.find<POSController>().currencySymbol} ${"cash_label".tr}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).textTheme.bodyLarge?.color)),
             ],
           ),
           const SizedBox(width: 24),

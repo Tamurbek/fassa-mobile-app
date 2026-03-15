@@ -636,8 +636,10 @@ class POSController extends POSControllerState with
   }
 
   Future<bool> submitOrder({bool isPaid = false, String? paymentMethod}) async {
-    if (currentOrder.isEmpty) return false;
-    bool isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+    if (isSubmitting.value || currentOrder.isEmpty) return false;
+    isSubmitting.value = true;
+    try {
+      bool isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
     if (!isWithinGeofence.value && isWaiter && !isDesktop) return false;
 
     if (editingOrderId.value != null) return await updateExistingOrder(isPaid: isPaid, paymentMethod: paymentMethod);
@@ -756,11 +758,17 @@ class POSController extends POSControllerState with
     }
 
     clearCurrentOrder();
+    isSubmitting.value = false;
     return true;
+    } catch (e) {
+      isSubmitting.value = false;
+      return false;
+    }
   }
 
   Future<bool> updateExistingOrder({bool isPaid = false, String? paymentMethod}) async {
-    if (editingOrderId.value == null) return false;
+    if (isSubmitting.value || editingOrderId.value == null) return false;
+    isSubmitting.value = true;
     bool isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
     if (!isWithinGeofence.value && isWaiter && !isDesktop) return false;
     
@@ -897,10 +905,15 @@ class POSController extends POSControllerState with
         allOrders.refresh();
         clearCurrentOrder();
         saveAllOrders();
+        isSubmitting.value = false;
         return true;
       }
+      isSubmitting.value = false;
       return false;
-    } catch (e) { return false; }
+    } catch (e) { 
+      isSubmitting.value = false;
+      return false; 
+    }
   }
 
   Future<void> printBillAndExit() async {

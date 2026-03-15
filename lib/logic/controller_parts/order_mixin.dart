@@ -407,7 +407,10 @@ mixin OrderMixin on POSControllerState {
     if (!printedKitchenQuantities.containsKey(orderIdStr)) {
       final Map<String, int> printedMap = {};
       for (var d in details) {
-        printedMap[d['id']?.toString() ?? ""] = (d['qty'] as num?)?.toInt() ?? 0;
+        final productId = d['id']?.toString() ?? "";
+        final variantId = d['variant_id']?.toString();
+        final itemKey = (variantId != null && variantId.isNotEmpty) ? "${productId}_$variantId" : productId;
+        printedMap[itemKey] = (d['qty'] as num?)?.toInt() ?? 0;
       }
       printedKitchenQuantities[orderIdStr] = printedMap;
       storage.write('printed_kitchen_items', Map.from(printedKitchenQuantities));
