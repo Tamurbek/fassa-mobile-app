@@ -388,15 +388,20 @@ class POSController extends POSControllerState with
     });
 
     socket.onNewOrder((data) {
-      final String? clientId = data['client_id']?.toString();
+      final String? clientId = data['client_id']?.toString() ?? data['clientId']?.toString();
       final String? serverId = data['id']?.toString();
       
       int index = allOrders.indexWhere((o) => 
           (clientId != null && o['id'].toString() == clientId) || 
+          (clientId != null && o['client_id'].toString() == clientId) ||
           (serverId != null && o['id'].toString() == serverId));
           
       if (index == -1) {
         final normalized = normalizeOrder(data);
+        // Ensure client_id is preserved if available
+        if (clientId != null && normalized['client_id'] == null) {
+          normalized['client_id'] = clientId;
+        }
         allOrders.insert(0, normalized);
         allOrders.refresh();
         saveAllOrders();
@@ -404,16 +409,29 @@ class POSController extends POSControllerState with
         if (isMainPrinterTerminal.value) {
             final now = DateTime.now();
             final printKeyKitchen = "${serverId ?? clientId}_kitchen";
+            final normalizedClientId = normalized['client_id']?.toString();
+            final actualClientId = clientId ?? normalizedClientId;
             
             // Check BOTH server id and client uuid for deduplication
             bool isAlreadyDone = processedPrintIds.containsKey(printKeyKitchen) && 
                                 now.difference(processedPrintIds[printKeyKitchen]!).inSeconds < 15;
+                                
+            if (!isAlreadyDone && serverId != null) {
+              if (processedPrintIds.containsKey("${serverId}_kitchen") && 
+                  now.difference(processedPrintIds["${serverId}_kitchen"]!).inSeconds < 15) {
+                isAlreadyDone = true;
+              }
+            }
             
-            if (!isAlreadyDone && clientId != null) {
-              final uuidKey = "${clientId}_kitchen";
+            if (!isAlreadyDone && actualClientId != null) {
+              final uuidKey = "${actualClientId}_kitchen";
               if (processedPrintIds.containsKey(uuidKey) && 
                   now.difference(processedPrintIds[uuidKey]!).inSeconds < 15) {
                 isAlreadyDone = true;
+                // Important: If we printed using the UUID, link the server ID's printed quantities to it
+                if (serverId != null) {
+                  printedKitchenQuantities[serverId] = Map.from(printedKitchenQuantities[actualClientId] ?? {});
+                }
               }
             }
             
@@ -421,17 +439,24 @@ class POSController extends POSControllerState with
             
             // Mark as processed
             if (serverId != null) processedPrintIds["${serverId}_kitchen"] = now;
-            if (clientId != null) processedPrintIds["${clientId}_kitchen"] = now;
+            if (actualClientId != null) processedPrintIds["${actualClientId}_kitchen"] = now;
             
             printLocally(normalized, isKitchenOnly: true);
         }
       } else {
          // Even if it exists, update it to have the server ID if it only had client UUID
          if (clientId != null && serverId != null) {
-            int uuidIdx = allOrders.indexWhere((o) => o['id'].toString() == clientId);
+            int uuidIdx = allOrders.indexWhere((o) => o['id'].toString() == clientId || o['client_id'].toString() == clientId);
             if (uuidIdx != -1) {
                allOrders[uuidIdx]['id'] = serverId;
+               allOrders[uuidIdx]['client_id'] ??= clientId; // Preserve client ID
                allOrders.refresh();
+               
+               // Link the printed quantities from UUID to ServerID natively so update orders work
+               if (printedKitchenQuantities.containsKey(clientId) && !printedKitchenQuantities.containsKey(serverId)) {
+                 printedKitchenQuantities[serverId] = Map.from(printedKitchenQuantities[clientId]!);
+                 storage.write('printed_kitchen_items', Map.from(printedKitchenQuantities));
+               }
             }
          }
       }
@@ -703,8 +728,17 @@ class POSController extends POSControllerState with
     };
 
     final normalized = normalizeOrder(orderData);
+    
+    // If NOT paid (just saving), we only want KITCHEN tickets.
+    // If paid, we want TO'LOV CHEKI (which includes kitchen items in our logic).
+    final String title = isPaid ? "to'lov cheki" : "kitchen";
+    
+    // Seed deduplication map early to prevent socket race conditions!
+    if (normalized['id'] != null) processedPrintIds["${normalized['id']}_$title"] = DateTime.now();
+    processedPrintIds["${orderId}_$title"] = DateTime.now();
 
     if (isOnline.value) {
+
       try {
         allOrders.insert(0, normalized);
         allOrders.refresh();
@@ -739,14 +773,6 @@ class POSController extends POSControllerState with
       Get.snackbar("Oflayn", "Buyurtma saqlandi. Internet paydo bo'lishi bilan yuboriladi.", 
         backgroundColor: Colors.blue, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
     }
-
-    // If NOT paid (just saving), we only want KITCHEN tickets.
-    // If paid, we want TO'LOV CHEKI (which includes kitchen items in our logic).
-    final String title = isPaid ? "to'lov cheki" : "kitchen";
-    
-    // Seed deduplication map with both IDs
-    if (normalized['id'] != null) processedPrintIds["${normalized['id']}_$title"] = DateTime.now();
-    processedPrintIds["${orderId}_$title"] = DateTime.now();
 
     if (autoPrintReceipt.value) {
       await printOrder(normalized, 
@@ -846,6 +872,20 @@ class POSController extends POSControllerState with
         }).toList()
       };
 
+      // Seed deduplication keys early to prevent socket race conditions!
+      final orderId = editingOrderId.value?.toString();
+      if (orderId != null) {
+        final String title = isPaid ? "to'lov cheki" : "kitchen";
+        processedPrintIds["${orderId}_$title"] = DateTime.now();
+        // Also check if the original order had a client_id
+        if (index != -1) {
+           final String? existingClientId = allOrders[index]['client_id']?.toString();
+           if (existingClientId != null) {
+             processedPrintIds["${existingClientId}_$title"] = DateTime.now();
+           }
+        }
+      }
+
       if (isOnline.value) {
         try {
           await api.updateOrderStatus(editingOrderId.value!, newStatus);
@@ -877,17 +917,6 @@ class POSController extends POSControllerState with
         }
         
         allOrders[index] = orderToPrint;
-
-      final orderId = editingOrderId.value?.toString();
-      if (orderId != null) {
-        final String title = isPaid ? "to'lov cheki" : "kitchen";
-        processedPrintIds["${orderId}_$title"] = DateTime.now();
-        // Also check if the original order had a client_id
-        final String? existingClientId = allOrders[index]['client_id']?.toString();
-        if (existingClientId != null) {
-          processedPrintIds["${existingClientId}_$title"] = DateTime.now();
-        }
-      }
 
       // If NOT paid (just saving), we only want KITCHEN tickets.
       if (autoPrintReceipt.value) {
