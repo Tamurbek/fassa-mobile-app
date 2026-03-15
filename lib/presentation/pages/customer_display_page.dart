@@ -69,6 +69,14 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
     return "${formatter.format(value).replaceAll(',', ' ')} $currency";
   }
 
+  String _safeFormatDate(String pattern, String locale) {
+    try {
+      return DateFormat(pattern, locale).format(_now);
+    } catch (e) {
+      return DateFormat(pattern, 'en_US').format(_now);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -135,9 +143,8 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
   }
 
   Widget _buildIdleState() {
-    String timeStr = DateFormat('HH:mm').format(_now);
-    String secondsStr = DateFormat(':ss').format(_now);
-    String dateStr = DateFormat('EEEE, d MMMM', 'uz_UZ').format(_now).toUpperCase();
+    String timeStr = _safeFormatDate('HH:mm', 'en_US');
+    String dateStr = _safeFormatDate('EEEE, d MMMM', 'uz_UZ').toUpperCase();
 
     return Center(
       key: const ValueKey("idle_state"),
@@ -175,9 +182,9 @@ class _CustomerDisplayPageState extends State<CustomerDisplayPage> {
   }
 
   Widget _buildClockSection(Color primaryColor, Color secondaryColor) {
-    String timeStr = DateFormat('HH:mm').format(_now);
-    String secondsStr = DateFormat(':ss').format(_now);
-    String dateStr = DateFormat('EEEE, d MMMM', 'uz_UZ').format(_now).toUpperCase();
+    String timeStr = _safeFormatDate('HH:mm', 'en_US');
+    String secondsStr = _safeFormatDate(':ss', 'en_US');
+    String dateStr = _safeFormatDate('EEEE, d MMMM', 'uz_UZ').toUpperCase();
 
     return Column(
       mainAxisSize: MainAxisSize.min,

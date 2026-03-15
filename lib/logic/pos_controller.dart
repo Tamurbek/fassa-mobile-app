@@ -166,8 +166,7 @@ class POSController extends POSControllerState with
     syncCartToDisplay();
 
     // 2. Local Multi-window sync (for desktop second monitor)
-    // Only for Windows/Linux for now to avoid macOS native crash
-    if (customerWindowId.value == null || Platform.isMacOS || (!Platform.isWindows && !Platform.isLinux)) return;
+    if (customerWindowId.value == null) return;
     
     try {
       // Extra check: verify if the window is still active

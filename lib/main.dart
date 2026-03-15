@@ -42,6 +42,14 @@ void main(List<String> args) async {
   await initializeDateFormatting('en_US', null);
   await initializeDateFormatting('ru_RU', null);
 
+  if (args.firstOrNull == 'multi_window') {
+    final windowId = int.parse(args[1]);
+    final argument = args.length > 2 ? jsonDecode(args[2]) as Map<String, dynamic> : <String, dynamic>{};
+    
+    runApp(CustomerDisplayApp(windowId: windowId, initialData: argument));
+    return;
+  }
+
   if (Platform.isWindows) {
     await WindowsSingleInstance.ensureSingleInstance(
       args,
@@ -51,15 +59,6 @@ void main(List<String> args) async {
         windowManager.focus();
       },
     );
-  }
-
-  if (args.firstOrNull == 'multi_window') {
-    await GetStorage.init();
-    final windowId = int.parse(args[1]);
-    final argument = args.length > 2 ? jsonDecode(args[2]) as Map<String, dynamic> : <String, dynamic>{};
-    
-    runApp(CustomerDisplayApp(windowId: windowId, initialData: argument));
-    return;
   }
 
   await initializeService();
@@ -117,14 +116,12 @@ class CustomerDisplayApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = GetStorage().read('is_dark_mode') ?? false;
-    
-    return GetMaterialApp(
+    return MaterialApp(
       title: 'Customer Display',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: Colors.black,
+      ),
       home: CustomerDisplayPage(initialData: initialData),
     );
   }
