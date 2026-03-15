@@ -741,8 +741,10 @@ class POSController extends POSControllerState with
     // If NOT paid (just saving), we only want KITCHEN tickets.
     // If paid, we want TO'LOV CHEKI (which includes kitchen items in our logic).
     final String title = isPaid ? "to'lov cheki" : "kitchen";
-    final printKey = "${normalized['id']}_$title";
-    processedPrintIds[printKey] = DateTime.now();
+    
+    // Seed deduplication map with both IDs
+    if (normalized['id'] != null) processedPrintIds["${normalized['id']}_$title"] = DateTime.now();
+    processedPrintIds["${orderId}_$title"] = DateTime.now();
 
     if (autoPrintReceipt.value) {
       await printOrder(normalized, 
@@ -872,6 +874,11 @@ class POSController extends POSControllerState with
       if (orderId != null) {
         final String title = isPaid ? "to'lov cheki" : "kitchen";
         processedPrintIds["${orderId}_$title"] = DateTime.now();
+        // Also check if the original order had a client_id
+        final String? existingClientId = allOrders[index]['client_id']?.toString();
+        if (existingClientId != null) {
+          processedPrintIds["${existingClientId}_$title"] = DateTime.now();
+        }
       }
 
       // If NOT paid (just saving), we only want KITCHEN tickets.

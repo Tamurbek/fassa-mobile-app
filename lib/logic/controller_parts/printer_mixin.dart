@@ -45,7 +45,27 @@ mixin PrinterMixin on POSControllerState {
     List<String> failedPrinters = [];
     List<String> filteredPrinters = [];
     
-    final details = order['details'] as List? ?? [];
+    // Aggregate details to avoid duplicates (e.g. from multiple cart entries of same product)
+    final Map<String, Map<String, dynamic>> grouped = {};
+    for (var item in (order['details'] as List? ?? [])) {
+      final productId = (item['id'] ?? item['product_id'] ?? "").toString().trim();
+      final variantId = item['variant_id']?.toString().trim() ?? "";
+      final itemKey = variantId.isNotEmpty ? "${productId}_$variantId" : productId;
+      
+      if (productId.isEmpty) continue;
+      
+      if (grouped.containsKey(itemKey)) {
+        int q1 = int.tryParse(grouped[itemKey]!['qty'].toString()) ?? 0;
+        int q2 = int.tryParse(item['qty'].toString()) ?? 0;
+        grouped[itemKey]!['qty'] = q1 + q2;
+      } else {
+        grouped[itemKey] = Map<String, dynamic>.from(item);
+        // Ensure qty is an int
+        grouped[itemKey]!['qty'] = int.tryParse(item['qty'].toString()) ?? 0;
+      }
+    }
+    final details = grouped.values.toList();
+
     final activePrinters = printers.where((p) => p.isActive).toList();
     
     if (activePrinters.isEmpty) {
@@ -153,9 +173,9 @@ mixin PrinterMixin on POSControllerState {
 
             // 1. Calculate ADDED items per area
             for (var item in details) {
-              final String productId = item['id']?.toString().trim() ?? "";
+              final String productId = (item['id'] ?? item['product_id'] ?? "").toString().trim();
               final String? variantId = item['variant_id']?.toString().trim();
-              final String itemKey = variantId != null ? "${productId}_$variantId" : productId;
+              final String itemKey = (variantId != null && variantId.isNotEmpty) ? "${productId}_$variantId" : productId;
               
               final product = products.firstWhereOrNull((p) => p.id.toString().trim() == productId);
               if (product == null || product.preparationAreaId == null) continue;

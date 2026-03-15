@@ -451,6 +451,7 @@ mixin DataSyncMixin on POSControllerState {
         "service_fee_dine_in": o['service_fee_dine_in'],
         "service_fee_takeaway": o['service_fee_takeaway'],
         "service_fee_delivery": o['service_fee_delivery'],
+        "client_id": o['client_id']?.toString(),
       };
     } catch (e) {
       print("Error normalizing order: $e");
