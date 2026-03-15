@@ -138,7 +138,7 @@ class ReportsScreen extends StatelessWidget {
                     const SizedBox(height: 40),
                     Text("top_selling".tr, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.displaySmall?.color)),
                     const SizedBox(height: 16),
-                    _buildTopSellingTable(topSelling),
+                    _buildTopSellingTable(topSelling, context),
                   ],
                 ),
               ),
@@ -158,17 +158,17 @@ class ReportsScreen extends StatelessWidget {
           spacing: 20,
           runSpacing: 20,
           children: [
-            _buildStatCard("today_revenue".tr, todayRevenue, Get.find<POSController>().currencySymbol, 0.0, Colors.orange, cardWidth),
-            _buildStatCard("order_count".tr, orderCount.toDouble(), "items".tr, 0.0, Colors.blue, cardWidth, isInteger: true),
-            _buildStatCard("average_bill".tr, avgBill, Get.find<POSController>().currencySymbol, 0.0, Colors.green, cardWidth),
-            _buildStatCard("total_sales".tr, totalRevenue, Get.find<POSController>().currencySymbol, 0.0, Colors.red, cardWidth),
+            _buildStatCard("today_revenue".tr, todayRevenue, Get.find<POSController>().currencySymbol, 0.0, Colors.orange, cardWidth, context),
+            _buildStatCard("order_count".tr, orderCount.toDouble(), "items".tr, 0.0, Colors.blue, cardWidth, context, isInteger: true),
+            _buildStatCard("average_bill".tr, avgBill, Get.find<POSController>().currencySymbol, 0.0, Colors.green, cardWidth, context),
+            _buildStatCard("total_sales".tr, totalRevenue, Get.find<POSController>().currencySymbol, 0.0, Colors.red, cardWidth, context),
           ],
         );
       }
     );
   }
 
-  Widget _buildStatCard(String title, double value, String unit, double percent, Color color, double width, {bool isInteger = false}) {
+  Widget _buildStatCard(String title, double value, String unit, double percent, Color color, double width, BuildContext context, {bool isInteger = false}) {
     final formatter = NumberFormat("#,###", "uz_UZ");
     return Container(
       width: width < 220 ? double.infinity : width,
@@ -235,7 +235,7 @@ class ReportsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopSellingTable(List<Map<String, dynamic>> items) {
+  Widget _buildTopSellingTable(List<Map<String, dynamic>> items, BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,

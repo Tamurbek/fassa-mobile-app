@@ -70,13 +70,13 @@ class OrdersScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: [
-                  _buildFilterChip("All", "all".tr, selectedFilter),
+                  _buildFilterChip("All", "all".tr, selectedFilter, context),
                   const SizedBox(width: 8),
-                  _buildFilterChip("Dine-in", 'dine_in'.tr, selectedFilter),
+                  _buildFilterChip("Dine-in", 'dine_in'.tr, selectedFilter, context),
                   const SizedBox(width: 8),
-                  _buildFilterChip("Takeaway", 'takeaway'.tr, selectedFilter),
+                  _buildFilterChip("Takeaway", 'takeaway'.tr, selectedFilter, context),
                   const SizedBox(width: 8),
-                  _buildFilterChip("Delivery", 'delivery'.tr, selectedFilter),
+                  _buildFilterChip("Delivery", 'delivery'.tr, selectedFilter, context),
                 ],
               )),
             ),
@@ -159,7 +159,12 @@ class OrdersScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02), blurRadius: 10)],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.02), 
+              blurRadius: 10
+            )
+          ],
         ),
         child: Obx(() => DataTable(
           headingRowColor: MaterialStateProperty.all(Theme.of(context).scaffoldBackgroundColor),
@@ -219,7 +224,7 @@ class OrdersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterChip(String value, String label, RxString selectedFilter) {
+  Widget _buildFilterChip(String value, String label, RxString selectedFilter, BuildContext context) {
     final bool isSelected = selectedFilter.value == value;
     return ChoiceChip(
       label: Text(label),
@@ -701,11 +706,11 @@ class OrdersScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Row(
               children: [
-                _buildModeOption(Icons.restaurant, "Dine-in", pos),
+                _buildModeOption(Icons.restaurant, "Dine-in", pos, context),
                 const SizedBox(width: 16),
-                _buildModeOption(Icons.shopping_bag, "Takeaway", pos),
+                _buildModeOption(Icons.shopping_bag, "Takeaway", pos, context),
                 const SizedBox(width: 16),
-                _buildModeOption(Icons.delivery_dining, "Delivery", pos),
+                _buildModeOption(Icons.delivery_dining, "Delivery", pos, context),
               ],
             ),
             const SizedBox(height: 20),
@@ -715,7 +720,7 @@ class OrdersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModeOption(IconData icon, String label, POSController pos) {
+  Widget _buildModeOption(IconData icon, String label, POSController pos, BuildContext context) {
     return Expanded(
       child: InkWell(
         onTap: () {

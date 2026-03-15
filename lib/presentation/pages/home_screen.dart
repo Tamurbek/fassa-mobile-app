@@ -206,7 +206,7 @@ class HomeScreen extends StatelessWidget {
               onTap: () => pos.refreshData() // Refresh tries to sync
             ) : const SizedBox.shrink()),
           const SizedBox(width: 8),
-          _buildTopIcon(Icons.notifications_outlined),
+          _buildTopIcon(Icons.notifications_outlined, context),
           const SizedBox(width: 8),
           _buildMoreActionsMenu(pos, context),
         ],
@@ -297,7 +297,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopIcon(IconData icon, {VoidCallback? onTap}) {
+  Widget _buildTopIcon(IconData icon, BuildContext context, {VoidCallback? onTap}) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.1) : const Color(0xFFF3F4F6),
@@ -626,7 +626,7 @@ class HomeScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                          _buildCounterForVariant(item, variant, qty, pos),
+                          _buildCounterForVariant(item, variant, qty, pos, context),
                         ],
                       ),
                     );
@@ -655,7 +655,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCounterForVariant(FoodItem item, dynamic variant, int qty, POSController pos) {
+  Widget _buildCounterForVariant(FoodItem item, dynamic variant, int qty, POSController pos, BuildContext context) {
     if (qty == 0) {
       return GestureDetector(
         onTap: () => pos.addToCart(item, variant: variant),
@@ -741,7 +741,7 @@ class HomeScreen extends StatelessWidget {
   Widget _buildPOSCartSidebar(POSController pos, BuildContext context) {
     return Column(
       children: [
-        _buildOperatorHeader(pos),
+        _buildOperatorHeader(pos, context),
         _buildModeSelector(pos),
         Expanded(
           child: pos.currentOrder.isEmpty
@@ -761,7 +761,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOperatorHeader(POSController pos) {
+  Widget _buildOperatorHeader(POSController pos, BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 40, 24, 10),
       child: Row(
@@ -1339,7 +1339,7 @@ class HomeScreen extends StatelessWidget {
   }
 
 
-  Widget _buildActionBtn(IconData icon, String label, Color color, VoidCallback onTap, {String? tooltip}) {
+  Widget _buildActionBtn(IconData icon, String label, Color color, Function()? onTap, {String? tooltip}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
